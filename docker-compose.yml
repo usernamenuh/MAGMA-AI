@@ -45,7 +45,7 @@ services:
     depends_on:
       - backend
     expose:
-      - "8090"
+      - "3000"
 
   nginx:
     image: nginx:latest
