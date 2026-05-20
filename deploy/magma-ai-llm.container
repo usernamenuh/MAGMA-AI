@@ -7,7 +7,7 @@ Wants=network-online.target
 Image=172.16.2.228:5000/magma-ai-llm:latest
 EnvironmentFile=/opt/secrets/openai-local/.env
 Network=host
-Volume=/mnt/data/magma-ai/models:/app/models:ro
+Volume=/mnt/data/magma-ai/models:/app/models:ro,z
 Entrypoint=python3
 Exec=main.py
 
