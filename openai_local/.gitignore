@@ -1,0 +1,104 @@
+__pycache__/
+/venv
+/openai-venv
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+compliance
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# PyCharm project settings
+.idea/
+
+# VS Code settings
+.vscode/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Pytest
+.cache/
+.pytest_cache/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+
+# Test output
+test-output/
+
+# Logs
+*.log
+
+# Streamlit
+.streamlit/
+
+# Local files
+*.sqlite3
+*.db
+*.bak
+*.tmp
+
+# Environment variable files
+.env
+.env.*
+
+# macOS and system files
+.DS_Store
+Thumbs.db
+
+# Docker
+*.pid
+*.tar
+*.img
+*.bak
+docker-compose.override.yml
+
+# Custom ignore
+logs/
+secrets/
+__old__/
+
+# Models
+/models

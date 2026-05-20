@@ -1,0 +1,40 @@
+text,label
+hai,GREETING
+halo,GREETING
+hai saya mau bertanya,GREETING
+selamat siang,GREETING
+halo sore,GREETING
+halo selamat malam,GREETING
+permisi saya ingin bertanya sesuatu,GREETING
+"selamat pagi saya mau bertanya sesuatu","GREETING"
+hai selamat siang,GREETING
+siapa kamu,IDENTITY
+kamu siapa,IDENTITY
+"boleh jelaskan kamu ini apa","IDENTITY"
+kamu bisa apa,CAPABILITY
+apa aja fitur yang ada,CAPABILITY
+ada layanan apa saja,CAPABILITY
+apa peran kamu,CAPABILITY
+"bisa jelasin kemampuan kamu secara singkat","CAPABILITY"
+"kamu bisa bantu apa saja sih","CAPABILITY"
+"apa saja layanan yang tersedia","CAPABILITY"
+"bisa jelasin kemampuan kamu secara singkat","CAPABILITY"
+"informasi apa saja yang bisa kamu berikan","CAPABILITY"
+"apa yang kamu bisa lakukan?","CAPABILITY"
+"apa kegunaan sistem ini","CAPABILITY"
+gempa bumi terbaru,OUT_OF_SCOPE
+bagaimana aktivitas gunung semeru hari ini,OUT_OF_SCOPE
+status gunung merapi hari ini,OUT_OF_SCOPE
+"merapi hari ini","OUT_OF_SCOPE"
+"info gempa","OUT_OF_SCOPE"
+"kamu bisa bantu jelasin status gunung merapi","OUT_OF_SCOPE"
+"status sinabung","OUT_OF_SCOPE"
+"status gunung semeru","OUT_OF_SCOPE"
+"keadaan semeru","OUT_OF_SCOPE"
+"keadaan terkini semeru","OUT_OF_SCOPE"
+"status gunung sinabung","OUT_OF_SCOPE"
+"jumlah gunung api di indonesia","OUT_OF_SCOPE"
+"Apakah wilayah saya rawan gempa bumi?",OUT_OF_SCOPE
+"Gunung apa saja yang sedang aktif saat ini?",OUT_OF_SCOPE
+"Bagaimana ringkasan aktivitas gunung api berdasarkan laporan MAGMA terbaru?",OUT_OF_SCOPE
+"Apakah daerah saya aman saat ini?",OUT_OF_SCOPE

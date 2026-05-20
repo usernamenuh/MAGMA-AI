@@ -1,0 +1,93 @@
+# ── Python ──────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+env/
+ENV/
+pip-wheel-metadata/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+
+# ── Node / Frontend ──────────────────────────────────────
+node_modules/
+dist/
+.next/
+.nuxt/
+.output/
+*.local
+
+# ── Environment & Secrets ────────────────────────────────
+.env
+.env.*
+!.env.example
+!env.example
+*.pem
+*.key
+private_key*
+public_key*
+license_key*
+
+# ── Docker ───────────────────────────────────────────────
+*.override.yml
+
+# ── Database / Vector Store ──────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+*.qdrant/
+qdrant_storage/
+
+# ── ML Models & Large Files ──────────────────────────────
+*.bin
+*.gguf
+*.ggml
+*.pt
+*.pth
+*.h5
+*.pkl
+*.joblib
+!ms-esdm/occ/magma_intent_model_2702/models/*.joblib
+!ms-esdm/occ/magma_intent_model_temp/models/*.joblib
+models/
+weights/
+
+# ── Logs ─────────────────────────────────────────────────
+*.log
+nohup.out
+logs/
+*.txt.log
+
+# ── OS ───────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── IDE ──────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ── Test artifacts ───────────────────────────────────────
+test_results_simplified.txt
+concurrency_log/
+
+# ── Misc ─────────────────────────────────────────────────
+.agents/
+*.orig
+.claude
+.wolf

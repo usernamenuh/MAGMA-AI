@@ -1,0 +1,35 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak
+venv.bak
+
+# Log files
+log.json
+concurrency_log/
+blobs/
+
+# Test results
+*_results.txt
+
+oauth_client.json
+token.json
+qa_pairs.json
+kb_eval_results.json
+test_results.csv
+occ/magma_intent_model/
+occ/inference_logs/
+occ/__pycache__/
+/output/
+
+license/
+
+licensing/public_key.pem

@@ -1,0 +1,2506 @@
+[
+    {
+        "name": "Daftar Kejadian Letusan",
+        "method": "GET",
+        "url": "{{url}}/api/v1/home/gunung-api/informasi-letusan?page=1",
+        "parameters": [
+            {
+                "key": "page",
+                "value": "1",
+                "description": "No halaman yang ingin ditampilkan"
+            }
+        ],
+        "example_request_body": null,
+        "example_response_body": [
+            {
+                "id": 937,
+                "code_ga": "LEW",
+                "nama_gunung_api": "Ili Lewotolok",
+                "latitude": -8.272,
+                "longitude": 123.505,
+                "elevation": 1423,
+                "local_date": "2021-08-05",
+                "local_time": "14:50",
+                "local_datetime": "2021-08-05 14:50:00",
+                "time_zone": "WITA",
+                "iso_datetime": "2021-08-05T14:50:00+08:00",
+                "foto": "https://magma.vsi.esdm.go.id/img/crs/VEN_LEW20210805134721.png",
+                "tingkat_aktivitas": "Level III (Siaga)",
+                "deskripsi": {
+                    "visual": "Terjadi erupsi G. Ili Lewotolok pada hari Thursday, 05 August 2021, pukul 14:50 WITA dengan tinggi kolom abu teramati &plusmn; 1000 m di atas puncak (&plusmn; 2423 m di atas permukaan laut). Kolom abu teramati berwarna kelabu hingga hitam dengan intensitas tebal ke arah barat.",
+                    "instrumental": "Erupsi ini terekam di seismograf dengan amplitudo maksimum 38 mm dan durasi 40 detik."
+                },
+                "pelapor": "Sigit Rian Alfian",
+                "share": {
+                    "url": "http://chamber.test/v1/gunung-api/informasi-letusan/937/show?signature=940ef7af2f8f128af3b77c79b2713f73f6b8622739132911df80c67cd55139e6",
+                    "description": "Terjadi erupsi G. Ili Lewotolok pada hari Thursday, 05 August 2021, pukul 14:50 WITA tinggi kolom abu &plusmn; 1000 m di atas puncak. Erupsi terekam di seismograf dengan amplitudo maksimum 38 mm dan durasi 40 detik.",
+                    "photo": "https://magma.vsi.esdm.go.id/img/crs/VEN_LEW20210805134721.png"
+                }
+            }
+        ]
+    },
+    {
+        "name": "Data per Kejadian Letusan",
+        "method": "GET",
+        "url": "{{url}}/api/v1/home/gunung-api/informasi-letusan/{id}",
+        "parameters": [],
+        "example_request_body": null,
+        "example_response_body": [
+            {
+                "data": {
+                    "id": 937,
+                    "code_ga": "LEW",
+                    "nama_gunung_api": "Ili Lewotolok",
+                    "latitude": -8.272,
+                    "longitude": 123.505,
+                    "elevation": 1423,
+                    "local_date": "2021-08-05",
+                    "local_time": "14:50",
+                    "local_datetime": "2021-08-05 14:50:00",
+                    "time_zone": "WITA",
+                    "iso_datetime": "2021-08-05T14:50:00+08:00",
+                    "foto": "https://magma.vsi.esdm.go.id/img/crs/VEN_LEW20210805134721.png",
+                    "tingkat_aktivitas": "Level III (Siaga)",
+                    "deskripsi": {
+                        "visual": "Terjadi erupsi G. Ili Lewotolok pada hari Thursday, 05 August 2021, pukul 14:50 WITA dengan tinggi kolom abu teramati &plusmn; 1000 m di atas puncak (&plusmn; 2423 m di atas permukaan laut). Kolom abu teramati berwarna kelabu hingga hitam dengan intensitas tebal ke arah barat.",
+                        "instrumental": "Erupsi ini terekam di seismograf dengan amplitudo maksimum 38 mm dan durasi 40 detik."
+                    },
+                    "pelapor": "Sigit Rian Alfian",
+                    "share": {
+                        "url": "http://chamber.test/v1/gunung-api/informasi-letusan/937/show?signature=940ef7af2f8f128af3b77c79b2713f73f6b8622739132911df80c67cd55139e6",
+                        "description": "Terjadi erupsi G. Ili Lewotolok pada hari Thursday, 05 August 2021, pukul 14:50 WITA tinggi kolom abu &plusmn; 1000 m di atas puncak. Erupsi terekam di seismograf dengan amplitudo maksimum 38 mm dan durasi 40 detik.",
+                        "photo": "https://magma.vsi.esdm.go.id/img/crs/VEN_LEW20210805134721.png"
+                    }
+                }
+            }
+        ]
+    },
+    {
+        "name": "Kejadian Letusan Terkini",
+        "method": "GET",
+        "url": "{{url}}/api/v1/home/gunung-api/informasi-letusan/latest",
+        "parameters": [],
+        "example_request_body": null,
+        "example_response_body": [
+            {
+                "data": {
+                    "id": 937,
+                    "code_ga": "LEW",
+                    "nama_gunung_api": "Ili Lewotolok",
+                    "latitude": -8.272,
+                    "longitude": 123.505,
+                    "elevation": 1423,
+                    "local_date": "2021-08-05",
+                    "local_time": "14:50",
+                    "local_datetime": "2021-08-05 14:50:00",
+                    "time_zone": "WITA",
+                    "iso_datetime": "2021-08-05T14:50:00+08:00",
+                    "foto": "https://magma.vsi.esdm.go.id/img/crs/VEN_LEW20210805134721.png",
+                    "tingkat_aktivitas": "Level III (Siaga)",
+                    "deskripsi": {
+                        "visual": "Terjadi erupsi G. Ili Lewotolok pada hari Thursday, 05 August 2021, pukul 14:50 WITA dengan tinggi kolom abu teramati &plusmn; 1000 m di atas puncak (&plusmn; 2423 m di atas permukaan laut). Kolom abu teramati berwarna kelabu hingga hitam dengan intensitas tebal ke arah barat.",
+                        "instrumental": "Erupsi ini terekam di seismograf dengan amplitudo maksimum 38 mm dan durasi 40 detik."
+                    },
+                    "pelapor": "Sigit Rian Alfian",
+                    "share": {
+                        "url": "http://chamber.test/v1/gunung-api/informasi-letusan/937/show?signature=940ef7af2f8f128af3b77c79b2713f73f6b8622739132911df80c67cd55139e6",
+                        "description": "Terjadi erupsi G. Ili Lewotolok pada hari Thursday, 05 August 2021, pukul 14:50 WITA tinggi kolom abu &plusmn; 1000 m di atas puncak. Erupsi terekam di seismograf dengan amplitudo maksimum 38 mm dan durasi 40 detik.",
+                        "photo": "https://magma.vsi.esdm.go.id/img/crs/VEN_LEW20210805134721.png"
+                    }
+                }
+            }
+        ]
+    },
+    {
+        "name": "Cari Kejadian Letusan",
+        "method": "GET",
+        "url": "{{url}}/api/v1/home/gunung-api/informasi-letusan/filter",
+        "parameters": [],
+        "example_request_body": [
+            {
+                "code": "SIN",
+                "start_date": "2021-01-01",
+                "end_date": "2021-10-10"
+            }
+        ],
+        "example_response_body": [
+            {
+                "id": 933,
+                "code_ga": "SIN",
+                "nama_gunung_api": "Sinabung",
+                "latitude": 3.17,
+                "longitude": 98.392,
+                "elevation": 2460,
+                "local_date": "2021-07-28",
+                "local_time": "13:20",
+                "local_datetime": "2021-07-28 13:20:00",
+                "time_zone": "WIB",
+                "iso_datetime": "2021-07-28T13:20:00+07:00",
+                "foto": "https://magma.vsi.esdm.go.id/img/crs/VEN_SIN20210728132410.png",
+                "tingkat_aktivitas": "Level III (Siaga)",
+                "deskripsi": {
+                    "visual": "Terjadi erupsi G. Sinabung pada hari Wednesday, 28 July 2021, pukul 13:20 WIB dengan tinggi kolom abu teramati &plusmn; 4500 m di atas puncak (&plusmn; 6960 m di atas permukaan laut). Kolom abu teramati berwarna kelabu dengan intensitas tebal ke arah timur dan selatan.",
+                    "instrumental": "Erupsi ini terekam di seismograf dengan amplitudo maksimum 120 mm dan durasi 742 detik."
+                },
+                "pelapor": "Armen Putra",
+                "share": {
+                    "url": "http://chamber.test/v1/gunung-api/informasi-letusan/933/show?signature=81e7608a9a6113f8ed522a78a9a47a131d385f5c8bd370aa783e6641b11b0eea",
+                    "description": "Terjadi erupsi G. Sinabung pada hari Wednesday, 28 July 2021, pukul 13:20 WIB tinggi kolom abu &plusmn; 4500 m di atas puncak. Erupsi terekam di seismograf dengan amplitudo maksimum 120 mm dan durasi 742 detik.",
+                    "photo": "https://magma.vsi.esdm.go.id/img/crs/VEN_SIN20210728132410.png"
+                }
+            }
+        ]
+    },
+    {
+        "name": "Daftar VONA",
+        "method": "GET",
+        "url": "{{url}}/api/v1/vona",
+        "parameters": [
+            {
+                "key": "page",
+                "value": "1",
+                "description": "No halaman yang ingin ditampilkan"
+            }
+        ],
+        "example_request_body": null,
+        "example_response_body": [
+            {
+                "uuid": 6041,
+                "noticenumber": "2021SMR44",
+                "issued": "2021-08-06 23:33:00",
+                "issued_utc": "20210806/2333Z",
+                "code_id": "SMR",
+                "smithsonian_id": "263300",
+                "volcano": "Semeru",
+                "cu_code": "ORANGE",
+                "prev_code": "ORANGE",
+                "location": "S 08 deg 06 min 29 sec E 112 deg 55 min 12 sec",
+                "vas": "Eruption with volcanic ash cloud at 2326 UTC (0626 local). ",
+                "vch_summit": 1600,
+                "vch_asl": 13363,
+                "vch_other": "Ash-cloud moving to vertical",
+                "remarks": "Seismic activity is characterized by eruption, avalanche and gas emission earthquakes. ",
+                "type": "REAL",
+                "sent": true,
+                "volcano_information": {
+                    "code": "SMR",
+                    "name": "Semeru",
+                    "latitude": -8.108,
+                    "longitude": 112.92,
+                    "elevation": 3676
+                },
+                "description": "Eruption with volcanic ash cloud at 2326 UTC (0626 local).  Best estimate of ash-cloud top is around 13363 FT (4176 M) above sea level, may be higher than what can be observed clearly. Source of height data: ground observer. Ash-cloud moving to vertical",
+                "share": {
+                    "url": "http://chamber.test/v1/vona/6041?signature=d3164fcc1bc924357c5298a0879ca10c46ec22005a383acb7cc0ee96a128f7e5",
+                    "description": "Eruption with volcanic ash cloud at 2326 UTC (0626 local).  Best estimate of ash-cloud top is around 13363 FT (4176 M) above sea level, may be higher than what can be observed clearly. Source of height data: ground observer. Ash-cloud moving to vertical"
+                }
+            }
+        ]
+    },
+    {
+        "name": "VONA by ID",
+        "method": "GET",
+        "url": "{{url}}/api/v1/vona/{uuid}",
+        "parameters": [],
+        "example_request_body": null,
+        "example_response_body": [
+            {
+                "data": {
+                    "uuid": 6000,
+                    "noticenumber": "2021LEW12",
+                    "issued": "2021-06-11 02:05:00",
+                    "issued_utc": "20210611/0205Z",
+                    "code_id": "LEW",
+                    "smithsonian_id": "264230",
+                    "volcano": "Ili Lewotolok",
+                    "cu_code": "ORANGE",
+                    "prev_code": "ORANGE",
+                    "location": "S 08 deg 16 min 19 sec E 123 deg 30 min 18 sec",
+                    "vas": "Eruption with volcanic ash cloud at 0200 UTC (1000 local). Eruption and ash emission is not continuing.",
+                    "vch_summit": 1920,
+                    "vch_asl": 6474,
+                    "vch_other": "Ash-cloud moving to west",
+                    "remarks": "Seismic activity is characterized by continuous volcanic tremor. ",
+                    "type": "REAL",
+                    "sent": true,
+                    "volcano_information": {
+                        "code": "LEW",
+                        "name": "Ili Lewotolok",
+                        "latitude": -8.272,
+                        "longitude": 123.505,
+                        "elevation": 1423
+                    },
+                    "description": "Eruption with volcanic ash cloud at 0200 UTC (1000 local). Eruption and ash emission is not continuing. Best estimate of ash-cloud top is around 6474 FT (2023 M) above sea level, may be higher than what can be observed clearly. Source of height data: ground observer. Ash-cloud moving to west",
+                    "share": {
+                        "url": "http://chamber.test/v1/vona/6000?signature=bf7871c74514229d94ab9880d7bb188ebba0d21c5ce161b8e4a19503b82c011d",
+                        "description": "Eruption with volcanic ash cloud at 0200 UTC (1000 local). Eruption and ash emission is not continuing. Best estimate of ash-cloud top is around 6474 FT (2023 M) above sea level, may be higher than what can be observed clearly. Source of height data: ground observer. Ash-cloud moving to west"
+                    }
+                }
+            }
+        ]
+    },
+    {
+        "name": "VONA Terkini",
+        "method": "GET",
+        "url": "{{url}}/api/v1/vona/latest",
+        "parameters": [],
+        "example_request_body": null,
+        "example_response_body": [
+            {
+                "data": {
+                    "uuid": 6041,
+                    "noticenumber": "2021SMR44",
+                    "issued": "2021-08-06 23:33:00",
+                    "issued_utc": "20210806/2333Z",
+                    "code_id": "SMR",
+                    "smithsonian_id": "263300",
+                    "volcano": "Semeru",
+                    "cu_code": "ORANGE",
+                    "prev_code": "ORANGE",
+                    "location": "S 08 deg 06 min 29 sec E 112 deg 55 min 12 sec",
+                    "vas": "Eruption with volcanic ash cloud at 2326 UTC (0626 local). ",
+                    "vch_summit": 1600,
+                    "vch_asl": 13363,
+                    "vch_other": "Ash-cloud moving to vertical",
+                    "remarks": "Seismic activity is characterized by eruption, avalanche and gas emission earthquakes. ",
+                    "type": "REAL",
+                    "sent": true,
+                    "volcano_information": {
+                        "code": "SMR",
+                        "name": "Semeru",
+                        "latitude": -8.108,
+                        "longitude": 112.92,
+                        "elevation": 3676
+                    },
+                    "description": "Eruption with volcanic ash cloud at 2326 UTC (0626 local).  Best estimate of ash-cloud top is around 13363 FT (4176 M) above sea level, may be higher than what can be observed clearly. Source of height data: ground observer. Ash-cloud moving to vertical",
+                    "share": {
+                        "url": "http://chamber.test/v1/vona/6041?signature=d3164fcc1bc924357c5298a0879ca10c46ec22005a383acb7cc0ee96a128f7e5",
+                        "description": "Eruption with volcanic ash cloud at 2326 UTC (0626 local).  Best estimate of ash-cloud top is around 13363 FT (4176 M) above sea level, may be higher than what can be observed clearly. Source of height data: ground observer. Ash-cloud moving to vertical"
+                    }
+                }
+            }
+        ]
+    },
+    {
+        "name": "Cari VONA",
+        "method": "GET",
+        "url": "{{url}}/api/v1/vona/filter",
+        "parameters": [],
+        "example_request_body": [
+            {
+                "code": "SIN",
+                "start_date": "2021-01-01",
+                "end_date": "2021-10-10"
+            }
+        ],
+        "example_response_body": [
+            {
+                "uuid": 6039,
+                "noticenumber": "2021SIN79",
+                "issued": "2021-07-28 06:34:00",
+                "issued_utc": "20210728/0634Z",
+                "code_id": "SIN",
+                "smithsonian_id": "261080",
+                "volcano": "Sinabung",
+                "cu_code": "RED",
+                "prev_code": "ORANGE",
+                "location": "N 03 deg 10 min 12 sec E 98 deg 23 min 31 sec",
+                "vas": "Eruption with ash clouds at 06:20 UTC (13:20 local time). The eruption lasted for 742 seconds.",
+                "vch_summit": 14400,
+                "vch_asl": 22272,
+                "vch_other": "Ash cloud is moving to E - S.",
+                "remarks": "Seismic activity is characterized by the Deep Volcanic Earthquake, Low Frequency Earthquake, and Hybrid Earthquake. Pyroclastic flow  is observed through the East-Southeast  slope  and reaches a distance of 1000 meters from the summit.",
+                "type": "REAL",
+                "sent": true,
+                "volcano_information": {
+                    "code": "SIN",
+                    "name": "Sinabung",
+                    "latitude": 3.17,
+                    "longitude": 98.392,
+                    "elevation": 2460
+                },
+                "description": "Eruption with ash clouds at 06:20 UTC (13:20 local time). The eruption lasted for 742 seconds. Best estimate of ash-cloud top is around 22272 FT (6960 M) above sea level, may be higher than what can be observed clearly. Source of height data: ground observer. Ash cloud is moving to E - S.",
+                "share": {
+                    "url": "http://chamber.test/v1/vona/6039?signature=08ef0bc9f0665acd81c7ccb25ae5eb2269331969961d9eb081eef28f06fd4189",
+                    "description": "Eruption with ash clouds at 06:20 UTC (13:20 local time). The eruption lasted for 742 seconds. Best estimate of ash-cloud top is around 22272 FT (6960 M) above sea level, may be higher than what can be observed clearly. Source of height data: ground observer. Ash cloud is moving to E - S."
+                }
+            }
+        ]
+    },
+    {
+        "name": "Daftar Laporan",
+        "method": "GET",
+        "url": "{{url}}/api/v1/magma-var",
+        "parameters": [],
+        "example_request_body": null,
+        "example_response_body": [
+            {
+                "gunung_api": {
+                    "code": "AGU",
+                    "nama": "Agung",
+                    "deskripsi": "Terletak di Kab\\Kota Karangasem, Bali dengan posisi geografis di Latitude -8.342&deg;LU, Longitude 115.508&deg;BT dan memiliki ketinggian 3142 mdpl",
+                    "status": 2,
+                    "koordinat": {
+                        "latitude": -8.342,
+                        "longitude": 115.508
+                    }
+                },
+                "laporan_terakhir": {
+                    "noticenumber": "202108062400",
+                    "tanggal": "Laporan per 24 jam, tanggal 2021-08-06 pukul 00:00-24:00 WITA",
+                    "dibuat_oleh": "Wahyu Ardi Setiawan",
+                    "visual": {
+                        "deskripsi": "Gunung api terlihat jelas hingga tertutup Kabut 0-II. Teramati asap kawah utama berwarna putih dengan intensitas tipis tinggi sekitar 40- meter dari puncak. ",
+                        "lainnya": "Nihil",
+                        "foto": "https://magma.vsi.esdm.go.id/img/ga/AGU/AGU202108062400.png"
+                    },
+                    "klimatologi": {
+                        "deskripsi": "Cuaca cerah hingga berawan, angin lemah ke arah barat. Suhu udara sekitar 20-29&deg;C. Kelembaban 73-93%. "
+                    },
+                    "gempa": {
+                        "deskripsi": [
+                            "3 kali gempa Tektonik Jauh dengan amplitudo 4-23 mm, S-P 19-117 detik dan lama gempa 76-227 detik. "
+                        ],
+                        "grafik": "https://magma.vsi.esdm.go.id/img/eqhist/AGU.png"
+                    },
+                    "rekomendasi": "(1) Masyarakat di sekitar G. Agung dan pendaki/pengunjung/wisatawan agar tidak berada, tidak melakukan pendakian dan tidak melakukan aktivitas apapun di Zona Perkiraan Bahaya yaitu di dalam area kawah G. Agung dan di seluruh area di dalam radius 2 km dari Kawah Puncak G. Agung.\n(2) Masyarakat yang bermukim dan beraktivitas di sekitar aliran-aliran sungai yang berhulu di Gunung Agung agar mewaspadai potensi ancaman bahaya sekunder berupa aliran lahar hujan yang dapat terjadi terutama pada musim hujan dan jika material erupsi masih terpapar di area puncak."
+                },
+                "url": "http://chamber.test/api/v1/magma-var/AGU/202108062400",
+                "share": {
+                    "url": "http://chamber.test/v1/gunung-api/laporan/168652?signature=215d1113027672e172fc049d304e8fe0718d9f0d4fc1a7e381cc38c98a626459",
+                    "description": "Laporan 24 Jam Aktivitas Gunung Api Agung. Tanggal 2021-08-06 pukul 00:00-24:00 WITA. http://chamber.test/v1/gunung-api/laporan/168652?signature=215d1113027672e172fc049d304e8fe0718d9f0d4fc1a7e381cc38c98a626459",
+                    "photo": "https://magma.vsi.esdm.go.id/img/ga/AGU/AGU202108062400.png"
+                }
+            }
+        ]
+    },
+    {
+        "name": "Laporan Aktivitas per Gunung Api",
+        "method": "GET",
+        "url": "{{url}}/api/v1/magma-var/{code}",
+        "parameters": [],
+        "example_request_body": null,
+        "example_response_body": [
+            {
+                "gunung_api": {
+                    "code": "SIN",
+                    "nama": "Sinabung",
+                    "deskripsi": "Terletak di Kab\\Kota Karo, Sumatera Utara dengan posisi geografis di Latitude 3.17&deg;LU, Longitude 98.392&deg;BT dan memiliki ketinggian 2460 mdpl",
+                    "status": 3,
+                    "koordinat": {
+                        "latitude": 3.17,
+                        "longitude": 98.392
+                    }
+                },
+                "laporan_terakhir": {
+                    "noticenumber": "202108070600",
+                    "tanggal": "Laporan per 6 jam, tanggal 2021-08-07 pukul 06:00-12:00 WIB",
+                    "dibuat_oleh": "Arif Cahyo Purnomo, A.Md.",
+                    "visual": {
+                        "deskripsi": "Gunung api terlihat jelas hingga tertutup Kabut 0-II. Teramati asap kawah utama berwarna putih dengan intensitas tipis tinggi asap tidak teramati. ",
+                        "lainnya": "Nihil",
+                        "foto": "https://magma.vsi.esdm.go.id/img/ga/SIN/SIN202108070600.png"
+                    },
+                    "klimatologi": {
+                        "deskripsi": "Cuaca berawan hingga mendung, angin lemah ke arah timur. Suhu udara sekitar 15-32&deg;C. "
+                    },
+                    "gempa": {
+                        "deskripsi": [
+                            "5 kali gempa Hybrid/Fase Banyak dengan amplitudo 2-8 mm, S-P tidak teramati dan lama gempa 3-15 detik. "
+                        ],
+                        "grafik": "https://magma.vsi.esdm.go.id/img/eqhist/SIN.png"
+                    },
+                    "rekomendasi": "1. Masyarakat dan pengunjung/wisatawan agar tidak melakukan aktivitas pada desa-desa yang sudah direlokasi, serta lokasi di dalam radius radial 3 km dari puncak G.Sinabung, serta radius sektoral 5 km untuk sektor selatan-timur, dan 4 km untuk sektor timur-utara dan barat.\n2. Jika terjadi hujan abu, masyarakat dihimbau memakai masker bila keluar rumah untuk mengurangi dampak kesehatan dari abu vulkanik. Mengamankan sarana air bersih serta membersihkan atap rumah dari abu vulkanik yang lebat agar tidak roboh.\n3. Masyarakat yang berada dan bermukim di dekat sungai-sungai yang berhulu di G. Sinabung agar tetap waspada terhadap bahaya lahar."
+                },
+                "url": "http://chamber.test/api/v1/magma-var/SIN/202108070600",
+                "share": {
+                    "url": "http://chamber.test/v1/gunung-api/laporan/168716?signature=4432ee8ba8c6b4971ba0de4d14cd10c1fcc9ef68eda3d41e74a943f82ba212e7",
+                    "description": "Laporan 6 Jam Aktivitas Gunung Api Sinabung. Tanggal 2021-08-07 pukul 06:00-12:00 WIB. http://chamber.test/v1/gunung-api/laporan/168716?signature=4432ee8ba8c6b4971ba0de4d14cd10c1fcc9ef68eda3d41e74a943f82ba212e7",
+                    "photo": "https://magma.vsi.esdm.go.id/img/ga/SIN/SIN202108070600.png"
+                }
+            }
+        ]
+    },
+    {
+        "name": "Laporan Aktivitas by Code dan Noticenumber",
+        "method": "GET",
+        "url": "{{url}}/api/v1/magma-var/{code}/{noticenumber}",
+        "parameters": [
+            {
+                "key": "",
+                "value": "",
+                "description": ""
+            }
+        ],
+        "example_request_body": null,
+        "example_response_body": [
+            {
+                "gunung_api": {
+                    "code": "AGU",
+                    "nama": "Agung",
+                    "deskripsi": "Terletak di Kab\\Kota Karangasem, Bali dengan posisi geografis di Latitude -8.342&deg;LU, Longitude 115.508&deg;BT dan memiliki ketinggian 3142 mdpl",
+                    "status": 2,
+                    "koordinat": {
+                        "latitude": -8.342,
+                        "longitude": 115.508
+                    }
+                },
+                "laporan_terakhir": {
+                    "noticenumber": "202108062400",
+                    "tanggal": "Laporan per 24 jam, tanggal 2021-08-06 pukul 00:00-24:00 WITA",
+                    "dibuat_oleh": "Wahyu Ardi Setiawan",
+                    "visual": {
+                        "deskripsi": "Gunung api terlihat jelas hingga tertutup Kabut 0-II. Teramati asap kawah utama berwarna putih dengan intensitas tipis tinggi sekitar 40- meter dari puncak. ",
+                        "lainnya": "Nihil",
+                        "foto": "https://magma.vsi.esdm.go.id/img/ga/AGU/AGU202108062400.png"
+                    },
+                    "klimatologi": {
+                        "deskripsi": "Cuaca cerah hingga berawan, angin lemah ke arah barat. Suhu udara sekitar 20-29&deg;C. Kelembaban 73-93%. "
+                    },
+                    "gempa": {
+                        "deskripsi": [
+                            "3 kali gempa Tektonik Jauh dengan amplitudo 4-23 mm, S-P 19-117 detik dan lama gempa 76-227 detik. "
+                        ],
+                        "grafik": "https://magma.vsi.esdm.go.id/img/eqhist/AGU.png"
+                    },
+                    "rekomendasi": "(1) Masyarakat di sekitar G. Agung dan pendaki/pengunjung/wisatawan agar tidak berada, tidak melakukan pendakian dan tidak melakukan aktivitas apapun di Zona Perkiraan Bahaya yaitu di dalam area kawah G. Agung dan di seluruh area di dalam radius 2 km dari Kawah Puncak G. Agung.\n(2) Masyarakat yang bermukim dan beraktivitas di sekitar aliran-aliran sungai yang berhulu di Gunung Agung agar mewaspadai potensi ancaman bahaya sekunder berupa aliran lahar hujan yang dapat terjadi terutama pada musim hujan dan jika material erupsi masih terpapar di area puncak."
+                },
+                "url": "http://chamber.test/api/v1/magma-var/AGU/202108062400",
+                "share": {
+                    "url": "http://chamber.test/v1/gunung-api/laporan/168652?signature=215d1113027672e172fc049d304e8fe0718d9f0d4fc1a7e381cc38c98a626459",
+                    "description": "Laporan 24 Jam Aktivitas Gunung Api Agung. Tanggal 2021-08-06 pukul 00:00-24:00 WITA. http://chamber.test/v1/gunung-api/laporan/168652?signature=215d1113027672e172fc049d304e8fe0718d9f0d4fc1a7e381cc38c98a626459",
+                    "photo": "https://magma.vsi.esdm.go.id/img/ga/AGU/AGU202108062400.png"
+                }
+            }
+        ]
+    },
+    {
+        "name": "Cari Laporan",
+        "method": "GET",
+        "url": "{{url}}/api/v1/magma-var/filter",
+        "parameters": [],
+        "example_request_body": [
+            {
+                "code": "AGU",
+                "start_date": "2021-01-01",
+                "end_date": "2021-01-10"
+            }
+        ],
+        "example_response_body": [
+            {
+                "gunung_api": {
+                    "code": "AGU",
+                    "nama": "Agung",
+                    "deskripsi": "Terletak di Kab\\Kota Karangasem, Bali dengan posisi geografis di Latitude -8.342&deg;LU, Longitude 115.508&deg;BT dan memiliki ketinggian 3142 mdpl",
+                    "status": 2,
+                    "koordinat": {
+                        "latitude": -8.342,
+                        "longitude": 115.508
+                    }
+                },
+                "laporan_terakhir": {
+                    "noticenumber": "202101102400",
+                    "tanggal": "Laporan per 24 jam, tanggal 2021-01-10 pukul 00:00-24:00 WITA",
+                    "dibuat_oleh": "I Dewa Made Merthe Yasa",
+                    "visual": {
+                        "deskripsi": "Gunung api tertutup Kabut 0-II hingga tertutup Kabut 0-III. Asap kawah tidak teramati. ",
+                        "lainnya": "Nihil",
+                        "foto": "https://magma.vsi.esdm.go.id/img/ga/AGU/AGU202101102400.png"
+                    },
+                    "klimatologi": {
+                        "deskripsi": "Cuaca cerah hingga hujan, angin lemah ke arah barat. Suhu udara sekitar 22-29&deg;C. Kelembaban 78-92%. "
+                    },
+                    "gempa": {
+                        "deskripsi": [
+                            "1 kali gempa Tektonik Jauh dengan amplitudo 6 mm, S-P 11 detik dan lama gempa 41 detik. "
+                        ],
+                        "grafik": "https://magma.vsi.esdm.go.id/img/eqhist/AGU.png"
+                    },
+                    "rekomendasi": "(1) Masyarakat di sekitar G. Agung dan pendaki/pengunjung/wisatawan agar tidak berada, tidak melakukan pendakian dan tidak melakukan aktivitas apapun di Zona Perkiraan Bahaya yaitu di dalam area kawah G. Agung dan di seluruh area di dalam radius 2 km dari Kawah Puncak G. Agung.\n(2) Masyarakat yang bermukim dan beraktivitas di sekitar aliran-aliran sungai yang berhulu di Gunung Agung agar mewaspadai potensi ancaman bahaya sekunder berupa aliran lahar hujan yang dapat terjadi terutama pada musim hujan dan jika material erupsi masih terpapar di area puncak."
+                },
+                "url": "http://chamber.test/api/v1/magma-var/AGU/202101102400",
+                "share": {
+                    "url": "http://chamber.test/v1/gunung-api/laporan/151036?signature=4cf8ddfb57e006f57a226ff9519088bad70f79ce07785b57912e94f97a1cbacc",
+                    "description": "Laporan 24 Jam Aktivitas Gunung Api Agung. Tanggal 2021-01-10 pukul 00:00-24:00 WITA. http://chamber.test/v1/gunung-api/laporan/151036?signature=4cf8ddfb57e006f57a226ff9519088bad70f79ce07785b57912e94f97a1cbacc",
+                    "photo": "https://magma.vsi.esdm.go.id/img/ga/AGU/AGU202101102400.png"
+                }
+            }
+        ]
+    },
+    {
+        "name": "Daftar CCTV",
+        "method": "GET",
+        "url": "{{url}}/api/v1/home/gunung-api/cctv",
+        "parameters": [],
+        "example_request_body": null,
+        "example_response_body": [
+            {
+                "cctvs": [
+                    {
+                        "id": 26,
+                        "uuid": "e23018af-a274-49a9-9144-dc684f66e93d",
+                        "code": "AGU",
+                        "lokasi": "Batu Lompeh",
+                        "url": "/storage/cctv/AgungBatulompeh/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 12280,
+                        "publish": true,
+                        "created_at": "2019-10-16 10:04:39",
+                        "updated_at": "2022-01-31 06:05:43",
+                        "gunungapi": {
+                            "code": "AGU",
+                            "name": "Agung"
+                        }
+                    },
+                    {
+                        "id": 44,
+                        "uuid": "9a913733-4f79-477d-91e9-19b90924578e",
+                        "code": "AMB",
+                        "lokasi": "Pos Pengamatan",
+                        "url": "/storage/cctv/Ambang/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 489,
+                        "publish": true,
+                        "created_at": "2021-09-24 21:33:53",
+                        "updated_at": "2022-01-30 21:46:51",
+                        "gunungapi": {
+                            "code": "AMB",
+                            "name": "Ambang"
+                        }
+                    },
+                    {
+                        "id": 51,
+                        "uuid": "f30f6806-54f7-421a-997b-d7d37ec7e25b",
+                        "code": "AWU",
+                        "lokasi": "Pos Pengamatan",
+                        "url": "/storage/cctv/Awu/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 434,
+                        "publish": true,
+                        "created_at": "2021-11-25 12:31:01",
+                        "updated_at": "2022-01-30 23:24:41",
+                        "gunungapi": {
+                            "code": "AWU",
+                            "name": "Awu"
+                        }
+                    },
+                    {
+                        "id": 29,
+                        "uuid": "543986cb-6c7b-4735-8543-c27eb4fab814",
+                        "code": "BAT",
+                        "lokasi": "Pos Pengamatan",
+                        "url": "/storage/cctv/Batur/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 29832,
+                        "publish": true,
+                        "created_at": "2019-11-22 08:40:04",
+                        "updated_at": "2022-01-31 05:44:18",
+                        "gunungapi": {
+                            "code": "BAT",
+                            "name": "Batur"
+                        }
+                    },
+                    {
+                        "id": 22,
+                        "uuid": "ecf7701e-b632-451c-8b86-76a11a0a7de4",
+                        "code": "BRO",
+                        "lokasi": "Pos Pengamatan",
+                        "url": "/storage/cctv/Bromo/Latest/bromo_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 67198,
+                        "publish": true,
+                        "created_at": "2019-10-16 10:04:39",
+                        "updated_at": "2022-01-31 11:56:07",
+                        "gunungapi": {
+                            "code": "BRO",
+                            "name": "Bromo"
+                        }
+                    },
+                    {
+                        "id": 45,
+                        "uuid": "920bbf79-3ab7-428a-8ddb-41ea470e41cb",
+                        "code": "DIE",
+                        "lokasi": "Timbang",
+                        "url": "/storage/cctv/Dieng/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 450,
+                        "publish": true,
+                        "created_at": "2021-09-29 15:25:15",
+                        "updated_at": "2022-01-30 13:26:02",
+                        "gunungapi": {
+                            "code": "DIE",
+                            "name": "Dieng"
+                        }
+                    },
+                    {
+                        "id": 16,
+                        "uuid": "54119148-cfef-4801-bcf0-eb22b7b0c55a",
+                        "code": "DIE",
+                        "lokasi": "Sileri",
+                        "url": "/storage/cctv/Dieng/Latest/cam_2.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 23874,
+                        "publish": true,
+                        "created_at": "2019-10-16 10:04:39",
+                        "updated_at": "2022-01-31 11:06:58",
+                        "gunungapi": {
+                            "code": "DIE",
+                            "name": "Dieng"
+                        }
+                    },
+                    {
+                        "id": 13,
+                        "uuid": "f68a8a94-e971-458a-8046-4913c3c0a7f1",
+                        "code": "GAL",
+                        "lokasi": "Kawah",
+                        "url": "/storage/cctv/Galunggung/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 19849,
+                        "publish": true,
+                        "created_at": "2019-10-16 10:04:39",
+                        "updated_at": "2022-01-30 18:39:05",
+                        "gunungapi": {
+                            "code": "GAL",
+                            "name": "Galunggung"
+                        }
+                    },
+                    {
+                        "id": 9,
+                        "uuid": "9d402250-8917-4d00-a128-18003d42d718",
+                        "code": "GED",
+                        "lokasi": "Pos Pengamatan",
+                        "url": "/storage/cctv/Gede/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 17919,
+                        "publish": true,
+                        "created_at": "2019-10-16 10:04:39",
+                        "updated_at": "2022-01-30 18:39:08",
+                        "gunungapi": {
+                            "code": "GED",
+                            "name": "Gede"
+                        }
+                    },
+                    {
+                        "id": 39,
+                        "uuid": "bfa7480e-3895-4d6f-8c9a-a6239e38fd2a",
+                        "code": "GML",
+                        "lokasi": "Pos PGA",
+                        "url": "/storage/cctv/Gamalama/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 26927,
+                        "publish": true,
+                        "created_at": "2021-01-13 13:35:27",
+                        "updated_at": "2022-01-30 18:39:11",
+                        "gunungapi": {
+                            "code": "GML",
+                            "name": "Gamalama"
+                        }
+                    },
+                    {
+                        "id": 11,
+                        "uuid": "ba8d775e-ee33-4abe-b431-91689f854b82",
+                        "code": "GUN",
+                        "lokasi": "Pos Pengamatan",
+                        "url": "/storage/cctv/Guntur/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 585,
+                        "publish": true,
+                        "created_at": "2019-10-16 10:04:39",
+                        "updated_at": "2022-01-30 18:39:15",
+                        "gunungapi": {
+                            "code": "GUN",
+                            "name": "Guntur"
+                        }
+                    },
+                    {
+                        "id": 43,
+                        "uuid": "7ab0fa5b-9fba-4b2f-86aa-11faa0a5ece4",
+                        "code": "IBU",
+                        "lokasi": "Pos PGA",
+                        "url": "/storage/cctv/Ibu/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 55018,
+                        "publish": true,
+                        "created_at": "2021-02-06 19:53:27",
+                        "updated_at": "2021-12-16 21:51:52",
+                        "gunungapi": {
+                            "code": "IBU",
+                            "name": "Ibu"
+                        }
+                    },
+                    {
+                        "id": 25,
+                        "uuid": "a97297a3-3f33-42a7-b790-bbd65fcecdbb",
+                        "code": "IJE",
+                        "lokasi": "Kawah Ijen",
+                        "url": "/storage/cctv/Ijen/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 28210,
+                        "publish": true,
+                        "created_at": "2019-10-16 10:04:39",
+                        "updated_at": "2022-01-31 10:21:07",
+                        "gunungapi": {
+                            "code": "IJE",
+                            "name": "Ijen"
+                        }
+                    },
+                    {
+                        "id": 33,
+                        "uuid": "c22ed9cc-bc4e-44e3-aab4-2f71e59e7a3d",
+                        "code": "KAR",
+                        "lokasi": "Pos PGA Karangetang",
+                        "url": "/storage/cctv/Karangetang/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 1022,
+                        "publish": true,
+                        "created_at": "2019-12-25 05:53:38",
+                        "updated_at": "2022-01-31 13:31:36",
+                        "gunungapi": {
+                            "code": "KAR",
+                            "name": "Karangetang"
+                        }
+                    },
+                    {
+                        "id": 32,
+                        "uuid": "59518ccb-50b9-4147-89d5-1b396079b0f6",
+                        "code": "KAR",
+                        "lokasi": "Kanawong",
+                        "url": "/storage/cctv/Karangetang/Latest/cam_2.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 62836,
+                        "publish": true,
+                        "created_at": "2019-11-28 07:39:27",
+                        "updated_at": "2022-01-31 13:32:49",
+                        "gunungapi": {
+                            "code": "KAR",
+                            "name": "Karangetang"
+                        }
+                    },
+                    {
+                        "id": 48,
+                        "uuid": "2766eb09-9d9e-4b63-9b16-1bc90da120cd",
+                        "code": "KLD",
+                        "lokasi": "Kawah G.Kelud",
+                        "url": "/storage/cctv/Kelud/Latest/cam_2.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 13384,
+                        "publish": true,
+                        "created_at": "2021-10-27 17:43:52",
+                        "updated_at": "2022-01-31 11:55:07",
+                        "gunungapi": {
+                            "code": "KLD",
+                            "name": "Kelud"
+                        }
+                    },
+                    {
+                        "id": 47,
+                        "uuid": "1ee04cbb-a096-47a3-8dfe-2cde713931ea",
+                        "code": "KLD",
+                        "lokasi": "Lirang",
+                        "url": "/storage/cctv/Kelud/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 1419,
+                        "publish": true,
+                        "created_at": "2021-10-27 17:43:12",
+                        "updated_at": "2022-01-31 11:55:14",
+                        "gunungapi": {
+                            "code": "KLD",
+                            "name": "Kelud"
+                        }
+                    },
+                    {
+                        "id": 8,
+                        "uuid": "4df64552-c043-4df9-87bf-c0d233df546c",
+                        "code": "KRA",
+                        "lokasi": "Puncak Krakatau",
+                        "url": "/storage/cctv/Krakatau/Latest/cam_2.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 170120,
+                        "publish": true,
+                        "created_at": "2019-10-16 10:04:39",
+                        "updated_at": "2022-01-31 13:10:27",
+                        "gunungapi": {
+                            "code": "KRA",
+                            "name": "Anak Krakatau"
+                        }
+                    },
+                    {
+                        "id": 7,
+                        "uuid": "7a62925c-63a3-4470-9c20-4e4c5e9c1537",
+                        "code": "KRA",
+                        "lokasi": "Pos Pengamatan",
+                        "url": "/storage/cctv/Krakatau/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 47555,
+                        "publish": true,
+                        "created_at": "2019-10-16 10:04:39",
+                        "updated_at": "2022-03-10 18:23:53",
+                        "gunungapi": {
+                            "code": "KRA",
+                            "name": "Anak Krakatau"
+                        }
+                    },
+                    {
+                        "id": 41,
+                        "uuid": "a6b5bdb4-d5df-4fc1-82c5-39b2abdd5a02",
+                        "code": "LEW",
+                        "lokasi": "Pos PGA",
+                        "url": "/storage/cctv/Lewotolok/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 294503,
+                        "publish": true,
+                        "created_at": "2021-01-20 19:39:00",
+                        "updated_at": "2022-01-31 09:56:43",
+                        "gunungapi": {
+                            "code": "LEW",
+                            "name": "Ili Lewotolok"
+                        }
+                    },
+                    {
+                        "id": 27,
+                        "uuid": "564310c4-9900-4373-8f51-63a09c3c19aa",
+                        "code": "LOK",
+                        "lokasi": "Pos Pengamatan",
+                        "url": "/storage/cctv/Lokon/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 25970,
+                        "publish": true,
+                        "created_at": "2019-10-16 10:04:39",
+                        "updated_at": "2022-01-30 21:47:43",
+                        "gunungapi": {
+                            "code": "LOK",
+                            "name": "Lokon"
+                        }
+                    },
+                    {
+                        "id": 5,
+                        "uuid": "55dc4eda-ace4-4b7a-b973-c7206efe6776",
+                        "code": "MAR",
+                        "lokasi": "Pos Pengamatan",
+                        "url": "/storage/cctv/Marapi/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 7390,
+                        "publish": true,
+                        "created_at": "2019-10-16 10:04:39",
+                        "updated_at": "2022-01-31 11:05:40",
+                        "gunungapi": {
+                            "code": "MAR",
+                            "name": "Marapi"
+                        }
+                    },
+                    {
+                        "id": 19,
+                        "uuid": "1d0fdf87-6363-416d-bf76-e63c93d1f887",
+                        "code": "MER",
+                        "lokasi": "Puncak Merapi",
+                        "url": "/storage/cctv/Merapi/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 4655,
+                        "publish": true,
+                        "created_at": "2019-10-16 10:04:39",
+                        "updated_at": "2022-01-31 11:06:06",
+                        "gunungapi": {
+                            "code": "MER",
+                            "name": "Merapi"
+                        }
+                    },
+                    {
+                        "id": 20,
+                        "uuid": "348a3625-02fa-46c6-af9e-abbb0237d558",
+                        "code": "MER",
+                        "lokasi": "Pelawangan",
+                        "url": "/storage/cctv/Merapi/Latest/cam_2.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 812,
+                        "publish": true,
+                        "created_at": "2019-10-16 10:04:39",
+                        "updated_at": "2022-01-31 12:48:29",
+                        "gunungapi": {
+                            "code": "MER",
+                            "name": "Merapi"
+                        }
+                    },
+                    {
+                        "id": 42,
+                        "uuid": "83a92050-326e-4152-8e4b-08e54b5d9f41",
+                        "code": "RAU",
+                        "lokasi": "Pos PGA",
+                        "url": "/storage/cctv/Raung/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 105154,
+                        "publish": true,
+                        "created_at": "2021-02-06 19:52:17",
+                        "updated_at": "2022-01-31 11:55:58",
+                        "gunungapi": {
+                            "code": "RAU",
+                            "name": "Raung"
+                        }
+                    },
+                    {
+                        "id": 50,
+                        "uuid": "579debe9-30a6-4e71-85c5-fe00b1a7d7fe",
+                        "code": "RIN",
+                        "lokasi": "Pos Pengamatan",
+                        "url": "/storage/cctv/Rinjani/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 481,
+                        "publish": true,
+                        "created_at": "2021-11-13 10:56:01",
+                        "updated_at": "2022-01-31 12:06:27",
+                        "gunungapi": {
+                            "code": "RIN",
+                            "name": "Rinjani"
+                        }
+                    },
+                    {
+                        "id": 38,
+                        "uuid": "60c571d5-4533-402c-b594-7b445aae1bc4",
+                        "code": "SAN",
+                        "lokasi": "Pos PGA",
+                        "url": "/storage/cctv/Sangiangapi/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 89981,
+                        "publish": true,
+                        "created_at": "2021-01-13 13:35:02",
+                        "updated_at": "2022-01-30 07:56:31",
+                        "gunungapi": {
+                            "code": "SAN",
+                            "name": "Sangeangapi"
+                        }
+                    },
+                    {
+                        "id": 17,
+                        "uuid": "82d6a5cf-d7a5-418e-b05b-81d43524a628",
+                        "code": "SBG",
+                        "lokasi": "Pos Pengamatan",
+                        "url": "/storage/cctv/Sumbing/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 20834,
+                        "publish": true,
+                        "created_at": "2019-10-16 10:04:39",
+                        "updated_at": "2022-01-31 06:05:09",
+                        "gunungapi": {
+                            "code": "SBG",
+                            "name": "Sumbing"
+                        }
+                    },
+                    {
+                        "id": 2,
+                        "uuid": "7c390308-79e2-45ae-be8f-81b491a7a85b",
+                        "code": "SIN",
+                        "lokasi": "Kebayekan",
+                        "url": "/storage/cctv/Kebayaken/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 93932,
+                        "publish": true,
+                        "created_at": "2019-10-16 10:04:39",
+                        "updated_at": "2022-01-31 06:05:50",
+                        "gunungapi": {
+                            "code": "SIN",
+                            "name": "Sinabung"
+                        }
+                    },
+                    {
+                        "id": 46,
+                        "uuid": "c7aa8e2c-4868-4fca-a814-7a562ac3f858",
+                        "code": "SIN",
+                        "lokasi": "Kutambaru",
+                        "url": "/storage/cctv/Kutambaru/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 31291,
+                        "publish": true,
+                        "created_at": "2021-09-29 21:29:54",
+                        "updated_at": "2022-01-31 07:23:38",
+                        "gunungapi": {
+                            "code": "SIN",
+                            "name": "Sinabung"
+                        }
+                    },
+                    {
+                        "id": 4,
+                        "uuid": "53ba7251-88e0-4858-869d-e2e57d65243e",
+                        "code": "SIN",
+                        "lokasi": "Tigapancur",
+                        "url": "/storage/cctv/Tigapancur/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 48127,
+                        "publish": true,
+                        "created_at": "2019-10-16 10:04:39",
+                        "updated_at": "2022-01-31 11:47:32",
+                        "gunungapi": {
+                            "code": "SIN",
+                            "name": "Sinabung"
+                        }
+                    },
+                    {
+                        "id": 3,
+                        "uuid": "5801c9a0-f620-440a-86d6-71e35178968e",
+                        "code": "SIN",
+                        "lokasi": "Laukawar",
+                        "url": "/storage/cctv/Laukawar/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 99134,
+                        "publish": true,
+                        "created_at": "2019-10-16 10:04:39",
+                        "updated_at": "2022-01-30 13:20:51",
+                        "gunungapi": {
+                            "code": "SIN",
+                            "name": "Sinabung"
+                        }
+                    },
+                    {
+                        "id": 1,
+                        "uuid": "03c2d164-87b0-4cd3-ab27-7193547e9012",
+                        "code": "SIN",
+                        "lokasi": "Pos Pengamatan",
+                        "url": "/storage/cctv/Sinabung/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 120705,
+                        "publish": true,
+                        "created_at": "2019-10-16 10:04:39",
+                        "updated_at": "2022-01-31 07:23:28",
+                        "gunungapi": {
+                            "code": "SIN",
+                            "name": "Sinabung"
+                        }
+                    },
+                    {
+                        "id": 28,
+                        "uuid": "718642be-1a9d-436a-998c-1402c9cbd7f1",
+                        "code": "SLA",
+                        "lokasi": "Sawangan - Sigedong",
+                        "url": "/storage/cctv/Slamet/Latest/cam_2.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 25771,
+                        "publish": true,
+                        "created_at": "2019-10-28 13:14:26",
+                        "updated_at": "2022-01-31 10:54:44",
+                        "gunungapi": {
+                            "code": "SLA",
+                            "name": "Slamet"
+                        }
+                    },
+                    {
+                        "id": 14,
+                        "uuid": "97c898bf-2a3d-4aad-8907-c5b8fd2550aa",
+                        "code": "SLA",
+                        "lokasi": "Pos Pengamatan",
+                        "url": "/storage/cctv/Slamet/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 25282,
+                        "publish": true,
+                        "created_at": "2019-10-16 10:04:39",
+                        "updated_at": "2022-01-31 10:53:55",
+                        "gunungapi": {
+                            "code": "SLA",
+                            "name": "Slamet"
+                        }
+                    },
+                    {
+                        "id": 23,
+                        "uuid": "1823fe47-40e9-4d3a-9582-94e5dc2fd88e",
+                        "code": "SMR",
+                        "lokasi": "Pos Pengamatan",
+                        "url": "/storage/cctv/Semeru/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 105842,
+                        "publish": true,
+                        "created_at": "2019-10-16 10:04:39",
+                        "updated_at": "2022-01-31 08:30:40",
+                        "gunungapi": {
+                            "code": "SMR",
+                            "name": "Semeru"
+                        }
+                    },
+                    {
+                        "id": 54,
+                        "uuid": "1fbcaade-771a-4b6a-a29b-cb182bc659ec",
+                        "code": "SMR",
+                        "lokasi": "Sriti",
+                        "url": "/storage/cctv/Semeru/Latest/cam_2.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 103,
+                        "publish": true,
+                        "created_at": "2022-01-24 23:15:48",
+                        "updated_at": "2022-01-31 10:48:04",
+                        "gunungapi": {
+                            "code": "SMR",
+                            "name": "Semeru"
+                        }
+                    },
+                    {
+                        "id": 37,
+                        "uuid": "b173b563-748d-48dd-9326-3214000d44a5",
+                        "code": "SOP",
+                        "lokasi": "Pos PGA",
+                        "url": "/storage/cctv/Soputan/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 67364,
+                        "publish": true,
+                        "created_at": "2021-01-13 13:34:37",
+                        "updated_at": "2022-01-31 00:00:04",
+                        "gunungapi": {
+                            "code": "SOP",
+                            "name": "Soputan"
+                        }
+                    },
+                    {
+                        "id": 18,
+                        "uuid": "109854d1-73c5-471c-b7b4-6873ba4561e1",
+                        "code": "SUN",
+                        "lokasi": "Pos Pengamatan",
+                        "url": "/storage/cctv/Sundoro/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 18994,
+                        "publish": true,
+                        "created_at": "2019-10-16 10:04:39",
+                        "updated_at": "2022-01-31 13:36:20",
+                        "gunungapi": {
+                            "code": "SUN",
+                            "name": "Sundoro"
+                        }
+                    },
+                    {
+                        "id": 6,
+                        "uuid": "63bca6b9-7d19-4ee9-a0f5-a2b467e1458d",
+                        "code": "TAL",
+                        "lokasi": "Pos Pengamatan",
+                        "url": "/storage/cctv/Talang/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 24051,
+                        "publish": true,
+                        "created_at": "2019-10-16 10:04:39",
+                        "updated_at": "2022-01-22 01:12:46",
+                        "gunungapi": {
+                            "code": "TAL",
+                            "name": "Talang"
+                        }
+                    },
+                    {
+                        "id": 40,
+                        "uuid": "ccb64040-e89a-48bf-9efe-2383f9953d48",
+                        "code": "TAR",
+                        "lokasi": "Pos Lewotolok",
+                        "url": "/storage/cctv/Batutara/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 25437,
+                        "publish": true,
+                        "created_at": "2021-01-13 13:35:49",
+                        "updated_at": "2022-01-31 14:36:08",
+                        "gunungapi": {
+                            "code": "TAR",
+                            "name": "Batutara"
+                        }
+                    },
+                    {
+                        "id": 10,
+                        "uuid": "08bbb920-352a-43d7-aca9-deea784ae574",
+                        "code": "TPR",
+                        "lokasi": "Tangkuban Parahu",
+                        "url": "/storage/cctv/TangkubanParahu/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 82881,
+                        "publish": true,
+                        "created_at": "2019-10-16 10:04:39",
+                        "updated_at": "2022-01-31 12:40:56",
+                        "gunungapi": {
+                            "code": "TPR",
+                            "name": "Tangkuban Parahu"
+                        }
+                    },
+                    {
+                        "id": 34,
+                        "uuid": "99e11136-bb75-4ef3-ada3-9cb671b8c0cd",
+                        "code": "WER",
+                        "lokasi": "Pos Pengamatan",
+                        "url": "/storage/cctv/Ilewerung/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 15233,
+                        "publish": true,
+                        "created_at": "2019-12-25 05:54:33",
+                        "updated_at": "2022-01-29 01:16:17",
+                        "gunungapi": {
+                            "code": "WER",
+                            "name": "Ile Werung"
+                        }
+                    }
+                ],
+                "gunung_api": [
+                    {
+                        "code": "SIN",
+                        "name": "Sinabung",
+                        "cctv_count": 5
+                    },
+                    {
+                        "code": "BAT",
+                        "name": "Batur",
+                        "cctv_count": 1
+                    },
+                    {
+                        "code": "AGU",
+                        "name": "Agung",
+                        "cctv_count": 3
+                    },
+                    {
+                        "code": "MAR",
+                        "name": "Marapi",
+                        "cctv_count": 1
+                    },
+                    {
+                        "code": "RIN",
+                        "name": "Rinjani",
+                        "cctv_count": 2
+                    },
+                    {
+                        "code": "SAN",
+                        "name": "Sangeangapi",
+                        "cctv_count": 1
+                    },
+                    {
+                        "code": "TAL",
+                        "name": "Talang",
+                        "cctv_count": 1
+                    },
+                    {
+                        "code": "KRA",
+                        "name": "Anak Krakatau",
+                        "cctv_count": 2
+                    },
+                    {
+                        "code": "GED",
+                        "name": "Gede",
+                        "cctv_count": 1
+                    },
+                    {
+                        "code": "TPR",
+                        "name": "Tangkuban Parahu",
+                        "cctv_count": 1
+                    },
+                    {
+                        "code": "GUN",
+                        "name": "Guntur",
+                        "cctv_count": 1
+                    },
+                    {
+                        "code": "GAL",
+                        "name": "Galunggung",
+                        "cctv_count": 1
+                    },
+                    {
+                        "code": "TAR",
+                        "name": "Batutara",
+                        "cctv_count": 1
+                    },
+                    {
+                        "code": "LEW",
+                        "name": "Ili Lewotolok",
+                        "cctv_count": 1
+                    },
+                    {
+                        "code": "WER",
+                        "name": "Ile Werung",
+                        "cctv_count": 1
+                    },
+                    {
+                        "code": "AMB",
+                        "name": "Ambang",
+                        "cctv_count": 1
+                    },
+                    {
+                        "code": "SOP",
+                        "name": "Soputan",
+                        "cctv_count": 1
+                    },
+                    {
+                        "code": "LOK",
+                        "name": "Lokon",
+                        "cctv_count": 1
+                    },
+                    {
+                        "code": "KAR",
+                        "name": "Karangetang",
+                        "cctv_count": 2
+                    },
+                    {
+                        "code": "AWU",
+                        "name": "Awu",
+                        "cctv_count": 1
+                    },
+                    {
+                        "code": "GML",
+                        "name": "Gamalama",
+                        "cctv_count": 1
+                    },
+                    {
+                        "code": "IBU",
+                        "name": "Ibu",
+                        "cctv_count": 1
+                    },
+                    {
+                        "code": "SLA",
+                        "name": "Slamet",
+                        "cctv_count": 2
+                    },
+                    {
+                        "code": "DIE",
+                        "name": "Dieng",
+                        "cctv_count": 2
+                    },
+                    {
+                        "code": "SUN",
+                        "name": "Sundoro",
+                        "cctv_count": 1
+                    },
+                    {
+                        "code": "SBG",
+                        "name": "Sumbing",
+                        "cctv_count": 1
+                    },
+                    {
+                        "code": "MER",
+                        "name": "Merapi",
+                        "cctv_count": 2
+                    },
+                    {
+                        "code": "KLD",
+                        "name": "Kelud",
+                        "cctv_count": 3
+                    },
+                    {
+                        "code": "BRO",
+                        "name": "Bromo",
+                        "cctv_count": 1
+                    },
+                    {
+                        "code": "SMR",
+                        "name": "Semeru",
+                        "cctv_count": 2
+                    },
+                    {
+                        "code": "RAU",
+                        "name": "Raung",
+                        "cctv_count": 1
+                    },
+                    {
+                        "code": "IJE",
+                        "name": "Ijen",
+                        "cctv_count": 1
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Filter CCTV",
+        "method": "GET",
+        "url": "{{url}}/api/v1/home/gunung-api/cctv/{code}",
+        "parameters": [],
+        "example_request_body": null,
+        "example_response_body": [
+            {
+                "cctvs": [
+                    {
+                        "id": 26,
+                        "uuid": "e23018af-a274-49a9-9144-dc684f66e93d",
+                        "code": "AGU",
+                        "lokasi": "Batu Lompeh",
+                        "url": "/storage/cctv/AgungBatulompeh/Latest/cam_1.jpg",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "hit": 12280,
+                        "publish": true,
+                        "created_at": "2019-10-16 10:04:39",
+                        "updated_at": "2022-01-31 06:05:43",
+                        "gunungapi": {
+                            "code": "AGU",
+                            "name": "Agung"
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Show CCTV",
+        "method": "POST",
+        "url": "{{url}}/api/v1/home/gunung-api/cctv",
+        "parameters": [],
+        "example_request_body": [
+            {
+                "uuid": "7a62925c-63a3-4470-9c20-4e4c5e9c1537"
+            }
+        ],
+        "example_response_body": []
+    },
+    {
+        "name": "Helicorder",
+        "method": "GET",
+        "url": "{{url}}/api/winston/helicorder",
+        "parameters": [],
+        "example_request_body": [
+            {
+                "code": "RTUZ_EHZ_VG_00"
+            }
+        ],
+        "example_response_body": [
+            {
+                "name": "Agung",
+                "code": "AGU",
+                "tzone": 8,
+                "seismometers": [
+                    {
+                        "id": 32,
+                        "uuid": "387a9126-5521-422f-b268-b71f6ec7d38d",
+                        "code": "AGU",
+                        "lokasi": "Pasar Agung",
+                        "station": "PSAG",
+                        "channel": "EHZ",
+                        "network": "VG",
+                        "location": "00",
+                        "scnl": "PSAG_EHZ_VG_00",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "is_active": true,
+                        "hit": 27301,
+                        "published": false,
+                        "created_at": "2019-10-16 16:38:09",
+                        "updated_at": "2021-10-06 19:22:49",
+                        "full_url": "http://172.16.2.253:16035/heli?code=PSAG_EHZ_VG_00&w=1200&h=720&lb=1"
+                    },
+                    {
+                        "id": 33,
+                        "uuid": "7b61ff36-e4ab-4637-afa6-0e630b35d46c",
+                        "code": "AGU",
+                        "lokasi": null,
+                        "station": "GTOH",
+                        "channel": "EHZ",
+                        "network": "VG",
+                        "location": "00",
+                        "scnl": "GTOH_EHZ_VG_00",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "is_active": true,
+                        "hit": 0,
+                        "published": false,
+                        "created_at": "2019-10-16 16:38:09",
+                        "updated_at": "2019-10-16 16:38:09",
+                        "full_url": "http://172.16.2.253:16035/heli?code=GTOH_EHZ_VG_00&w=1200&h=720&lb=1"
+                    },
+                    {
+                        "id": 34,
+                        "uuid": "5592bef6-f76d-462f-813d-d9859ac1e194",
+                        "code": "AGU",
+                        "lokasi": "Tumukus",
+                        "station": "TMKS",
+                        "channel": "EHZ",
+                        "network": "VG",
+                        "location": "00",
+                        "scnl": "TMKS_EHZ_VG_00",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "is_active": true,
+                        "hit": 34198,
+                        "published": true,
+                        "created_at": "2019-10-16 16:38:09",
+                        "updated_at": "2022-01-31 11:44:11",
+                        "full_url": "http://172.16.2.253:16035/heli?code=TMKS_EHZ_VG_00&w=1200&h=720&lb=1"
+                    },
+                    {
+                        "id": 35,
+                        "uuid": "41442064-a9a9-439a-982f-f65ada427826",
+                        "code": "AGU",
+                        "lokasi": null,
+                        "station": "ABNG",
+                        "channel": "SHZ",
+                        "network": "VG",
+                        "location": "00",
+                        "scnl": "ABNG_SHZ_VG_00",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "is_active": true,
+                        "hit": 0,
+                        "published": false,
+                        "created_at": "2019-10-16 16:38:09",
+                        "updated_at": "2019-10-16 16:38:09",
+                        "full_url": "http://172.16.2.253:16035/heli?code=ABNG_SHZ_VG_00&w=1200&h=720&lb=1"
+                    },
+                    {
+                        "id": 36,
+                        "uuid": "62ab5ee4-63ee-4fab-accc-f02554677a4f",
+                        "code": "AGU",
+                        "lokasi": null,
+                        "station": "YHKR",
+                        "channel": "BHZ",
+                        "network": "VG",
+                        "location": "00",
+                        "scnl": "YHKR_BHZ_VG_00",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "is_active": true,
+                        "hit": 0,
+                        "published": false,
+                        "created_at": "2019-10-16 16:38:09",
+                        "updated_at": "2019-10-16 16:38:09",
+                        "full_url": "http://172.16.2.253:16035/heli?code=YHKR_BHZ_VG_00&w=1200&h=720&lb=1"
+                    },
+                    {
+                        "id": 37,
+                        "uuid": "2569ba69-f01c-4d23-b9fd-5758799ac2f5",
+                        "code": "AGU",
+                        "lokasi": null,
+                        "station": "YHKR",
+                        "channel": "BHE",
+                        "network": "VG",
+                        "location": "00",
+                        "scnl": "YHKR_BHE_VG_00",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "is_active": true,
+                        "hit": 0,
+                        "published": false,
+                        "created_at": "2019-10-16 16:38:09",
+                        "updated_at": "2019-10-16 16:38:09",
+                        "full_url": "http://172.16.2.253:16035/heli?code=YHKR_BHE_VG_00&w=1200&h=720&lb=1"
+                    },
+                    {
+                        "id": 38,
+                        "uuid": "70fe13d9-9b42-418f-9776-6f9212467c96",
+                        "code": "AGU",
+                        "lokasi": null,
+                        "station": "YHKR",
+                        "channel": "BHN",
+                        "network": "VG",
+                        "location": "00",
+                        "scnl": "YHKR_BHN_VG_00",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "is_active": true,
+                        "hit": 0,
+                        "published": false,
+                        "created_at": "2019-10-16 16:38:09",
+                        "updated_at": "2019-10-16 16:38:09",
+                        "full_url": "http://172.16.2.253:16035/heli?code=YHKR_BHN_VG_00&w=1200&h=720&lb=1"
+                    },
+                    {
+                        "id": 39,
+                        "uuid": "5f8a0bc3-39f3-4164-ac59-4f1406117576",
+                        "code": "AGU",
+                        "lokasi": null,
+                        "station": "CEGI",
+                        "channel": "BHZ",
+                        "network": "VG",
+                        "location": "00",
+                        "scnl": "CEGI_BHZ_VG_00",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "is_active": true,
+                        "hit": 0,
+                        "published": false,
+                        "created_at": "2019-10-16 16:38:09",
+                        "updated_at": "2019-10-16 16:38:09",
+                        "full_url": "http://172.16.2.253:16035/heli?code=CEGI_BHZ_VG_00&w=1200&h=720&lb=1"
+                    },
+                    {
+                        "id": 40,
+                        "uuid": "99f4c3d2-eab5-405e-9cab-48ad281879db",
+                        "code": "AGU",
+                        "lokasi": null,
+                        "station": "CEGI",
+                        "channel": "BHE",
+                        "network": "VG",
+                        "location": "00",
+                        "scnl": "CEGI_BHE_VG_00",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "is_active": true,
+                        "hit": 0,
+                        "published": false,
+                        "created_at": "2019-10-16 16:38:09",
+                        "updated_at": "2019-10-16 16:38:09",
+                        "full_url": "http://172.16.2.253:16035/heli?code=CEGI_BHE_VG_00&w=1200&h=720&lb=1"
+                    },
+                    {
+                        "id": 41,
+                        "uuid": "948db552-1c66-4bc5-9469-521b5d757785",
+                        "code": "AGU",
+                        "lokasi": null,
+                        "station": "CEGI",
+                        "channel": "BHN",
+                        "network": "VG",
+                        "location": "00",
+                        "scnl": "CEGI_BHN_VG_00",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "is_active": true,
+                        "hit": 0,
+                        "published": false,
+                        "created_at": "2019-10-16 16:38:09",
+                        "updated_at": "2019-10-16 16:38:09",
+                        "full_url": "http://172.16.2.253:16035/heli?code=CEGI_BHN_VG_00&w=1200&h=720&lb=1"
+                    },
+                    {
+                        "id": 42,
+                        "uuid": "3aea51ca-7345-487b-8fdb-c8a3002fdce8",
+                        "code": "AGU",
+                        "lokasi": null,
+                        "station": "DUKU",
+                        "channel": "BHZ",
+                        "network": "VG",
+                        "location": "00",
+                        "scnl": "DUKU_BHZ_VG_00",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "is_active": true,
+                        "hit": 0,
+                        "published": false,
+                        "created_at": "2019-10-16 16:38:09",
+                        "updated_at": "2019-10-16 16:38:09",
+                        "full_url": "http://172.16.2.253:16035/heli?code=DUKU_BHZ_VG_00&w=1200&h=720&lb=1"
+                    },
+                    {
+                        "id": 43,
+                        "uuid": "bcbc661e-8062-4198-a66b-d2f599649f7c",
+                        "code": "AGU",
+                        "lokasi": null,
+                        "station": "DUKU",
+                        "channel": "BHE",
+                        "network": "VG",
+                        "location": "00",
+                        "scnl": "DUKU_BHE_VG_00",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "is_active": true,
+                        "hit": 0,
+                        "published": false,
+                        "created_at": "2019-10-16 16:38:09",
+                        "updated_at": "2019-10-16 16:38:09",
+                        "full_url": "http://172.16.2.253:16035/heli?code=DUKU_BHE_VG_00&w=1200&h=720&lb=1"
+                    },
+                    {
+                        "id": 44,
+                        "uuid": "3f547b4b-ded6-4a6f-9c3e-697d1388e531",
+                        "code": "AGU",
+                        "lokasi": null,
+                        "station": "DUKU",
+                        "channel": "BHN",
+                        "network": "VG",
+                        "location": "00",
+                        "scnl": "DUKU_BHN_VG_00",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "is_active": true,
+                        "hit": 0,
+                        "published": false,
+                        "created_at": "2019-10-16 16:38:09",
+                        "updated_at": "2019-10-16 16:38:09",
+                        "full_url": "http://172.16.2.253:16035/heli?code=DUKU_BHN_VG_00&w=1200&h=720&lb=1"
+                    },
+                    {
+                        "id": 45,
+                        "uuid": "0e8c57e0-1228-44be-b01c-d5cc76acb2d7",
+                        "code": "AGU",
+                        "lokasi": null,
+                        "station": "BATU",
+                        "channel": "BHN",
+                        "network": "VG",
+                        "location": "00",
+                        "scnl": "BATU_BHN_VG_00",
+                        "elevation": null,
+                        "latitude": null,
+                        "longitude": null,
+                        "is_active": true,
+                        "hit": 0,
+                        "published": false,
+                        "created_at": "2019-10-16 16:38:09",
+                        "updated_at": "2019-10-16 16:38:09",
+                        "full_url": "http://172.16.2.253:16035/heli?code=BATU_BHN_VG_00&w=1200&h=720&lb=1"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Show",
+        "method": "GET",
+        "url": "{{url}}/api/winston/helicorder/{scnl}",
+        "parameters": [],
+        "example_request_body": null,
+        "example_response_body": []
+    },
+    {
+        "name": "Show By Volcode",
+        "method": "GET",
+        "url": "{{url}}/api/v1/magma-var/seismic/{code}",
+        "parameters": [],
+        "example_request_body": null,
+        "example_response_body": []
+    },
+    {
+        "name": "Code dan Daftar Gunung Api",
+        "method": "GET",
+        "url": "{{url}}/api/v1/home/gunung-api",
+        "parameters": [],
+        "example_request_body": null,
+        "example_response_body": [
+            {
+                "ga_code": "AGU",
+                "ga_nama_gapi": "Agung",
+                "ga_kab_gapi": "Karangasem",
+                "ga_prov_gapi": "Bali",
+                "ga_koter_gapi": "Karangasem",
+                "ga_elev_gapi": 3142,
+                "ga_lon_gapi": 115.508,
+                "ga_lat_gapi": -8.342,
+                "ga_status": 1,
+                "has_vona": false,
+                "url": "https://magma.esdm.go.id/api/v1/home/gunung-api/var/AGU"
+            }
+        ]
+    },
+    {
+        "name": "Tingkat Aktivitas Gunung Api",
+        "method": "GET",
+        "url": "{{url}}/api/v1/home/gunung-api/status",
+        "parameters": [],
+        "example_request_body": null,
+        "example_response_body": [
+            {
+                "url": "https://magma.esdm.go.id/v1/gunung-api/laporan",
+                "latest": [
+                    {
+                        "level": 4,
+                        "status": "Awas",
+                        "jumlah": 0,
+                        "daftar_gunungapi": []
+                    },
+                    {
+                        "level": 3,
+                        "status": "Siaga",
+                        "jumlah": 4,
+                        "daftar_gunungapi": [
+                            "Ile Werung",
+                            "Ili Lewotolok",
+                            "Merapi",
+                            "Sinabung"
+                        ]
+                    },
+                    {
+                        "level": 2,
+                        "status": "Waspada",
+                        "jumlah": 16,
+                        "daftar_gunungapi": [
+                            "Anak Krakatau",
+                            "Banda Api",
+                            "Bromo",
+                            "Dukono",
+                            "Gamalama",
+                            "Gamkonora",
+                            "Ibu",
+                            "Karangetang",
+                            "Kerinci",
+                            "Lokon",
+                            "Marapi",
+                            "Rinjani",
+                            "Sangeangapi",
+                            "Semeru",
+                            "Sirung",
+                            "Soputan"
+                        ]
+                    },
+                    {
+                        "level": 1,
+                        "status": "Normal",
+                        "jumlah": 48,
+                        "daftar_gunungapi": [
+                            "Agung",
+                            "Ambang",
+                            "Anak Ranakah",
+                            "Arjuno Welirang",
+                            "Awu",
+                            "Batur",
+                            "Batutara",
+                            "Bur Ni Telong",
+                            "Ciremai",
+                            "Colo",
+                            "Dempo",
+                            "Dieng",
+                            "Ebulobo",
+                            "Egon",
+                            "Galunggung",
+                            "Gede",
+                            "Guntur",
+                            "Ijen",
+                            "Ili Boleng",
+                            "Inielika",
+                            "Inierie",
+                            "Iya",
+                            "Kaba",
+                            "Kelimutu",
+                            "Kelud",
+                            "Kie Besi",
+                            "Lamongan",
+                            "Lereboleng",
+                            "Lewotobi Laki-laki",
+                            "Lewotobi Perempuan",
+                            "Mahawu",
+                            "Papandayan",
+                            "Peut Sague",
+                            "Raung",
+                            "Rokatenda",
+                            "Ruang",
+                            "Salak",
+                            "Seulawah Agam",
+                            "Slamet",
+                            "Sorikmarapi",
+                            "Sumbing",
+                            "Sundoro",
+                            "Talang",
+                            "Tambora",
+                            "Tandikat",
+                            "Tangkoko",
+                            "Tangkuban Parahu",
+                            "Wurlali"
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Tingkat Aktivitas Gunung Api dan Tanggal Berlaku",
+        "method": "GET",
+        "url": "{{url}}/api/v1/home/gunung-api/status-date",
+        "parameters": [],
+        "example_request_body": null,
+        "example_response_body": [
+            {
+                "url": "https://magma.esdm.go.id/v1/gunung-api/laporan",
+                "latest": [
+                    {
+                        "level": 4,
+                        "status": "Awas",
+                        "jumlah": 0,
+                        "daftar_gunungapi": []
+                    },
+                    {
+                        "level": 3,
+                        "status": "Siaga",
+                        "jumlah": 4,
+                        "daftar_gunungapi": [
+                            "Ile Werung",
+                            "Ili Lewotolok",
+                            "Merapi",
+                            "Sinabung"
+                        ]
+                    },
+                    {
+                        "level": 2,
+                        "status": "Waspada",
+                        "jumlah": 16,
+                        "daftar_gunungapi": [
+                            "Anak Krakatau",
+                            "Banda Api",
+                            "Bromo",
+                            "Dukono",
+                            "Gamalama",
+                            "Gamkonora",
+                            "Ibu",
+                            "Karangetang",
+                            "Kerinci",
+                            "Lokon",
+                            "Marapi",
+                            "Rinjani",
+                            "Sangeangapi",
+                            "Semeru",
+                            "Sirung",
+                            "Soputan"
+                        ]
+                    },
+                    {
+                        "level": 1,
+                        "status": "Normal",
+                        "jumlah": 48,
+                        "daftar_gunungapi": [
+                            "Agung",
+                            "Ambang",
+                            "Anak Ranakah",
+                            "Arjuno Welirang",
+                            "Awu",
+                            "Batur",
+                            "Batutara",
+                            "Bur Ni Telong",
+                            "Ciremai",
+                            "Colo",
+                            "Dempo",
+                            "Dieng",
+                            "Ebulobo",
+                            "Egon",
+                            "Galunggung",
+                            "Gede",
+                            "Guntur",
+                            "Ijen",
+                            "Ili Boleng",
+                            "Inielika",
+                            "Inierie",
+                            "Iya",
+                            "Kaba",
+                            "Kelimutu",
+                            "Kelud",
+                            "Kie Besi",
+                            "Lamongan",
+                            "Lereboleng",
+                            "Lewotobi Laki-laki",
+                            "Lewotobi Perempuan",
+                            "Mahawu",
+                            "Papandayan",
+                            "Peut Sague",
+                            "Raung",
+                            "Rokatenda",
+                            "Ruang",
+                            "Salak",
+                            "Seulawah Agam",
+                            "Slamet",
+                            "Sorikmarapi",
+                            "Sumbing",
+                            "Sundoro",
+                            "Talang",
+                            "Tambora",
+                            "Tandikat",
+                            "Tangkoko",
+                            "Tangkuban Parahu",
+                            "Wurlali"
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Daftar Tanggapan Gerakan Tanah",
+        "method": "GET",
+        "url": "{{url}}/api/v1/home/gerakan-tanah",
+        "parameters": [],
+        "example_request_body": null,
+        "example_response_body": [
+            {
+                "id": "CRS20210804102457",
+                "judul": "Laporan Tanggapan Gerakan Tanah di Air Putih, Samarinda Ulu, Kota Samarinda, Kalimantan Timur",
+                "pelapor": "Agus Budianto, Ir.",
+                "local_datetime": "2021-08-20 16:30:00",
+                "updated_at": "2021-08-04 10:24:57",
+                "time_zone": "WITA",
+                "iso_datetime": "2021-08-20T16:30:00+08:00",
+                "latitude": -0.47971,
+                "longitude": 117.11817,
+                "provinsi": "Kalimantan Timur",
+                "kabupaten_kota": "Kota Samarinda",
+                "kecamatan": "Samarinda Ulu",
+                "kelurahan": "Air Putih",
+                "deskripsi": "Gerakan tanah terjadi di Air Putih, Samarinda Ulu, Kota Samarinda, Kalimantan Timur pada Friday, 20 August 2021 pukul 16:30:00 WITA. Secara Geografis, lokasi kejadian gerakan tanah terletak pada posisi -0.47971 LU dan 117.11817 BT.",
+                "kerentanan": null,
+                "rekomendasi": null,
+                "url": "http://chamber.test/api/v1/home/gerakan-tanah/sigertan/CRS20210804102457",
+                "share": {
+                    "url": "http://chamber.test/v1/gerakan-tanah/tanggapan/CRS20210804102457?signature=c7bca3af3385669e58c1c1224e7ff0e67bb8b8c0c281f58a36474395ae965574",
+                    "description": "Gerakan tanah terjadi di Air Putih, Samarinda Ulu, Kota Samarinda, Kalimantan Timur pada Friday, 20 August 2021 pukul 16:30:00 WITA. Secara Geografis, lokasi kejadian gerakan tanah terletak pada posisi -0.47971 LU dan 117.11817 BT."
+                }
+            }
+        ]
+    },
+    {
+        "name": "Gerakan Tanah by ID",
+        "method": "GET",
+        "url": "{{url}}/api/v1/home/gerakan-tanah/SGT20210802155007",
+        "parameters": [],
+        "example_request_body": null,
+        "example_response_body": [
+            {
+                "data": {
+                    "laporan": {
+                        "peta": null,
+                        "pelapor": "Agus Budianto, Ir.",
+                        "judul": "Laporan Tanggapan Gerakan Tanah di Girijaya, Nagrak, Kabupaten Sukabumi, Jawa Barat",
+                        "updated_at": "Diperbarui pada tanggal 02 August 2021 pukul 15:50:07 WIB",
+                        "tingkat_kerentanan": [
+                            "MENENGAH",
+                            "TINGGI"
+                        ],
+                        "deskripsi": "Gerakan tanah terjadi di Girijaya, Nagrak, Kabupaten Sukabumi, Jawa Barat pada Sunday, 01 August 2021 pukul 00:15:00 WIB. Secara Geografis, lokasi kejadian gerakan tanah terletak pada posisi -6.8555314 LU dan 106.8561884 BT."
+                    },
+                    "tanggapan": {
+                        "tipe": "Longsoran Translasi",
+                        "dampak": {
+                            "korban": 0,
+                            "luka": 0,
+                            "rumah_rusak": 0,
+                            "rumah_hancur": 0,
+                            "rumah_terancam": 0,
+                            "bangunan_rusak": 0,
+                            "bangunan_hancur": 0,
+                            "bangunan_terancam": 0,
+                            "lahan_rusak": 50,
+                            "jalan_rusak": 0
+                        },
+                        "kondisi": {
+                            "morfologi": "Secara umum lokasi gerakan tanah ini merupakan daerah perbukitan yang memiliki kemiringan lereng Agak curam (moderately steep) : 8º - 16º",
+                            "geologi": "Berdasarkan peta geologi, lokasi bencana tersusun oleh formasi Kaki Barat Daya G. Pangrango. Jenis Batuan di antaranya adalah Tanah pelapukan vulkanik G. Pangrango. ",
+                            "keairan": "Keairan di lokasi gerakan tanah berupa Sungai, Saluran Irigasi.",
+                            "tata_guna_lahan": "Tata Guna Lahan  di lokasi gerakan tanah ini berupa Sawah, Semak Belukar.",
+                            "kerentanan": "Berdasarkan Peta Potensi Gerakan Tanah yang dikeluarkan Badan Geologi, Pusat Vulkanologi dan Mitigasi Bencana Geologi pada bulan ini, lokasi bencana berada pada Zona Potensi Gerakan Tanah Menengah hingga Tinggi. Yang artinya daerah ini memiliki potensi menengah hingga tinggi untuk terjadi gerakan tanah.",
+                            "penyebab": "Curah Hujan Yang Tinggi<Br>Pelapukan<Br>Lainnya : Tebing Lereng Didinding Irigasi"
+                        }
+                    },
+                    "rekomendasi": [
+                        "a)\tPemasangan rambu rawan bencana longsor di sekitar lokasi yang longsor untuk meningkatkan kewaspadaan.<br />\nb)\tSegera memberihkan saluran irigasi dari timbunan longsoran dan  penanganan longsoran agar memperhatikan cuaca, agar tidak dilakukan pada saat dan setelah hujan deras, karena daerah ini masih berpotensi terjadi gerakan tanah susulan yang bisa menimpa petugas.<br />\nc)\tPerkuatan pada lereng dinding saluran irigasi dengan memperhatikan kaidah-kaidah geologi teknik.<br />\nd)\tMeningkatkan sosialisasi kepada masyarakat untuk lebih mengenal dan memahami gerakan tanah dan gejala-gejala yang mengawalinya sebagai upaya mitigasi bencana akibat gerakan tanah.<br />\ne)\tMasyarakat setempat dihimbau untuk selalu mengikuti arahan dari pemerintah daerah / BPBD setempat.<br />\n"
+                    ],
+                    "share": {
+                        "url": "http://chamber.test/v1/gerakan-tanah/tanggapan/CRS20210802155007?signature=5421b7142c911db24286e290c0c90de7f54f934f63e0a543761ecbf58b195023",
+                        "description": "Gerakan tanah terjadi di Girijaya, Nagrak, Kabupaten Sukabumi, Jawa Barat pada Sunday, 01 August 2021 pukul 00:15:00 WIB. Secara Geografis, lokasi kejadian gerakan tanah terletak pada posisi -6.8555314 LU dan 106.8561884 BT."
+                    }
+                }
+            }
+        ]
+    },
+    {
+        "name": "Tanggapan Kejadian Terkini",
+        "method": "GET",
+        "url": "{{url}}/api/v1/home/gerakan-tanah/latest",
+        "parameters": [],
+        "example_request_body": null,
+        "example_response_body": [
+            {
+                "data": {
+                    "laporan": {
+                        "peta": null,
+                        "pelapor": "Agus Budianto, Ir.",
+                        "judul": "Laporan Tanggapan Gerakan Tanah di Air Putih, Samarinda Ulu, Kota Samarinda, Kalimantan Timur",
+                        "updated_at": "Diperbarui pada tanggal 04 August 2021 pukul 10:24:57 WIB",
+                        "tingkat_kerentanan": null,
+                        "deskripsi": "Gerakan tanah terjadi di Air Putih, Samarinda Ulu, Kota Samarinda, Kalimantan Timur pada Friday, 20 August 2021 pukul 16:30:00 WITA. Secara Geografis, lokasi kejadian gerakan tanah terletak pada posisi -0.47971 LU dan 117.11817 BT."
+                    },
+                    "tanggapan": {
+                        "tipe": null,
+                        "dampak": {
+                            "korban": 0,
+                            "luka": 0,
+                            "rumah_rusak": 0,
+                            "rumah_hancur": 0,
+                            "rumah_terancam": 0,
+                            "bangunan_rusak": 0,
+                            "bangunan_hancur": 0,
+                            "bangunan_terancam": 0,
+                            "lahan_rusak": 0,
+                            "jalan_rusak": 0
+                        },
+                        "kondisi": {
+                            "morfologi": null,
+                            "geologi": null,
+                            "keairan": null,
+                            "tata_guna_lahan": null,
+                            "kerentanan": null,
+                            "penyebab": null
+                        }
+                    },
+                    "rekomendasi": [
+                        null
+                    ],
+                    "share": {
+                        "url": "http://chamber.test/v1/gerakan-tanah/tanggapan/CRS20210804102457?signature=c7bca3af3385669e58c1c1224e7ff0e67bb8b8c0c281f58a36474395ae965574",
+                        "description": "Gerakan tanah terjadi di Air Putih, Samarinda Ulu, Kota Samarinda, Kalimantan Timur pada Friday, 20 August 2021 pukul 16:30:00 WITA. Secara Geografis, lokasi kejadian gerakan tanah terletak pada posisi -0.47971 LU dan 117.11817 BT."
+                    }
+                }
+            }
+        ]
+    },
+    {
+        "name": "Cari Tanggapan Kejadian",
+        "method": "GET",
+        "url": "{{url}}/api/v1/home/gerakan-tanah/filter",
+        "parameters": [],
+        "example_request_body": [
+            {
+                "start_date": "2021-01-01",
+                "end_date": "2021-10-10"
+            }
+        ],
+        "example_response_body": [
+            {
+                "id": "CRS20210804102457",
+                "judul": "Laporan Tanggapan Gerakan Tanah di Air Putih, Samarinda Ulu, Kota Samarinda, Kalimantan Timur",
+                "pelapor": "Agus Budianto, Ir.",
+                "local_datetime": "2021-08-20 16:30:00",
+                "updated_at": "2021-08-04 10:24:57",
+                "time_zone": "WITA",
+                "iso_datetime": "2021-08-20T16:30:00+08:00",
+                "latitude": -0.47971,
+                "longitude": 117.11817,
+                "provinsi": "Kalimantan Timur",
+                "kabupaten_kota": "Kota Samarinda",
+                "kecamatan": "Samarinda Ulu",
+                "kelurahan": "Air Putih",
+                "deskripsi": "Gerakan tanah terjadi di Air Putih, Samarinda Ulu, Kota Samarinda, Kalimantan Timur pada Friday, 20 August 2021 pukul 16:30:00 WITA. Secara Geografis, lokasi kejadian gerakan tanah terletak pada posisi -0.47971 LU dan 117.11817 BT.",
+                "kerentanan": null,
+                "rekomendasi": null,
+                "url": "http://chamber.test/api/v1/home/gerakan-tanah/CRS20210804102457",
+                "share": {
+                    "url": "http://chamber.test/v1/gerakan-tanah/tanggapan/CRS20210804102457?signature=c7bca3af3385669e58c1c1224e7ff0e67bb8b8c0c281f58a36474395ae965574",
+                    "description": "Gerakan tanah terjadi di Air Putih, Samarinda Ulu, Kota Samarinda, Kalimantan Timur pada Friday, 20 August 2021 pukul 16:30:00 WITA. Secara Geografis, lokasi kejadian gerakan tanah terletak pada posisi -0.47971 LU dan 117.11817 BT."
+                }
+            }
+        ]
+    },
+    {
+        "name": "Daftar Stasiun LEWS",
+        "method": "GET",
+        "url": "{{url}}/api/v1/magma-sigertan/lews",
+        "parameters": [],
+        "example_request_body": null,
+        "example_response_body": []
+    },
+    {
+        "name": "Daftar Stasiun LEWS Copy",
+        "method": "GET",
+        "url": "{{url}}/api/v1/magma-sigertan/lews/TLR0301022",
+        "parameters": [],
+        "example_request_body": null,
+        "example_response_body": []
+    },
+    {
+        "name": "Daftar Kajian Gempa Bumi",
+        "method": "GET",
+        "url": "{{url}}/api/v1/home/gempa-bumi",
+        "parameters": [],
+        "example_request_body": null,
+        "example_response_body": [
+            {
+                "id": 2215,
+                "judul": "ANALISIS GEOLOGI KEJADIAN GEMPA BUMI DI KABUPATEN TOJO UNA-UNA",
+                "deskripsi": "Berdasarkan informasi dari BMKG gempa bumi terjadi pada hari Senin, tanggal 26 Juli 2021, pukul 19:09:07 WIB. Lokasi pusat gempa bumi terletak di laut pada koordinat 0,73°LS dan 121,92°BT, dengan magnitudo (M6,5) pada kedalaman 10 km, berjarak sekitar 41,2 km timur laut kota Ampana (Ibukota Kabupaten Tojo Una-una, Provinsi Sulawesi Tengah).  Menurut informasi dari The United States Geological Survey (USGS), Amerika Serikat, lokasi pusat gempa bumi terletak pada koordinat 121,931° BT dan 0,748° LS, dengan magnitudo (M6,2) pada kedalaman 10,7 km. Berdasarkan data GeoForschungsZentrum (GFZ) lokasi pusat gempa bumi berada pada koordinat 122,04° BT dan 0,71° LS, dengan magnitudo (M6,1) pada kedalaman 10 km. Sebelumnya pada hari yang sama pukul 10:52:03 WIB telah terjadi gempa bumi yang berjarak sekitar 5,5 km sebelah barat kejadian gempa bumi pukul 19:09:07 WIB, dengan Magnitudo (M5,9) pada kedalaman 10 km. Kejadian gempa bumi pada pukul 19:09:07 WIB diperkirakan merupakan gempa bumi awal (foreshock) dan kejadian pukul 19:09:07 WIB diperkirakan sebagai gempa bumi utama (mainshock).",
+                "rekomendasi": "(1) Masyarakat diimbau untuk tetap tenang, mengikuti arahan serta informasi dari petugas BPBD setempat, dan tetap waspada dengan kejadian gempa bumi susulan yang kekuatannya semakin mengecil. Jangan terpancing oleh isu yang tidak bertanggung jawab mengenai gempa bumi dan tsunami.\r\n(2) Kejadian gempa bumi ini diperkirakan berpotensi mengakibatkan kerusakan bangunan. Bagi penduduk yang rumahnya mengalami kerusakan agar mengungsi ke tempat aman.\r\n(3) Bangunan yang terletak pada KRB menengah dan tinggi harus dibangun dengan konstruksi bangunan tahan guncangan gempa bumi guna menghindari dari risiko kerusakan. Selain itu juga harus dilengkapi dengan jalur dan tempat evakuasi.\r\n(4) Kejadian gempa bumi ini diperkirakan berpotensi mengakibatkan terjadinya bahaya ikutan (collateral hazard) berupa retakan tanah, penurunan tanah, gerakan tanah dan likuefaksi tipe non aliran. Oleh karena itu penduduk agar waspada terhadap kemungkinan terjadinya fenomena tersebut.\r\n(5) Penduduk agar waspada apabila terjadi retakan tanah pada bagian atas bukit yang berbentuk melingkar ke arah lembah, karena dapat memicu terjadinya gerakan tanah yang dipicu oleh guncangan gempa bumi kuat dan curah hujan tinggi.",
+                "local_datetime": "2021-07-26 19:09:07",
+                "time_zone": "WIB",
+                "magnitude": 6.5,
+                "kedalaman": 10,
+                "latitude": -0.73,
+                "longitude": 121.92,
+                "lokasi": "41,2 km timur laut Kabupaten Tojo Una-una",
+                "kota_terdekat": "Ampana, Sulawesi Tengah",
+                "intensitas": "V-VI",
+                "berpotensi_tsunami": true,
+                "url": "http://chamber.test/api/v1/home/gempa-bumi/2215",
+                "share": {
+                    "url": "http://chamber.test/v1/gempa-bumi-dan-tsunami/kajian/2215?signature=af9572dbfe2307e798b7d3cbe4020982fba7322de76d329186621d5da7ed7c34",
+                    "description": "Analisis Geologi Kejadian Gempa Bumi Di Kabupaten Tojo Una-Una"
+                }
+            }
+        ]
+    },
+    {
+        "name": "Gempa by ID",
+        "method": "GET",
+        "url": "http://chamber.test/api/v1/home/gempa-bumi/{id}",
+        "parameters": [],
+        "example_request_body": null,
+        "example_response_body": [
+            {
+                "data": {
+                    "id": 2215,
+                    "judul": "ANALISIS GEOLOGI KEJADIAN GEMPA BUMI DI KABUPATEN TOJO UNA-UNA",
+                    "deskripsi": "Berdasarkan informasi dari BMKG gempa bumi terjadi pada hari Senin, tanggal 26 Juli 2021, pukul 19:09:07 WIB. Lokasi pusat gempa bumi terletak di laut pada koordinat 0,73°LS dan 121,92°BT, dengan magnitudo (M6,5) pada kedalaman 10 km, berjarak sekitar 41,2 km timur laut kota Ampana (Ibukota Kabupaten Tojo Una-una, Provinsi Sulawesi Tengah).  Menurut informasi dari The United States Geological Survey (USGS), Amerika Serikat, lokasi pusat gempa bumi terletak pada koordinat 121,931° BT dan 0,748° LS, dengan magnitudo (M6,2) pada kedalaman 10,7 km. Berdasarkan data GeoForschungsZentrum (GFZ) lokasi pusat gempa bumi berada pada koordinat 122,04° BT dan 0,71° LS, dengan magnitudo (M6,1) pada kedalaman 10 km. Sebelumnya pada hari yang sama pukul 10:52:03 WIB telah terjadi gempa bumi yang berjarak sekitar 5,5 km sebelah barat kejadian gempa bumi pukul 19:09:07 WIB, dengan Magnitudo (M5,9) pada kedalaman 10 km. Kejadian gempa bumi pada pukul 19:09:07 WIB diperkirakan merupakan gempa bumi awal (foreshock) dan kejadian pukul 19:09:07 WIB diperkirakan sebagai gempa bumi utama (mainshock).",
+                    "rekomendasi": "(1) Masyarakat diimbau untuk tetap tenang, mengikuti arahan serta informasi dari petugas BPBD setempat, dan tetap waspada dengan kejadian gempa bumi susulan yang kekuatannya semakin mengecil. Jangan terpancing oleh isu yang tidak bertanggung jawab mengenai gempa bumi dan tsunami.\r\n(2) Kejadian gempa bumi ini diperkirakan berpotensi mengakibatkan kerusakan bangunan. Bagi penduduk yang rumahnya mengalami kerusakan agar mengungsi ke tempat aman.\r\n(3) Bangunan yang terletak pada KRB menengah dan tinggi harus dibangun dengan konstruksi bangunan tahan guncangan gempa bumi guna menghindari dari risiko kerusakan. Selain itu juga harus dilengkapi dengan jalur dan tempat evakuasi.\r\n(4) Kejadian gempa bumi ini diperkirakan berpotensi mengakibatkan terjadinya bahaya ikutan (collateral hazard) berupa retakan tanah, penurunan tanah, gerakan tanah dan likuefaksi tipe non aliran. Oleh karena itu penduduk agar waspada terhadap kemungkinan terjadinya fenomena tersebut.\r\n(5) Penduduk agar waspada apabila terjadi retakan tanah pada bagian atas bukit yang berbentuk melingkar ke arah lembah, karena dapat memicu terjadinya gerakan tanah yang dipicu oleh guncangan gempa bumi kuat dan curah hujan tinggi.",
+                    "local_datetime": "2021-07-26 19:09:07",
+                    "time_zone": "WIB",
+                    "magnitude": 6.5,
+                    "kedalaman": 10,
+                    "latitude": -0.73,
+                    "longitude": 121.92,
+                    "lokasi": "41,2 km timur laut Kabupaten Tojo Una-una",
+                    "kota_terdekat": "Ampana, Sulawesi Tengah",
+                    "intensitas": "V-VI",
+                    "berpotensi_tsunami": true,
+                    "url": "http://chamber.test/api/v1/home/gempa-bumi/2215",
+                    "share": {
+                        "url": "http://chamber.test/v1/gempa-bumi-dan-tsunami/kajian/2215?signature=af9572dbfe2307e798b7d3cbe4020982fba7322de76d329186621d5da7ed7c34",
+                        "description": "Analisis Geologi Kejadian Gempa Bumi Di Kabupaten Tojo Una-Una"
+                    }
+                }
+            }
+        ]
+    },
+    {
+        "name": "Kejadian Gempa Bumi Terkini",
+        "method": "GET",
+        "url": "{{url}}/api/v1/home/gempa-bumi/latest",
+        "parameters": [],
+        "example_request_body": null,
+        "example_response_body": [
+            {
+                "data": {
+                    "id": 2215,
+                    "judul": "ANALISIS GEOLOGI KEJADIAN GEMPA BUMI DI KABUPATEN TOJO UNA-UNA",
+                    "deskripsi": "Berdasarkan informasi dari BMKG gempa bumi terjadi pada hari Senin, tanggal 26 Juli 2021, pukul 19:09:07 WIB. Lokasi pusat gempa bumi terletak di laut pada koordinat 0,73°LS dan 121,92°BT, dengan magnitudo (M6,5) pada kedalaman 10 km, berjarak sekitar 41,2 km timur laut kota Ampana (Ibukota Kabupaten Tojo Una-una, Provinsi Sulawesi Tengah).  Menurut informasi dari The United States Geological Survey (USGS), Amerika Serikat, lokasi pusat gempa bumi terletak pada koordinat 121,931° BT dan 0,748° LS, dengan magnitudo (M6,2) pada kedalaman 10,7 km. Berdasarkan data GeoForschungsZentrum (GFZ) lokasi pusat gempa bumi berada pada koordinat 122,04° BT dan 0,71° LS, dengan magnitudo (M6,1) pada kedalaman 10 km. Sebelumnya pada hari yang sama pukul 10:52:03 WIB telah terjadi gempa bumi yang berjarak sekitar 5,5 km sebelah barat kejadian gempa bumi pukul 19:09:07 WIB, dengan Magnitudo (M5,9) pada kedalaman 10 km. Kejadian gempa bumi pada pukul 19:09:07 WIB diperkirakan merupakan gempa bumi awal (foreshock) dan kejadian pukul 19:09:07 WIB diperkirakan sebagai gempa bumi utama (mainshock).",
+                    "rekomendasi": "(1) Masyarakat diimbau untuk tetap tenang, mengikuti arahan serta informasi dari petugas BPBD setempat, dan tetap waspada dengan kejadian gempa bumi susulan yang kekuatannya semakin mengecil. Jangan terpancing oleh isu yang tidak bertanggung jawab mengenai gempa bumi dan tsunami.\r\n(2) Kejadian gempa bumi ini diperkirakan berpotensi mengakibatkan kerusakan bangunan. Bagi penduduk yang rumahnya mengalami kerusakan agar mengungsi ke tempat aman.\r\n(3) Bangunan yang terletak pada KRB menengah dan tinggi harus dibangun dengan konstruksi bangunan tahan guncangan gempa bumi guna menghindari dari risiko kerusakan. Selain itu juga harus dilengkapi dengan jalur dan tempat evakuasi.\r\n(4) Kejadian gempa bumi ini diperkirakan berpotensi mengakibatkan terjadinya bahaya ikutan (collateral hazard) berupa retakan tanah, penurunan tanah, gerakan tanah dan likuefaksi tipe non aliran. Oleh karena itu penduduk agar waspada terhadap kemungkinan terjadinya fenomena tersebut.\r\n(5) Penduduk agar waspada apabila terjadi retakan tanah pada bagian atas bukit yang berbentuk melingkar ke arah lembah, karena dapat memicu terjadinya gerakan tanah yang dipicu oleh guncangan gempa bumi kuat dan curah hujan tinggi.",
+                    "local_datetime": "2021-07-26 19:09:07",
+                    "time_zone": "WIB",
+                    "magnitude": 6.5,
+                    "kedalaman": 10,
+                    "latitude": -0.73,
+                    "longitude": 121.92,
+                    "lokasi": "41,2 km timur laut Kabupaten Tojo Una-una",
+                    "kota_terdekat": "Ampana, Sulawesi Tengah",
+                    "intensitas": "V-VI",
+                    "berpotensi_tsunami": true,
+                    "url": "http://chamber.test/api/v1/home/gempa-bumi/2215",
+                    "share": {
+                        "url": "http://chamber.test/v1/gempa-bumi-dan-tsunami/kajian/2215?signature=af9572dbfe2307e798b7d3cbe4020982fba7322de76d329186621d5da7ed7c34",
+                        "description": "Analisis Geologi Kejadian Gempa Bumi Di Kabupaten Tojo Una-Una"
+                    }
+                }
+            }
+        ]
+    },
+    {
+        "name": "Cari Kejadian Gempa Bumi",
+        "method": "GET",
+        "url": "{{url}}/api/v1/home/gempa-bumi/filter",
+        "parameters": [],
+        "example_request_body": [
+            {
+                "start_date": "2021-01-01",
+                "end_date": "2021-10-10"
+            }
+        ],
+        "example_response_body": [
+            {
+                "id": 2215,
+                "judul": "ANALISIS GEOLOGI KEJADIAN GEMPA BUMI DI KABUPATEN TOJO UNA-UNA",
+                "deskripsi": "Berdasarkan informasi dari BMKG gempa bumi terjadi pada hari Senin, tanggal 26 Juli 2021, pukul 19:09:07 WIB. Lokasi pusat gempa bumi terletak di laut pada koordinat 0,73°LS dan 121,92°BT, dengan magnitudo (M6,5) pada kedalaman 10 km, berjarak sekitar 41,2 km timur laut kota Ampana (Ibukota Kabupaten Tojo Una-una, Provinsi Sulawesi Tengah).  Menurut informasi dari The United States Geological Survey (USGS), Amerika Serikat, lokasi pusat gempa bumi terletak pada koordinat 121,931° BT dan 0,748° LS, dengan magnitudo (M6,2) pada kedalaman 10,7 km. Berdasarkan data GeoForschungsZentrum (GFZ) lokasi pusat gempa bumi berada pada koordinat 122,04° BT dan 0,71° LS, dengan magnitudo (M6,1) pada kedalaman 10 km. Sebelumnya pada hari yang sama pukul 10:52:03 WIB telah terjadi gempa bumi yang berjarak sekitar 5,5 km sebelah barat kejadian gempa bumi pukul 19:09:07 WIB, dengan Magnitudo (M5,9) pada kedalaman 10 km. Kejadian gempa bumi pada pukul 19:09:07 WIB diperkirakan merupakan gempa bumi awal (foreshock) dan kejadian pukul 19:09:07 WIB diperkirakan sebagai gempa bumi utama (mainshock).",
+                "rekomendasi": "(1) Masyarakat diimbau untuk tetap tenang, mengikuti arahan serta informasi dari petugas BPBD setempat, dan tetap waspada dengan kejadian gempa bumi susulan yang kekuatannya semakin mengecil. Jangan terpancing oleh isu yang tidak bertanggung jawab mengenai gempa bumi dan tsunami.\r\n(2) Kejadian gempa bumi ini diperkirakan berpotensi mengakibatkan kerusakan bangunan. Bagi penduduk yang rumahnya mengalami kerusakan agar mengungsi ke tempat aman.\r\n(3) Bangunan yang terletak pada KRB menengah dan tinggi harus dibangun dengan konstruksi bangunan tahan guncangan gempa bumi guna menghindari dari risiko kerusakan. Selain itu juga harus dilengkapi dengan jalur dan tempat evakuasi.\r\n(4) Kejadian gempa bumi ini diperkirakan berpotensi mengakibatkan terjadinya bahaya ikutan (collateral hazard) berupa retakan tanah, penurunan tanah, gerakan tanah dan likuefaksi tipe non aliran. Oleh karena itu penduduk agar waspada terhadap kemungkinan terjadinya fenomena tersebut.\r\n(5) Penduduk agar waspada apabila terjadi retakan tanah pada bagian atas bukit yang berbentuk melingkar ke arah lembah, karena dapat memicu terjadinya gerakan tanah yang dipicu oleh guncangan gempa bumi kuat dan curah hujan tinggi.",
+                "local_datetime": "2021-07-26 19:09:07",
+                "time_zone": "WIB",
+                "magnitude": 6.5,
+                "kedalaman": 10,
+                "latitude": -0.73,
+                "longitude": 121.92,
+                "lokasi": "41,2 km timur laut Kabupaten Tojo Una-una",
+                "kota_terdekat": "Ampana, Sulawesi Tengah",
+                "intensitas": "V-VI",
+                "berpotensi_tsunami": true,
+                "url": "http://chamber.test/api/v1/home/gempa-bumi/2215",
+                "share": {
+                    "url": "http://chamber.test/v1/gempa-bumi-dan-tsunami/kajian/2215?signature=af9572dbfe2307e798b7d3cbe4020982fba7322de76d329186621d5da7ed7c34",
+                    "description": "Analisis Geologi Kejadian Gempa Bumi Di Kabupaten Tojo Una-Una"
+                }
+            }
+        ]
+    },
+    {
+        "name": "Highlights",
+        "method": "GET",
+        "url": "{{url}}/api/v1/home/esdm",
+        "parameters": [],
+        "example_request_body": null,
+        "example_response_body": [
+            {
+                "url": "https://magma.esdm.go.id/v1/gunung-api/laporan",
+                "latest": [
+                    {
+                        "level": 4,
+                        "status": "Awas",
+                        "jumlah": 0,
+                        "daftar_gunungapi": []
+                    },
+                    {
+                        "level": 3,
+                        "status": "Siaga",
+                        "jumlah": 4,
+                        "daftar_gunungapi": [
+                            "Ile Werung",
+                            "Ili Lewotolok",
+                            "Merapi",
+                            "Sinabung"
+                        ]
+                    },
+                    {
+                        "level": 2,
+                        "status": "Waspada",
+                        "jumlah": 16,
+                        "daftar_gunungapi": [
+                            "Anak Krakatau",
+                            "Banda Api",
+                            "Bromo",
+                            "Dukono",
+                            "Gamalama",
+                            "Gamkonora",
+                            "Ibu",
+                            "Karangetang",
+                            "Kerinci",
+                            "Lokon",
+                            "Marapi",
+                            "Rinjani",
+                            "Sangeangapi",
+                            "Semeru",
+                            "Sirung",
+                            "Soputan"
+                        ]
+                    },
+                    {
+                        "level": 1,
+                        "status": "Normal",
+                        "jumlah": 48,
+                        "daftar_gunungapi": [
+                            "Agung",
+                            "Ambang",
+                            "Anak Ranakah",
+                            "Arjuno Welirang",
+                            "Awu",
+                            "Batur",
+                            "Batutara",
+                            "Bur Ni Telong",
+                            "Ciremai",
+                            "Colo",
+                            "Dempo",
+                            "Dieng",
+                            "Ebulobo",
+                            "Egon",
+                            "Galunggung",
+                            "Gede",
+                            "Guntur",
+                            "Ijen",
+                            "Ili Boleng",
+                            "Inielika",
+                            "Inierie",
+                            "Iya",
+                            "Kaba",
+                            "Kelimutu",
+                            "Kelud",
+                            "Kie Besi",
+                            "Lamongan",
+                            "Lereboleng",
+                            "Lewotobi Laki-laki",
+                            "Lewotobi Perempuan",
+                            "Mahawu",
+                            "Papandayan",
+                            "Peut Sague",
+                            "Raung",
+                            "Rokatenda",
+                            "Ruang",
+                            "Salak",
+                            "Seulawah Agam",
+                            "Slamet",
+                            "Sorikmarapi",
+                            "Sumbing",
+                            "Sundoro",
+                            "Talang",
+                            "Tambora",
+                            "Tandikat",
+                            "Tangkoko",
+                            "Tangkuban Parahu",
+                            "Wurlali"
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+]

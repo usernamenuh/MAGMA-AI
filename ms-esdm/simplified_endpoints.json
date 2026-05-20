@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Get Latest VONA Report",
+    "url": "{{url}}/api/v1/vona/latest"
+  },
+  {
+    "name": "List All Volcanoes",
+    "url": "{{url}}/api/v1/home/gunung-api"
+  },
+  {
+    "name": "Get Latest Eruption Information",
+    "url": "{{url}}/api/v1/home/gunung-api/informasi-letusan/latest"
+  },
+  {
+    "name": "Get Volcano Status",
+    "url": "{{url}}/api/v1/home/gunung-api/status"
+  },
+  {
+    "name": "List Recent Earthquakes",
+    "url": "{{url}}/api/v1/home/gempa-bumi/recent"
+  },
+  {
+    "name": "List Land Movements",
+    "url": "{{url}}/api/v1/home/gerakan-tanah"
+  }
+]

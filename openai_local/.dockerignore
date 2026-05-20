@@ -1,0 +1,21 @@
+# Ignore Git directory
+.git
+
+# Ignore Python cache
+__pycache__/
+*.pyc
+
+# --- CRITICAL ---
+# Ignore the models directory during the main build context copy.
+models/
+
+# Ignore local virtual environment
+venv/
+.venv/
+
+# Ignore license tools
+license_tools/
+
+# Ignore local keys and licenses
+data_key.key
+license.lic

@@ -1,0 +1,63 @@
+text,label
+halo,GREETING
+hai,GREETING
+hi,GREETING
+pagi,GREETING
+selamat pagi,GREETING
+selamat siang,GREETING
+selamat malam,GREETING
+halo selamat malam,GREETING
+halo selamat siang,GREETING
+halo selamat sore,GREETING
+halo selamat pagi,GREETING
+hai selamat malam,GREETING
+hai selamat siang,GREETING
+hai selamat sore,GREETING
+hai selamat pagi,GREETING
+assalamualaikum,GREETING
+halo selamat pagi,GREETING
+hai selamat siang,GREETING
+halo kak,GREETING
+hai admin,GREETING
+halo saya mau tanya sedikit sebelum lanjut,GREETING
+hai saya baru pertama kali pakai sistem ini,GREETING
+selamat pagi saya ingin bertanya mengenai informasi yang tersedia,GREETING
+halo saya butuh bantuan terkait informasi di sistem ini,GREETING
+permisi saya ingin bertanya sesuatu,GREETING
+siapa kamu,IDENTITY
+kamu siapa,IDENTITY
+siapa anda,IDENTITY
+siapa nama kamu,IDENTITY
+nama kamu siapa,IDENTITY
+boleh tahu kamu siapa,IDENTITY
+perkenalkan dirimu,IDENTITY
+jelaskan siapa kamu,IDENTITY
+kamu itu apa,IDENTITY
+sebelum lanjut saya ingin tahu kamu ini siapa,IDENTITY
+ini sistem apa dan kamu berperan sebagai apa,IDENTITY
+boleh jelaskan kamu ini asisten apa,IDENTITY
+kamu ini chatbot atau sistem informasi,IDENTITY
+saya ingin tahu siapa yang menjawab pertanyaan saya,IDENTITY
+kamu bisa apa,CAPABILITY
+apa yang bisa kamu lakukan,CAPABILITY
+apa saja yang bisa kamu lakukan,CAPABILITY
+fungsi kamu apa,CAPABILITY
+kegunaan kamu apa,CAPABILITY
+bisa bantu apa,CAPABILITY
+bisa bantu saya apa,CAPABILITY
+fitur apa yang kamu miliki,CAPABILITY
+fitur apa saja yang ada,CAPABILITY
+fitur yang ada,CAPABILITY
+bisa jelaskan kemampuanmu,CAPABILITY
+apa peran kamu,CAPABILITY
+kamu membantu apa saja,CAPABILITY
+apa saja layanan yang tersedia,CAPABILITY
+layanan apa yang tersedia,CAPABILITY
+apa saja layanan kamu,CAPABILITY
+layanan yang bisa diberikan,CAPABILITY
+fasilitas apa yang ada,CAPABILITY
+sebelum saya bertanya lebih jauh saya ingin tahu kamu bisa membantu apa saja,CAPABILITY
+informasi apa saja yang bisa kamu berikan melalui sistem ini,CAPABILITY
+fitur dan layanan apa yang tersedia di asisten ini,CAPABILITY
+saya ingin tahu batasan dan kemampuan sistem ini,CAPABILITY
+apakah kamu bisa membantu menjawab pertanyaan terkait data dan dokumen,CAPABILITY

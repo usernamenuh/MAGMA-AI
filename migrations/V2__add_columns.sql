@@ -1,0 +1,5 @@
+ALTER TABLE chat_histories
+ADD COLUMN IF NOT EXISTS "references" JSON[] NULL;
+
+ALTER TABLE chat_histories
+ADD COLUMN IF NOT EXISTS "type" VARCHAR(50) NULL;

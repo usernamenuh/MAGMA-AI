@@ -1,0 +1,10 @@
+export const LOGIN = '/login';
+export const HISTORY = '/history';
+export const SCRAPPING = '/scrapping';
+export const API_KEYS = '/api-keys';
+export const MAIN = '/';
+export const CHAT = '/chat';
+export const REGISTER = '/register';
+export const FORGOT_PASSWORD = '/forgot-password';
+export const KNOWLEDGE_BASE='/knowledge-base';
+export const API_DOCUMENTATION  = '/api-documentation';

@@ -1,0 +1,30 @@
+version: '3.9'
+
+services:
+  backend:
+    build:
+      context: ./
+    container_name: ms-esdm-backend
+    env_file:
+      - ./.env
+    expose:
+      - "8000"
+    volumes:
+      - .:/app
+    dns:
+      - 8.8.8.8          # Google DNS (primary)
+      - 1.1.1.1          # Cloudflare DNS (secondary)
+      - 172.31.0.2
+    dns_search:
+      - .
+    extra_hosts:
+      - "magma.esdm.go.id:103.87.161.61"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; socket.gethostbyname('magma.esdm.go.id'); print('DNS OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  esdm-data:
