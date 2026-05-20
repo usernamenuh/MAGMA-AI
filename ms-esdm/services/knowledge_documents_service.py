@@ -19,41 +19,45 @@ class KnowledgeDocumentsService:
             class_=AsyncSession,
         )
 
+    async def _set_status(self, document_id: int, status: DocumentStatus, total_pages: int = None):
+        async with self.SessionLocal() as db:
+            doc = await db.get(Document, document_id)
+            doc.processing_status = status
+            if total_pages is not None:
+                doc.total_pages = total_pages
+            await db.commit()
+
     async def upload_document(self, document_id: int, file_path: str):
         print(f"Uploading {file_path} with id {document_id}")
         file_ext = os.path.splitext(file_path)[1].lower()
-        async with self.SessionLocal() as db:
-            doc = await db.get(Document, document_id)
-            doc.processing_status = DocumentStatus.PROCESSING
-            await db.commit()
-        if file_ext == ".pdf":
-            chunks = extract_pdf_chunks(file_path)
-        elif file_ext == ".docx":
-            chunks = extract_docx_chunks(file_path)
-        elif file_ext == ".doc":
-            try:
-                docx_path = await convert_doc_to_docx(file_path)
-                chunks = extract_docx_chunks(docx_path)
-            except Exception:
-                text = extract_doc_text_fallback(file_path)
-                chunks = [(text[i:i + 500], i // 500 + 1) for i in range(0, len(text), 500)]
-        else:
-            raise ValueError("Unsupported file type")
+        try:
+            await self._set_status(document_id, DocumentStatus.PROCESSING)
 
+            if file_ext == ".pdf":
+                chunks = extract_pdf_chunks(file_path)
+            elif file_ext == ".docx":
+                chunks = extract_docx_chunks(file_path)
+            elif file_ext == ".doc":
+                try:
+                    docx_path = await convert_doc_to_docx(file_path)
+                    chunks = extract_docx_chunks(docx_path)
+                except Exception:
+                    text = extract_doc_text_fallback(file_path)
+                    chunks = [(text[i:i + 500], i // 500 + 1) for i in range(0, len(text), 500)]
+            else:
+                raise ValueError("Unsupported file type")
 
-        # Store chunks
-        for idx, (text, page_num) in enumerate(chunks):
-            async with self.SessionLocal() as db:
-                store = VectorStore(db)
-                print(f"Trying chunk {idx} of {len(chunks)}")
-                await store.store_chunk(text, document_id, page_num, idx)
+            for idx, (text, page_num) in enumerate(chunks):
+                async with self.SessionLocal() as db:
+                    store = VectorStore(db)
+                    print(f"Trying chunk {idx} of {len(chunks)}")
+                    await store.store_chunk(text, document_id, page_num, idx)
 
-        # Update status
-        async with self.SessionLocal() as db:
-            doc = await db.get(Document, document_id)
-            doc.processing_status = DocumentStatus.COMPLETED
-            doc.total_pages = len(set(p for _, p in chunks))
-            await db.commit()
+            await self._set_status(document_id, DocumentStatus.COMPLETED, len(set(p for _, p in chunks)))
+
+        except Exception as e:
+            print(f"[upload_document] failed for doc {document_id}: {e}")
+            await self._set_status(document_id, DocumentStatus.FAILED)
 
     async def find_vector(self, query: str, top_k: int = 10):
         async with self.SessionLocal() as db:
