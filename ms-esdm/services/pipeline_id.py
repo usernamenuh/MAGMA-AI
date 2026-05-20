@@ -8,7 +8,7 @@ from utils.extraction import detect_volcano_name
 from utils.geo_location import extract_indonesia_location, get_geolocation_indonesia
 from utils.pipeline_helpers import resolve_api_url, call_api, semantic_recommend_api_improved, safe_json_loads, \
     recommend_api_fallback, model_chat, load_examples, crosscheck_api, find_nearest_volcano, check_if_nearest_question, \
-    get_mount_code, fetch_api_simple, filter_history, _detect_volcano_name, check_if_mount_level, BASE_URL, check_around, get_closest_gerakan_tanah_data, is_empty_response
+    get_mount_code, fetch_api_simple, filter_history, _detect_volcano_name, check_if_mount_level, BASE_URL, check_around, get_closest_gerakan_tanah_data, is_empty_response, load_volcano_cache
 from concurrent.futures import ThreadPoolExecutor
 from deep_translator import GoogleTranslator
 from utils.classifier import detect_conversational_intent

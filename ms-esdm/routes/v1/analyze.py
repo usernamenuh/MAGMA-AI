@@ -78,7 +78,7 @@ async def analyze(req: AnalyzeRequest,
         req.location_name
     )
 
-    if result["status"]=="error":
+    if result is None or result["status"]=="error":
         log_entry = {
             "status": "error",
             "date": datetime.utcnow().isoformat(),
