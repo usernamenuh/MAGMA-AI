@@ -16,9 +16,12 @@ jobs:
   changes:
     runs-on: asus
     outputs:
-      ms-esdm: ${{ steps.filter.outputs.ms-esdm }}
-      fe-esdm: ${{ steps.filter.outputs.fe-esdm }}
-      openai-local: ${{ steps.filter.outputs.openai-local }}
+      api: ${{ steps.filter.outputs.api }}
+      api-code: ${{ steps.filter.outputs.api-code }}
+      web: ${{ steps.filter.outputs.web }}
+      web-code: ${{ steps.filter.outputs.web-code }}
+      llm: ${{ steps.filter.outputs.llm }}
+      llm-code: ${{ steps.filter.outputs.llm-code }}
     steps:
       - uses: actions/checkout@v4
 
@@ -27,17 +30,26 @@ jobs:
         with:
           base: ${{ github.event.before }}
           filters: |
-            ms-esdm:
+            api:
               - 'ms-esdm/**'
-            fe-esdm:
+              - 'deploy/magma-ai-api.container'
+            api-code:
+              - 'ms-esdm/**'
+            web:
               - 'fe-esdm/**'
-            openai-local:
+              - 'deploy/magma-ai-web.container'
+            web-code:
+              - 'fe-esdm/**'
+            llm:
+              - 'openai_local/**'
+              - 'deploy/magma-ai-llm.container'
+            llm-code:
               - 'openai_local/**'
 
   # ── Backend ────────────────────────────────────────────
-  deploy-ms-esdm:
+  deploy-api:
     needs: changes
-    if: needs.changes.outputs.ms-esdm == 'true'
+    if: needs.changes.outputs.api == 'true'
     runs-on: asus
     steps:
       - uses: actions/checkout@v4
@@ -48,10 +60,12 @@ jobs:
           echo "${{ secrets.MS_ESDM_ENV }}" > /opt/secrets/ms-esdm/.env
 
       - name: Build image
+        if: needs.changes.outputs.api-code == 'true'
         run: |
           podman build -t ${{ env.REGISTRY }}/magma-ai-api:${{ github.sha }} ms-esdm/
 
       - name: Push image
+        if: needs.changes.outputs.api-code == 'true'
         run: |
           podman push ${{ env.REGISTRY }}/magma-ai-api:${{ github.sha }}
 
@@ -66,27 +80,34 @@ jobs:
           cp deploy/magma-ai-api.container /etc/containers/systemd/
           systemctl daemon-reload
 
-      - name: Deploy
+      - name: Deploy new image
+        if: needs.changes.outputs.api-code == 'true'
         run: |
           SERVICE=magma-ai-api IMAGE=${{ env.REGISTRY }}/magma-ai-api:${{ github.sha }} make rebuild
 
+      - name: Restart service (quadlet-only change)
+        if: needs.changes.outputs.api-code == 'false'
+        run: systemctl restart magma-ai-api
+
   # ── Frontend ────────────────────────────────────────────
-  deploy-fe-esdm:
+  deploy-web:
     needs: changes
-    if: needs.changes.outputs.fe-esdm == 'true'
+    if: needs.changes.outputs.web == 'true'
     runs-on: asus
     steps:
       - uses: actions/checkout@v4
 
-      # VITE_* vars are baked at build time — write .env into build context
       - name: Write build env
+        if: needs.changes.outputs.web-code == 'true'
         run: echo "${{ secrets.FE_ESDM_ENV }}" > fe-esdm/.env
 
       - name: Build image
+        if: needs.changes.outputs.web-code == 'true'
         run: |
           podman build -t ${{ env.REGISTRY }}/magma-ai-web:${{ github.sha }} fe-esdm/
 
       - name: Push image
+        if: needs.changes.outputs.web-code == 'true'
         run: |
           podman push ${{ env.REGISTRY }}/magma-ai-web:${{ github.sha }}
 
@@ -96,14 +117,19 @@ jobs:
           cp deploy/magma-ai-web.container /etc/containers/systemd/
           systemctl daemon-reload
 
-      - name: Deploy
+      - name: Deploy new image
+        if: needs.changes.outputs.web-code == 'true'
         run: |
           SERVICE=magma-ai-web IMAGE=${{ env.REGISTRY }}/magma-ai-web:${{ github.sha }} make rebuild
 
+      - name: Restart service (quadlet-only change)
+        if: needs.changes.outputs.web-code == 'false'
+        run: systemctl restart magma-ai-web
+
   # ── LLM Server (expensive build — skips if image already exists) ──
-  deploy-openai-local:
+  deploy-llm:
     needs: changes
-    if: needs.changes.outputs.openai-local == 'true'
+    if: needs.changes.outputs.llm == 'true'
     runs-on: asus
     steps:
       - uses: actions/checkout@v4
