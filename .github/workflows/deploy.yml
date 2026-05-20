@@ -8,6 +8,10 @@ on:
 env:
   REGISTRY: 172.16.2.228:5000
 
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: true
+
 jobs:
   changes:
     runs-on: asus
@@ -21,6 +25,7 @@ jobs:
       - uses: dorny/paths-filter@v3
         id: filter
         with:
+          base: ${{ github.event.before }}
           filters: |
             ms-esdm:
               - 'ms-esdm/**'
