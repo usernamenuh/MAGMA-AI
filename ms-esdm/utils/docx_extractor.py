@@ -52,6 +52,12 @@ def extract_docx_chunks(file_path: str, chunk_size: int = 500):
         if para.text.strip():
             full_text.append(para.text.strip())
 
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                if cell.text.strip():
+                    full_text.append(cell.text.strip())
+
     merged = " ".join(full_text)
 
     # Simple chunking
