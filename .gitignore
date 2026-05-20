@@ -62,7 +62,6 @@ qdrant_storage/
 *.joblib
 !ms-esdm/occ/magma_intent_model_2702/models/*.joblib
 !ms-esdm/occ/magma_intent_model_temp/models/*.joblib
-models/
 weights/
 
 # ── Logs ─────────────────────────────────────────────────
