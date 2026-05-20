@@ -11,7 +11,8 @@ Base = declarative_base()
 sync_engine = create_engine(
     settings.SYNC_DATABASE_URL,
     pool_pre_ping=True,
-    echo=False
+    echo=False,
+    connect_args={"options": "-csearch_path=magma_ai,public"}
 )
 
 SessionLocal = sessionmaker(
@@ -23,7 +24,8 @@ SessionLocal = sessionmaker(
 async_engine = create_async_engine(
     settings.DATABASE_URL,
     echo=False,
-    future=True
+    future=True,
+    connect_args={"server_settings": {"search_path": "magma_ai,public"}}
 )
 
 async_session = async_sessionmaker(

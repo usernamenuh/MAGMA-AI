@@ -1,57 +1,17 @@
 version: '3.9'
 
 services:
-  db:
-    image: pgvector/pgvector:pg15
-    container_name: esdm-postgres
-    environment:
-      POSTGRES_USER: esdm_user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: esdm_db
-    ports:
-      - "5432:5432"
-    volumes:
-      - esdm-data:/var/lib/postgresql/data
-      - ./ms-esdm/db-init:/docker-entrypoint-initdb.d
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U esdm_user -d esdm_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-      start_period: 10s
-  # flyway: removed — SQLAlchemy (Base.metadata.create_all) handles all table
-  # creation at backend startup. V2/V3 migrations are redundant and fail because
-  # the table doesn't exist yet when Flyway runs. Re-enable only if you switch
-  # to a Flyway-only schema management strategy.
-  # flyway:
-  #   image: flyway/flyway:latest
-  #   depends_on:
-  #     db:
-  #       condition: service_healthy
-  #   environment:
-  #     FLYWAY_URL: jdbc:postgresql://db:5432/esdm_db
-  #     FLYWAY_USER: esdm_user
-  #     FLYWAY_PASSWORD: password
-  #     FLYWAY_LOCATIONS: filesystem:/flyway/sql
-  #     FLYWAY_BASELINE_ON_MIGRATE: "true"
-  #   command: migrate
-  #   volumes:
-  #     - ./migrations:/flyway/sql
-
   backend:
     build:
       context: ./ms-esdm
     container_name: ms-esdm-backend
     env_file:
       - ./ms-esdm/.env
-    depends_on:
-      db:
-        condition: service_healthy
     expose:
       - "8000"
     dns:
-      - 8.8.8.8          # Google DNS (primary)
-      - 1.1.1.1          # Cloudflare DNS (secondary)
+      - 8.8.8.8
+      - 1.1.1.1
     dns_search:
       - .
     extra_hosts:
@@ -75,15 +35,13 @@ services:
     expose:
       - "8002"
     volumes:
-      - /home/gabriel-mac/models:/app/models
+      - /mnt/data/magma-ai/models:/app/models
     restart: unless-stopped
 
   frontend:
     build:
       context: ./fe-esdm
     container_name: fe-esdm-frontend
-    env_file:
-      - ./fe-esdm/.env
     depends_on:
       - backend
     expose:
@@ -100,6 +58,3 @@ services:
       - "80:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-
-volumes:
-  esdm-data:
