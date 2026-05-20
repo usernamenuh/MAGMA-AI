@@ -18,7 +18,7 @@ def auto_login():
     login_url = f"{BASE_URL.rstrip('/')}/api/login/stakeholder"
     params = {
         "app_id": APP_ID,
-        "secret_key": "$2y$10$KCibTVwiX53.RV/d7Rb4QeWS7ZAZigF.LqudN3HSFcfeep1xh6mzu"
+        "secret_key": SECRET_KEY,
     }
 
     try:
