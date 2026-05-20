@@ -1,0 +1,144 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - staging
+
+env:
+  REGISTRY: 172.16.2.228:5000
+
+jobs:
+  changes:
+    runs-on: asus
+    outputs:
+      ms-esdm: ${{ steps.filter.outputs.ms-esdm }}
+      fe-esdm: ${{ steps.filter.outputs.fe-esdm }}
+      openai-local: ${{ steps.filter.outputs.openai-local }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            ms-esdm:
+              - 'ms-esdm/**'
+            fe-esdm:
+              - 'fe-esdm/**'
+            openai-local:
+              - 'openai_local/**'
+
+  # ── Backend ────────────────────────────────────────────
+  deploy-ms-esdm:
+    needs: changes
+    if: needs.changes.outputs.ms-esdm == 'true'
+    runs-on: asus
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Write env file
+        run: |
+          mkdir -p /opt/secrets/ms-esdm
+          echo "${{ secrets.MS_ESDM_ENV }}" > /opt/secrets/ms-esdm/.env
+
+      - name: Build image
+        run: |
+          podman build -t ${{ env.REGISTRY }}/magma-ms-esdm:${{ github.sha }} ms-esdm/
+
+      - name: Push image
+        run: |
+          podman push ${{ env.REGISTRY }}/magma-ms-esdm:${{ github.sha }}
+
+      - name: Prepare host volumes
+        run: |
+          mkdir -p /mnt/data/magma-ai/blobs
+          chmod 755 /mnt/data/magma-ai/blobs
+
+      - name: Install Quadlet unit
+        run: |
+          mkdir -p /etc/containers/systemd
+          cp deploy/magma-ms-esdm.container /etc/containers/systemd/
+          systemctl daemon-reload
+
+      - name: Deploy
+        run: |
+          SERVICE=magma-ms-esdm IMAGE=${{ env.REGISTRY }}/magma-ms-esdm:${{ github.sha }} make rebuild
+
+  # ── Frontend ────────────────────────────────────────────
+  deploy-fe-esdm:
+    needs: changes
+    if: needs.changes.outputs.fe-esdm == 'true'
+    runs-on: asus
+    steps:
+      - uses: actions/checkout@v4
+
+      # VITE_* vars are baked at build time — write .env into build context
+      - name: Write build env
+        run: echo "${{ secrets.FE_ESDM_ENV }}" > fe-esdm/.env
+
+      - name: Build image
+        run: |
+          podman build -t ${{ env.REGISTRY }}/magma-fe-esdm:${{ github.sha }} fe-esdm/
+
+      - name: Push image
+        run: |
+          podman push ${{ env.REGISTRY }}/magma-fe-esdm:${{ github.sha }}
+
+      - name: Install Quadlet unit
+        run: |
+          mkdir -p /etc/containers/systemd
+          cp deploy/magma-fe-esdm.container /etc/containers/systemd/
+          systemctl daemon-reload
+
+      - name: Deploy
+        run: |
+          SERVICE=magma-fe-esdm IMAGE=${{ env.REGISTRY }}/magma-fe-esdm:${{ github.sha }} make rebuild
+
+  # ── LLM Server (expensive build — skips if image already exists) ──
+  deploy-openai-local:
+    needs: changes
+    if: needs.changes.outputs.openai-local == 'true'
+    runs-on: asus
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compute content hash
+        id: hash
+        run: |
+          TAG=$(git log -1 --format=%H -- openai_local/ | head -c 12)
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+
+      - name: Check if image already exists in registry
+        id: check
+        run: |
+          if podman manifest inspect ${{ env.REGISTRY }}/magma-openai-local:${{ steps.hash.outputs.tag }} > /dev/null 2>&1; then
+            echo "skip_build=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip_build=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Write env file
+        run: |
+          mkdir -p /opt/secrets/openai-local
+          echo "${{ secrets.OPENAI_LOCAL_ENV }}" > /opt/secrets/openai-local/.env
+
+      - name: Build image
+        if: steps.check.outputs.skip_build == 'false'
+        run: |
+          podman build -t ${{ env.REGISTRY }}/magma-openai-local:${{ steps.hash.outputs.tag }} openai_local/
+
+      - name: Push image
+        if: steps.check.outputs.skip_build == 'false'
+        run: |
+          podman push ${{ env.REGISTRY }}/magma-openai-local:${{ steps.hash.outputs.tag }}
+
+      - name: Install Quadlet unit
+        run: |
+          mkdir -p /etc/containers/systemd
+          cp deploy/magma-openai-local.container /etc/containers/systemd/
+          systemctl daemon-reload
+
+      - name: Deploy
+        run: |
+          SERVICE=magma-openai-local IMAGE=${{ env.REGISTRY }}/magma-openai-local:${{ steps.hash.outputs.tag }} make rebuild

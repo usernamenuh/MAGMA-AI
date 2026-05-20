@@ -56,6 +56,8 @@ services:
       - .
     extra_hosts:
       - "magma.esdm.go.id:103.87.161.61"
+    volumes:
+      - /mnt/data/magma-ai/blobs:/app/blobs:z
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/docs')"]
       interval: 30s

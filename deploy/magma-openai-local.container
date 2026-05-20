@@ -1,0 +1,16 @@
+[Unit]
+Description=MAGMA-AI LLM Server
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=172.16.2.228:5000/magma-openai-local:latest
+EnvironmentFile=/opt/secrets/openai-local/.env
+Network=host
+
+[Service]
+Restart=always
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

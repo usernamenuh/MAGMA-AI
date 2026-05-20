@@ -1,0 +1,15 @@
+[Unit]
+Description=MAGMA-AI Web
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=172.16.2.228:5000/magma-fe-esdm:latest
+Network=host
+
+[Service]
+Restart=always
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
