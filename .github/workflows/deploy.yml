@@ -7,6 +7,7 @@ on:
 
 env:
   REGISTRY: 172.16.2.228:5000
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 concurrency:
   group: deploy-staging

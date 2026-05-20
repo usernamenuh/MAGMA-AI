@@ -19,3 +19,4 @@ EXPOSE 8090
 
 CMD ["nginx", "-g", "daemon off;"]
 
+
