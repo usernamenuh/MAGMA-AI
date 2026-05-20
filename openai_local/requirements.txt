@@ -11,4 +11,5 @@ requests==2.31.0
 tqdm==4.66.1
 tinydb==4.8.0
 pytest==8.4.2
-psutil==5.9.8 
+psutil==5.9.8
+cryptography

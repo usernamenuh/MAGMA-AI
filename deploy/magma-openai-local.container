@@ -7,6 +7,8 @@ Wants=network-online.target
 Image=172.16.2.228:5000/magma-openai-local:latest
 EnvironmentFile=/opt/secrets/openai-local/.env
 Network=host
+Entrypoint=python3
+Exec=main.py
 
 [Service]
 Restart=always
