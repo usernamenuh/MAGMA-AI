@@ -1,0 +1,17 @@
+[Unit]
+Description=MAGMA-AI Nginx Proxy
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=nginx:alpine
+Network=host
+ContainerName=magma-ai-nginx
+Volume=/opt/magma-ai/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+
+[Service]
+Restart=always
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

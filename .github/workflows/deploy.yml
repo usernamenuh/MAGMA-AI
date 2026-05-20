@@ -22,6 +22,7 @@ jobs:
       web-code: ${{ steps.filter.outputs.web-code }}
       llm: ${{ steps.filter.outputs.llm }}
       llm-code: ${{ steps.filter.outputs.llm-code }}
+      nginx: ${{ steps.filter.outputs.nginx }}
     steps:
       - uses: actions/checkout@v4
 
@@ -45,6 +46,9 @@ jobs:
               - 'deploy/magma-ai-llm.container'
             llm-code:
               - 'openai_local/**'
+            nginx:
+              - 'nginx/nginx.prod.conf'
+              - 'deploy/magma-ai-nginx.container'
 
   # ── Backend ────────────────────────────────────────────
   deploy-api:
@@ -173,3 +177,27 @@ jobs:
       - name: Deploy
         run: |
           SERVICE=magma-ai-llm IMAGE=${{ env.REGISTRY }}/magma-ai-llm:${{ steps.hash.outputs.tag }} make rebuild
+
+  # ── Nginx Proxy ─────────────────────────────────────────
+  deploy-nginx:
+    needs: changes
+    if: needs.changes.outputs.nginx == 'true'
+    runs-on: asus
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install config and Quadlet unit
+        run: |
+          mkdir -p /opt/magma-ai
+          cp nginx/nginx.prod.conf /opt/magma-ai/nginx.prod.conf
+          mkdir -p /etc/containers/systemd
+          cp deploy/magma-ai-nginx.container /etc/containers/systemd/
+          systemctl daemon-reload
+
+      - name: Start or restart service
+        run: |
+          if systemctl is-active --quiet magma-ai-nginx; then
+            systemctl restart magma-ai-nginx
+          else
+            systemctl start magma-ai-nginx
+          fi
