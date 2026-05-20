@@ -1,11 +1,13 @@
 [Unit]
-Description=MAGMA-AI Web
+Description=MAGMA-AI API
 After=network-online.target
 Wants=network-online.target
 
 [Container]
-Image=172.16.2.228:5000/magma-fe-esdm:latest
+Image=172.16.2.228:5000/magma-ai-api:latest
+EnvironmentFile=/opt/secrets/ms-esdm/.env
 Network=host
+Volume=/mnt/data/magma-ai/blobs:/app/blobs:z
 
 [Service]
 Restart=always
