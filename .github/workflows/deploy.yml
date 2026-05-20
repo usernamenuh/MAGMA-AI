@@ -106,7 +106,7 @@ jobs:
       - name: Compute content hash
         id: hash
         run: |
-          TAG=$(git log -1 --format=%H -- openai_local/ | head -c 12)
+          TAG=$(git ls-tree -r HEAD -- openai_local/ | sha256sum | head -c 12)
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
 
       - name: Check if image already exists in registry
