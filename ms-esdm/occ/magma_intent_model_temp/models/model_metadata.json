@@ -1,0 +1,38 @@
+{
+  "timestamp": "20260210_093822",
+  "classes": [
+    "capability",
+    "count_list_query",
+    "general_chat",
+    "greeting",
+    "identity",
+    "location_required",
+    "out_of_scope",
+    "status",
+    "technical"
+  ],
+  "num_classes": 9,
+  "embedding_dim": 384,
+  "total_samples": 2290,
+  "augmented_samples": 2290,
+  "model_files": {
+    "intent_classifier": "intent_xgb.joblib",
+    "label_encoder": "intent_encoder.joblib",
+    "out_of_scope_detector": "intent_occ.joblib",
+    "embedder_info": "intent_embedder_info.joblib"
+  },
+  "text_cleaning": {
+    "function": "clean_text",
+    "description": "Removes punctuation, lowercases, removes extra spaces"
+  },
+  "intent_descriptions": {
+    "greeting": "User is greeting the assistant",
+    "identity": "User asks who/what the assistant is",
+    "capability": "User asks what the assistant can do",
+    "general_chat": "General conversation (thank you, how are you, etc.)",
+    "location_required": "Question needs user's location",
+    "technical": "Technical geological question (default)",
+    "count_list_query": "Asking for count or list of volcanoes",
+    "out_of_scope": "Question outside MAGMA's geological expertise"
+  }
+}
