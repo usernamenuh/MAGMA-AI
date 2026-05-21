@@ -8,8 +8,7 @@ from core.config import settings
 from db.session import sync_engine, async_engine
 from models.document import Base, Document, DocumentChunk, DocumentStatus
 from services.vector_store import VectorStore
-from utils.docx_extractor import extract_docx_chunks, convert_doc_to_docx, extract_doc_text_fallback
-from utils.pdf_extractor import extract_pdf_chunks
+from utils.docling_extractor import extract_chunks
 
 class KnowledgeDocumentsService:
     def __init__(self):
@@ -28,24 +27,17 @@ class KnowledgeDocumentsService:
             await db.commit()
 
     async def upload_document(self, document_id: int, file_path: str):
-        print(f"Uploading {file_path} with id {document_id}")
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info("Uploading %s with id %d", file_path, document_id)
         file_ext = os.path.splitext(file_path)[1].lower()
         try:
             await self._set_status(document_id, DocumentStatus.PROCESSING)
 
-            if file_ext == ".pdf":
-                chunks = extract_pdf_chunks(file_path)
-            elif file_ext == ".docx":
-                chunks = extract_docx_chunks(file_path)
-            elif file_ext == ".doc":
-                try:
-                    docx_path = await convert_doc_to_docx(file_path)
-                    chunks = extract_docx_chunks(docx_path)
-                except Exception:
-                    text = extract_doc_text_fallback(file_path)
-                    chunks = [(text[i:i + 500], i // 500 + 1) for i in range(0, len(text), 500)]
-            else:
-                raise ValueError("Unsupported file type")
+            if file_ext not in (".pdf", ".docx", ".doc"):
+                raise ValueError(f"Unsupported file type: {file_ext}")
+
+            chunks = await asyncio.to_thread(extract_chunks, file_path)
 
             for idx, (text, page_num) in enumerate(chunks):
                 async with self.SessionLocal() as db:

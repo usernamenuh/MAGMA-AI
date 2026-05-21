@@ -1,4 +1,5 @@
 fastapi~=0.104.1
+docling
 pydantic~=2.7.0
 python-dotenv
 mistralai<1.0.0

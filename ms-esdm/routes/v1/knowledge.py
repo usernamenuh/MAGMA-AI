@@ -1,6 +1,7 @@
 import asyncio
 import json
 import uuid
+from datetime import datetime
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, BackgroundTasks
 from fastapi.responses import JSONResponse
@@ -135,22 +136,22 @@ async def analyze(req: AnalyzeRequest,
         history=history_context
     )
     if result["status"] == "error":
+        error_msg = result.get("message", "An error occurred processing your request.")
         log_entry = {
             "status": "error",
-            "date": result["date"],
+            "date": datetime.utcnow().isoformat(),
             "user_input": req.user_input,
-            "references": result["references"],
-            "output": result["output"],
+            "references": [],
+            "output": error_msg,
             "session_id": session_id
         }
         await chat_service.create_message(
             user_id=user_id,
             session_id=session_id,
             role="assistant",
-            message=result["output"],
-            references=result["references"],
+            message=error_msg,
+            references=[],
             type="knowledge_base",
-
         )
         return log_entry
 
@@ -210,22 +211,23 @@ async def analyze_en(req: AnalyzeRequest,
         history=history_context
     )
     if result["status"] == "error":
+        error_msg = result.get("message", "An error occurred processing your request.")
         log_entry = {
             "status": "error",
-            "date": result["date"],
+            "date": datetime.utcnow().isoformat(),
             "user_input": req.user_input,
-            "references": result["references"],
-            "output": result["output"],
+            "references": [],
+            "output": error_msg,
             "session_id": session_id
         }
         await chat_service.create_message(
             user_id=user_id,
             session_id=session_id,
             role="assistant",
-            message=result["output"],
-            references=result["references"],
+            message=error_msg,
+            references=[],
             type="knowledge_base",
-            lang = 'en'
+            lang='en'
         )
         return log_entry
 

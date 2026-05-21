@@ -82,11 +82,14 @@ def build_prompt(user_input, response_text):
         """
 
 
-def analyze_response(user_input, contents_for_llm, max_len=2000):
-    prompt = build_prompt(user_input, contents_for_llm)
+def analyze_response(user_input, contents_for_llm, max_len=8000):
+    if isinstance(contents_for_llm, list):
+        formatted = "".join(item.get("content", "") + " \n" for item in contents_for_llm)
+        if len(formatted) > max_len:
+            formatted = formatted[:max_len]
+        contents_for_llm = formatted
 
-    if len(prompt) > max_len:
-        prompt = prompt[:max_len]
+    prompt = build_prompt(user_input, contents_for_llm)
     system_prompt_content = (
         "You are a document analysis assistant. "
         "Always respond in formal, clear, and concise Indonesian. "

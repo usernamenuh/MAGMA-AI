@@ -1123,16 +1123,16 @@ def semantic_recommend_api_improved_en(
         }, cache)
 
     # ------------------------
-    # 7. CCTV
+    # 7. CCTV (no endpoint available — out of scope)
     # ------------------------
     if "cctv" in text or "air traffic" in text:
         return ({
             "intents": ["technical"],
-            "recommended_api": [endpoints["CCTV"]["detail"]],
+            "recommended_api": [],
             "parameters": [{}],
-            "body": [{"code": volcano_code}],
+            "body": [None],
             "volcano_code": volcano_code,
-            "out_of_scope": False
+            "out_of_scope": True
         }, cache)
 
     # ------------------------
@@ -1547,7 +1547,7 @@ def get_openai_client():
 
     return OpenAI(
         base_url=base,
-        api_key="my-super-secret-admin-key"
+        api_key=os.getenv("OPENAI_API_KEY", "my-super-secret-admin-key")
     )
 
 def safe_json_loads(s: str):
@@ -1740,22 +1740,25 @@ def model_chat(
     for attempt in range(max_retries):
         try:
             base = os.getenv("OPENAI_API_BASE", "http://localhost:8002/v1")
+            payload = {
+                "model": model,
+                "messages": [{"role": m.role, "content": m.content} for m in messages],
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+            }
+            if stop:
+                payload["stop"] = stop
+            if repetition_penalty:
+                payload["frequency_penalty"] = frequency_penalty
+                payload["presence_penalty"] = presence_penalty
             response = requests.post(
-                    f"{base}/chat/completions",
-                    headers={
-                        "Authorization": "Bearer my-super-secret-admin-key",
-                        "Content-Type": "application/json"
-                    },
-                    json={
-                        "model": "llama3-8b-cpt-sahabatai",
-                        "messages": [
-                            {"role": m.role, "content": m.content}
-                            for m in messages
-                        ],
-                        "temperature": 0.2,
-                        "max_tokens": 600,
-                    }
-                )
+                f"{base}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY', 'my-super-secret-admin-key')}",
+                    "Content-Type": "application/json"
+                },
+                json=payload,
+            )
             
             return response.json()["choices"][0]["message"]["content"]
 
