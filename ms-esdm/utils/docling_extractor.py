@@ -47,16 +47,24 @@ def extract_chunks(
 
     for chunk in chunker.chunk(result.document):
         page = 1
-        if chunk.meta.page_numbers:
-            page = chunk.meta.page_numbers[0]
+        meta = chunk.meta
+        for item in (meta.doc_items or []):
+            if getattr(item, 'prov', None):
+                prov0 = item.prov[0]
+                if hasattr(prov0, 'page_no'):
+                    page = prov0.page_no
+                    break
 
-        heading_ctx = " > ".join(chunk.meta.headings) if chunk.meta.headings else ""
-        caption_ctx = " | ".join(chunk.meta.captions) if chunk.meta.captions else ""
+        headings = meta.headings or []
+        captions = meta.captions or []
+        heading_ctx = " > ".join(headings) if headings else ""
+        caption_ctx = " | ".join(captions) if captions else ""
 
         prefix_parts = [p for p in [heading_ctx, caption_ctx] if p]
         prefix = "\n".join(prefix_parts)
 
-        text = f"{prefix}\n{chunk.text}".strip() if prefix else chunk.text.strip()
+        chunk_text = chunk.text if hasattr(chunk, 'text') else str(chunk)
+        text = f"{prefix}\n{chunk_text}".strip() if prefix else chunk_text.strip()
 
         if text:
             chunks.append((text, page))
