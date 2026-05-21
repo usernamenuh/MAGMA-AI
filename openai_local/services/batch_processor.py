@@ -157,37 +157,16 @@ class BatchProcessor:
                     req.future.set_exception(e)
     
     def _run_batch_inference(self, prompts: List[str], generation_kwargs: Dict[str, Any]) -> List[Dict]:
-        """Run batch inference (blocking, runs in thread pool)"""
+        """Run inference sequentially (llama-cpp-python prompt accepts str or List[int] token IDs,
+        not List[str] — batch-by-list-of-strings is unsupported and corrupts context state)."""
         results = []
-        
-        # llama-cpp-python supports batch inference via list of prompts
-        # BUT only in create_completion, not in __call__
-        # We'll use create_completion for batching
-        
-        try:
-            # Try batch inference first
-            batch_result = self.llm_model.create_completion(
-                prompt=prompts,
-                **generation_kwargs
-            )
-            
-            # batch_result is a list when multiple prompts are provided
-            if isinstance(batch_result, list):
-                results = batch_result
-            else:
-                # Single result, wrap it
-                results = [batch_result]
-                
-        except Exception as e:
-            # Fallback to sequential processing if batch fails
-            print(f"⚠️ Batch inference failed, falling back to sequential: {e}")
-            for prompt in prompts:
-                try:
-                    result = self.llm_model(prompt, **generation_kwargs)
-                    results.append(result)
-                except Exception as inner_e:
-                    results.append({"error": str(inner_e)})
-        
+        for prompt in prompts:
+            try:
+                result = self.llm_model(prompt, **generation_kwargs)
+                results.append(result)
+            except Exception as e:
+                print(f"⚠️ Inference failed for prompt: {e}")
+                results.append({"error": str(e)})
         return results
     
     def get_stats(self) -> Dict[str, Any]:
