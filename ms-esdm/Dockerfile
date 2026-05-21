@@ -34,6 +34,9 @@ RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/wh
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install dateparser
+
+# Pre-download docling models at build time (avoids cold-start download in prod)
+RUN python3 -c "from docling.document_converter import DocumentConverter; DocumentConverter()"
 # Copy project code
 
 # --------------------------
