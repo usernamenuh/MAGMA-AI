@@ -6,7 +6,6 @@ Wants=network-online.target
 [Container]
 Image=nginx:alpine
 Network=host
-ContainerName=magma-ai-nginx
 Volume=/opt/magma-ai/nginx.prod.conf:/etc/nginx/nginx.conf:ro
 
 [Service]
