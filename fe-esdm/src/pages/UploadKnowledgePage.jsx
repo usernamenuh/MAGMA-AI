@@ -6,6 +6,10 @@ import {
     Paper,
     IconButton,
     LinearProgress, Alert,
+    FormControl,
+    InputLabel,
+    MenuItem,
+    Select,
 } from "@mui/material";
 import { Cloud, CheckCircle, AccessTime, Error, ArrowBack } from "@mui/icons-material";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -25,6 +29,7 @@ export default function UploadKnowledgePage() {
     const { uploadChatKnowledgeBase } = useKnowledgeBase();
     const [trainingFiles, setTrainingFiles] = useState(loadFromStorage());
     const [uploadError, setUploadError] = useState(null);
+    const [extractionMode, setExtractionMode] = useState("auto");
     const MAX_FILE_SIZE_MB = 50;
     const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
     const ALLOWED_MIMES = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
@@ -124,6 +129,7 @@ export default function UploadKnowledgePage() {
     const uploadSingleFile = async (fileItem) => {
         const formData = new FormData();
         formData.append("file", fileItem.file);
+        formData.append("extraction_mode", extractionMode);
 
         updateStatus(fileItem.name, { status: "uploading" });
 
@@ -134,7 +140,7 @@ export default function UploadKnowledgePage() {
                 status: "pending",
                 documentId: res.document_id
             });
-        } catch (err) {
+        } catch {
             updateStatus(fileItem.name, { status: "error" });
         }
     };
@@ -169,9 +175,12 @@ export default function UploadKnowledgePage() {
             display: "flex",
             flexDirection: "column",
             height: "100%",
+            minHeight: 0,
+            boxSizing: "border-box",
             bgcolor: "#fbfbfb",
             color: "#000000",
-            overflow: "hidden", }}>
+            overflowY: "auto",
+            overflowX: "hidden", }}>
             <Button startIcon={<ArrowBack />} onClick={() => navigate(-1)} sx={{ mb: 2, textTransform: 'none' }}>
                 Back to Documents
             </Button>
@@ -181,6 +190,23 @@ export default function UploadKnowledgePage() {
             <Typography variant="body2" color="text.secondary">
                 Upload your documents to include them as reference sources.
             </Typography>
+            <FormControl sx={{ mt: 3, maxWidth: 460 }} size="small">
+                <InputLabel id="extraction-mode-label">Document Processing Method</InputLabel>
+                <Select
+                    labelId="extraction-mode-label"
+                    value={extractionMode}
+                    label="Document Processing Method"
+                    onChange={(event) => setExtractionMode(event.target.value)}
+                >
+                    <MenuItem value="auto">Automatic — PyPDF2, fallback to OCR</MenuItem>
+                    <MenuItem value="text">PyPDF2 only — digital PDF</MenuItem>
+                    <MenuItem value="docling_no_ocr">Docling without OCR — digital PDF with complex layout</MenuItem>
+                    <MenuItem value="ocr">Docling + OCR — scanned/complex PDF</MenuItem>
+                </Select>
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                    Automatic checks the text layer first and only runs OCR when needed.
+                </Typography>
+            </FormControl>
             {uploadError && (
                 <Alert severity="error" sx={{ mt: 3, whiteSpace: 'pre-wrap' }}>
                     {uploadError}

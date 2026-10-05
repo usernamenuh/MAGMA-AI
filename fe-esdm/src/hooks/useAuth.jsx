@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { axiosInstance, setRefreshHandler } from "@/api/client.jsx";
+import { setRefreshHandler } from "@/api/client.jsx";
 import { LOGIN } from "@/utils/routes.jsx";
 import { AUTH_BASE_URL } from "@/utils/constants.jsx";
 
@@ -37,7 +37,9 @@ export function useAuth() {
                 await axios.post(`${AUTH_BASE_URL}/auth/logout`, {}, {
                     headers: { Authorization: `Bearer ${t}` },
                 });
-            } catch (_) {}
+            } catch {
+                // Remote logout is best effort; local credentials must still be cleared.
+            }
         }
         localStorage.clear();
         setUser(null);
@@ -83,7 +85,8 @@ export function useAuth() {
     }, []);
 
     const refreshAccessToken = useCallback(() => {
-        return new Promise(async (resolve, reject) => {
+        return new Promise((resolve, reject) => {
+            const refresh = async () => {
             if (isRefreshing.current) {
                 refreshQueue.current.push({ resolve, reject });
                 return;
@@ -111,6 +114,8 @@ export function useAuth() {
             } finally {
                 isRefreshing.current = false;
             }
+            };
+            refresh();
         });
     }, [refreshToken, logout]);
 
@@ -153,7 +158,7 @@ export function useAuth() {
                 }
             }
         })();
-    }, []);
+    }, [logout, refreshAccessToken]);
 
     return {
         user,

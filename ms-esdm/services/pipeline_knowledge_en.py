@@ -92,7 +92,7 @@ def analyze_response(user_input, contents_for_llm, max_len=8000):
     prompt = build_prompt(user_input, contents_for_llm)
     system_prompt_content = (
         "You are a document analysis assistant. "
-        "Always respond in formal, clear, and concise Indonesian. "
+        "Always respond in formal, clear, and concise English. "
         "Do NOT greet the user, introduce yourself, provide long conclusions, "
     )
 
@@ -115,13 +115,13 @@ def analyze_input_chat(enriched_user_input):
     You are an assistant for document query analysis.
 
     MANDATORY RULES:
-    1. The answer must be in formal and concise Indonesian.
+    1. The answer must be in formal and concise English.
     2. The answer must be based ONLY on the given user text.
     3. No opinions, speculation, inference, or additional analysis.
     4. No labels, points, scores, categories, or metadata of any kind.
     5. The final result must be a single short sentence/paragraph summarizing the user's main intent.
     6. If no information can be concluded, answer:
-       "Informasi tersebut tidak ditemukan dalam dokumen yang disediakan."
+       "The requested information was not found in the provided document."
     7. Maximum 3 sentences. No reasons, explanations, or additional narration.
     """
 
@@ -140,26 +140,31 @@ def analyze_input_chat(enriched_user_input):
     return model_chat(messages)
 
 
-async def run_knowledge_pipeline_en(user_input: str, history: str):
+async def run_knowledge_pipeline_en(
+    user_input: str,
+    history: str,
+    document_ids: list[int] = None,
+):
     try:
-        final_user_input = user_input
+        search_query = user_input
+        answer_query = user_input
 
         if history:
-            enriched_input = f"""
-            Chat history:
-            {history}
+            history_lines = [line.strip() for line in history.splitlines() if line.strip()]
+            topic_anchor = history_lines[0] if history_lines else history
+            search_query = f"{history}\nFollow-up question: {user_input}"
+            answer_query = (
+                f"Referenced topic: {topic_anchor}\n"
+                f"Latest question: {user_input}\n"
+                "Answer only the latest question and do not repeat previous answers."
+            )
 
-            User input:
-            {user_input}
-            """
-            final_user_input = analyze_input_chat(enriched_input)
-
-        results = await service.find_vector(final_user_input)
+        results = await service.find_vector(search_query, document_ids=document_ids)
 
         references = map_references(results)
         contents_for_llm = extract_contents_for_analysis(results)
 
-        answer = analyze_response(final_user_input, contents_for_llm)
+        answer = analyze_response(answer_query, contents_for_llm)
 
         return {
             "status": "success",

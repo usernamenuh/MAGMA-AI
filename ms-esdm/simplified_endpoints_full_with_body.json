@@ -2,7 +2,7 @@
     {
         "name": "Daftar Kejadian Letusan",
         "method": "GET",
-        "url": "{{url}}/api/v1/home/gunung-api/informasi-letusan?page=1",
+        "url": "{{url}}/api/v2/volcano/ven?page=1",
         "parameters": [
             {
                 "key": "page",
@@ -42,7 +42,7 @@
     {
         "name": "Data per Kejadian Letusan",
         "method": "GET",
-        "url": "{{url}}/api/v1/home/gunung-api/informasi-letusan/{id}",
+        "url": "{{url}}/api/v2/volcano/ven/{id}",
         "parameters": [],
         "example_request_body": null,
         "example_response_body": [
@@ -78,7 +78,7 @@
     {
         "name": "Kejadian Letusan Terkini",
         "method": "GET",
-        "url": "{{url}}/api/v1/home/gunung-api/informasi-letusan/latest",
+        "url": "{{url}}/api/v2/volcano/ven/latest",
         "parameters": [],
         "example_request_body": null,
         "example_response_body": [
@@ -114,7 +114,7 @@
     {
         "name": "Cari Kejadian Letusan",
         "method": "GET",
-        "url": "{{url}}/api/v1/home/gunung-api/informasi-letusan/filter",
+        "url": "{{url}}/api/v2/volcano/ven/filter",
         "parameters": [],
         "example_request_body": [
             {
@@ -154,7 +154,7 @@
     {
         "name": "Daftar VONA",
         "method": "GET",
-        "url": "{{url}}/api/v1/vona",
+        "url": "{{url}}/api/v2/volcano/vona",
         "parameters": [
             {
                 "key": "page",
@@ -200,7 +200,7 @@
     {
         "name": "VONA by ID",
         "method": "GET",
-        "url": "{{url}}/api/v1/vona/{uuid}",
+        "url": "{{url}}/api/v2/volcano/vona/{uuid}",
         "parameters": [],
         "example_request_body": null,
         "example_response_body": [
@@ -242,7 +242,7 @@
     {
         "name": "VONA Terkini",
         "method": "GET",
-        "url": "{{url}}/api/v1/vona/latest",
+        "url": "{{url}}/api/v2/volcano/vona/latest",
         "parameters": [],
         "example_request_body": null,
         "example_response_body": [
@@ -284,7 +284,7 @@
     {
         "name": "Cari VONA",
         "method": "GET",
-        "url": "{{url}}/api/v1/vona/filter",
+        "url": "{{url}}/api/v2/volcano/vona/filter",
         "parameters": [],
         "example_request_body": [
             {
@@ -330,7 +330,7 @@
     {
         "name": "Daftar Laporan",
         "method": "GET",
-        "url": "{{url}}/api/v1/magma-var",
+        "url": "{{url}}/api/v2/volcano/var",
         "parameters": [],
         "example_request_body": null,
         "example_response_body": [
@@ -365,7 +365,7 @@
                     },
                     "rekomendasi": "(1) Masyarakat di sekitar G. Agung dan pendaki/pengunjung/wisatawan agar tidak berada, tidak melakukan pendakian dan tidak melakukan aktivitas apapun di Zona Perkiraan Bahaya yaitu di dalam area kawah G. Agung dan di seluruh area di dalam radius 2 km dari Kawah Puncak G. Agung.\n(2) Masyarakat yang bermukim dan beraktivitas di sekitar aliran-aliran sungai yang berhulu di Gunung Agung agar mewaspadai potensi ancaman bahaya sekunder berupa aliran lahar hujan yang dapat terjadi terutama pada musim hujan dan jika material erupsi masih terpapar di area puncak."
                 },
-                "url": "http://chamber.test/api/v1/magma-var/AGU/202108062400",
+                "url": "http://chamber.test/api/v2/volcano/var/AGU/202108062400",
                 "share": {
                     "url": "http://chamber.test/v1/gunung-api/laporan/168652?signature=215d1113027672e172fc049d304e8fe0718d9f0d4fc1a7e381cc38c98a626459",
                     "description": "Laporan 24 Jam Aktivitas Gunung Api Agung. Tanggal 2021-08-06 pukul 00:00-24:00 WITA. http://chamber.test/v1/gunung-api/laporan/168652?signature=215d1113027672e172fc049d304e8fe0718d9f0d4fc1a7e381cc38c98a626459",
@@ -377,7 +377,7 @@
     {
         "name": "Laporan Aktivitas per Gunung Api",
         "method": "GET",
-        "url": "{{url}}/api/v1/magma-var/{code}",
+        "url": "{{url}}/api/v2/volcano/var/{code}",
         "parameters": [],
         "example_request_body": null,
         "example_response_body": [
@@ -412,7 +412,7 @@
                     },
                     "rekomendasi": "1. Masyarakat dan pengunjung/wisatawan agar tidak melakukan aktivitas pada desa-desa yang sudah direlokasi, serta lokasi di dalam radius radial 3 km dari puncak G.Sinabung, serta radius sektoral 5 km untuk sektor selatan-timur, dan 4 km untuk sektor timur-utara dan barat.\n2. Jika terjadi hujan abu, masyarakat dihimbau memakai masker bila keluar rumah untuk mengurangi dampak kesehatan dari abu vulkanik. Mengamankan sarana air bersih serta membersihkan atap rumah dari abu vulkanik yang lebat agar tidak roboh.\n3. Masyarakat yang berada dan bermukim di dekat sungai-sungai yang berhulu di G. Sinabung agar tetap waspada terhadap bahaya lahar."
                 },
-                "url": "http://chamber.test/api/v1/magma-var/SIN/202108070600",
+                "url": "http://chamber.test/api/v2/volcano/var/SIN/202108070600",
                 "share": {
                     "url": "http://chamber.test/v1/gunung-api/laporan/168716?signature=4432ee8ba8c6b4971ba0de4d14cd10c1fcc9ef68eda3d41e74a943f82ba212e7",
                     "description": "Laporan 6 Jam Aktivitas Gunung Api Sinabung. Tanggal 2021-08-07 pukul 06:00-12:00 WIB. http://chamber.test/v1/gunung-api/laporan/168716?signature=4432ee8ba8c6b4971ba0de4d14cd10c1fcc9ef68eda3d41e74a943f82ba212e7",
@@ -424,7 +424,7 @@
     {
         "name": "Laporan Aktivitas by Code dan Noticenumber",
         "method": "GET",
-        "url": "{{url}}/api/v1/magma-var/{code}/{noticenumber}",
+        "url": "{{url}}/api/v2/volcano/var/{code}/{noticenumber}",
         "parameters": [
             {
                 "key": "",
@@ -465,7 +465,7 @@
                     },
                     "rekomendasi": "(1) Masyarakat di sekitar G. Agung dan pendaki/pengunjung/wisatawan agar tidak berada, tidak melakukan pendakian dan tidak melakukan aktivitas apapun di Zona Perkiraan Bahaya yaitu di dalam area kawah G. Agung dan di seluruh area di dalam radius 2 km dari Kawah Puncak G. Agung.\n(2) Masyarakat yang bermukim dan beraktivitas di sekitar aliran-aliran sungai yang berhulu di Gunung Agung agar mewaspadai potensi ancaman bahaya sekunder berupa aliran lahar hujan yang dapat terjadi terutama pada musim hujan dan jika material erupsi masih terpapar di area puncak."
                 },
-                "url": "http://chamber.test/api/v1/magma-var/AGU/202108062400",
+                "url": "http://chamber.test/api/v2/volcano/var/AGU/202108062400",
                 "share": {
                     "url": "http://chamber.test/v1/gunung-api/laporan/168652?signature=215d1113027672e172fc049d304e8fe0718d9f0d4fc1a7e381cc38c98a626459",
                     "description": "Laporan 24 Jam Aktivitas Gunung Api Agung. Tanggal 2021-08-06 pukul 00:00-24:00 WITA. http://chamber.test/v1/gunung-api/laporan/168652?signature=215d1113027672e172fc049d304e8fe0718d9f0d4fc1a7e381cc38c98a626459",
@@ -477,7 +477,7 @@
     {
         "name": "Cari Laporan",
         "method": "GET",
-        "url": "{{url}}/api/v1/magma-var/filter",
+        "url": "{{url}}/api/v2/volcano/var/filter",
         "parameters": [],
         "example_request_body": [
             {
@@ -518,7 +518,7 @@
                     },
                     "rekomendasi": "(1) Masyarakat di sekitar G. Agung dan pendaki/pengunjung/wisatawan agar tidak berada, tidak melakukan pendakian dan tidak melakukan aktivitas apapun di Zona Perkiraan Bahaya yaitu di dalam area kawah G. Agung dan di seluruh area di dalam radius 2 km dari Kawah Puncak G. Agung.\n(2) Masyarakat yang bermukim dan beraktivitas di sekitar aliran-aliran sungai yang berhulu di Gunung Agung agar mewaspadai potensi ancaman bahaya sekunder berupa aliran lahar hujan yang dapat terjadi terutama pada musim hujan dan jika material erupsi masih terpapar di area puncak."
                 },
-                "url": "http://chamber.test/api/v1/magma-var/AGU/202101102400",
+                "url": "http://chamber.test/api/v2/volcano/var/AGU/202101102400",
                 "share": {
                     "url": "http://chamber.test/v1/gunung-api/laporan/151036?signature=4cf8ddfb57e006f57a226ff9519088bad70f79ce07785b57912e94f97a1cbacc",
                     "description": "Laporan 24 Jam Aktivitas Gunung Api Agung. Tanggal 2021-01-10 pukul 00:00-24:00 WITA. http://chamber.test/v1/gunung-api/laporan/151036?signature=4cf8ddfb57e006f57a226ff9519088bad70f79ce07785b57912e94f97a1cbacc",
@@ -1830,7 +1830,7 @@
     {
         "name": "Show By Volcode",
         "method": "GET",
-        "url": "{{url}}/api/v1/magma-var/seismic/{code}",
+        "url": "{{url}}/api/v2/volcano/var/seismic/{code}",
         "parameters": [],
         "example_request_body": null,
         "example_response_body": []
@@ -2078,7 +2078,7 @@
     {
         "name": "Daftar Tanggapan Gerakan Tanah",
         "method": "GET",
-        "url": "{{url}}/api/v1/home/gerakan-tanah",
+        "url": "{{url}}/api/v2/ground-movement",
         "parameters": [],
         "example_request_body": null,
         "example_response_body": [
@@ -2099,7 +2099,7 @@
                 "deskripsi": "Gerakan tanah terjadi di Air Putih, Samarinda Ulu, Kota Samarinda, Kalimantan Timur pada Friday, 20 August 2021 pukul 16:30:00 WITA. Secara Geografis, lokasi kejadian gerakan tanah terletak pada posisi -0.47971 LU dan 117.11817 BT.",
                 "kerentanan": null,
                 "rekomendasi": null,
-                "url": "http://chamber.test/api/v1/home/gerakan-tanah/sigertan/CRS20210804102457",
+                "url": "http://chamber.test/api/v2/ground-movement/sigertan/CRS20210804102457",
                 "share": {
                     "url": "http://chamber.test/v1/gerakan-tanah/tanggapan/CRS20210804102457?signature=c7bca3af3385669e58c1c1224e7ff0e67bb8b8c0c281f58a36474395ae965574",
                     "description": "Gerakan tanah terjadi di Air Putih, Samarinda Ulu, Kota Samarinda, Kalimantan Timur pada Friday, 20 August 2021 pukul 16:30:00 WITA. Secara Geografis, lokasi kejadian gerakan tanah terletak pada posisi -0.47971 LU dan 117.11817 BT."
@@ -2110,7 +2110,7 @@
     {
         "name": "Gerakan Tanah by ID",
         "method": "GET",
-        "url": "{{url}}/api/v1/home/gerakan-tanah/SGT20210802155007",
+        "url": "{{url}}/api/v2/ground-movement/SGT20210802155007",
         "parameters": [],
         "example_request_body": null,
         "example_response_body": [
@@ -2164,7 +2164,7 @@
     {
         "name": "Tanggapan Kejadian Terkini",
         "method": "GET",
-        "url": "{{url}}/api/v1/home/gerakan-tanah/latest",
+        "url": "{{url}}/api/v2/ground-movement/latest",
         "parameters": [],
         "example_request_body": null,
         "example_response_body": [
@@ -2215,7 +2215,7 @@
     {
         "name": "Cari Tanggapan Kejadian",
         "method": "GET",
-        "url": "{{url}}/api/v1/home/gerakan-tanah/filter",
+        "url": "{{url}}/api/v2/ground-movement/filter",
         "parameters": [],
         "example_request_body": [
             {
@@ -2241,7 +2241,7 @@
                 "deskripsi": "Gerakan tanah terjadi di Air Putih, Samarinda Ulu, Kota Samarinda, Kalimantan Timur pada Friday, 20 August 2021 pukul 16:30:00 WITA. Secara Geografis, lokasi kejadian gerakan tanah terletak pada posisi -0.47971 LU dan 117.11817 BT.",
                 "kerentanan": null,
                 "rekomendasi": null,
-                "url": "http://chamber.test/api/v1/home/gerakan-tanah/CRS20210804102457",
+                "url": "http://chamber.test/api/v2/ground-movement/CRS20210804102457",
                 "share": {
                     "url": "http://chamber.test/v1/gerakan-tanah/tanggapan/CRS20210804102457?signature=c7bca3af3385669e58c1c1224e7ff0e67bb8b8c0c281f58a36474395ae965574",
                     "description": "Gerakan tanah terjadi di Air Putih, Samarinda Ulu, Kota Samarinda, Kalimantan Timur pada Friday, 20 August 2021 pukul 16:30:00 WITA. Secara Geografis, lokasi kejadian gerakan tanah terletak pada posisi -0.47971 LU dan 117.11817 BT."

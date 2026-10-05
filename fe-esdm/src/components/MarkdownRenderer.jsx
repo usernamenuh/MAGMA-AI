@@ -7,7 +7,7 @@ const MarkdownRenderer = ({ content }) => {
     return (
         <Box
             sx={{
-                fontFamily: `"Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`,
+                fontFamily: "inherit",
                 fontSize: "0.95rem",
                 lineHeight: 1.6,
                 color: "text.primary",
@@ -71,7 +71,9 @@ const MarkdownRenderer = ({ content }) => {
             <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
-                    a: ({ node, ...props }) => (
+                    a: ({ node, ...props }) => {
+                        void node;
+                        return (
                         <a
                             {...props}
                             style={{
@@ -83,7 +85,8 @@ const MarkdownRenderer = ({ content }) => {
                         >
                             {props.children}
                         </a>
-                    ),
+                        );
+                    },
                 }}
             >
                 {content}

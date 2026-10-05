@@ -1,7 +1,6 @@
 import React, {useState} from "react";
 import {Box, Button, Card, CardContent, Collapse, IconButton, Tooltip, Typography, Chip} from "@mui/material";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
 import MarkdownRenderer from "@/components/MarkdownRenderer.jsx";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
@@ -34,14 +33,15 @@ export default function ChatMessage({ role, content, reference, response, geoloc
             sx={{
                 display: "flex",
                 justifyContent: isUser ? "flex-end" : "flex-start",
-                px: 2,
+                px: { xs: 0.5, sm: 2 },
                 py: 1,
             }}
         >
             <Box
                 sx={{
                     position: "relative",
-                    maxWidth: "80%",
+                    width: isUser ? "auto" : "100%",
+                    maxWidth: isUser ? { xs: "92%", md: "72%" } : { xs: "100%", md: "76%" },
                     // bgcolor: isUser ? "#2f2f2f" : "transparent",
                     color: "#fff",
                     borderRadius: isUser ? "18px" : "0",
@@ -58,9 +58,9 @@ export default function ChatMessage({ role, content, reference, response, geoloc
                             justifyContent: "flex-end",
                             bgcolor: "#233C5A",
                             color: "#E1E6EB",
-                            borderRadius: 2,
-                            p: 1.5,
-                            maxWidth: "80%",
+                            borderRadius: "16px 16px 4px 16px",
+                            px: 2,
+                            py: 1.25,
                         }}
                     >
                         <Typography
@@ -72,10 +72,13 @@ export default function ChatMessage({ role, content, reference, response, geoloc
                     </Box>
                 ) : (
                     <Box display="flex" alignItems="flex-start" mb={2} gap={1}>
-                        <Box component="img" src={AssistantIcon} alt="Assistant" sx={{ width: 32, height: 32, mt: 0.5 }} />
+                        <Box component="img" src={AssistantIcon} alt="ESDM Assistant" sx={{ width: 34, height: 34, mt: 0.5, objectFit: "contain" }} />
 
                         <Box sx={{ flex: 1 }}>
-                            <Card sx={{ backgroundColor: "#ffffff", borderRadius: 2, p: 2, boxShadow: 1 }}>
+                            <Typography variant="caption" sx={{ color: "#526579", fontWeight: 700, ml: 0.5, mb: 0.5, display: "block" }}>
+                                ESDM Assistant
+                            </Typography>
+                            <Card sx={{ backgroundColor: "#ffffff", borderRadius: "4px 16px 16px 16px", p: { xs: 1.5, sm: 2.25 }, border: "1px solid #e6ebf0", boxShadow: "0 4px 18px rgba(35,60,90,0.06)" }}>
                                 <MarkdownRenderer content={content} />
                                 {geolocation && (
                                     <Box sx={{ mt: 1, display: "flex", alignItems: "center", gap: 1 }}>
@@ -101,9 +104,8 @@ export default function ChatMessage({ role, content, reference, response, geoloc
 
                                 {reference && (
                                     <Button
-                                        variant="contained"
-                                        color="rgb(35,60,90)"
-                                        sx={{ bgcolor: "rgba(35,59,89,0.2)",color:"rgb(35,60,90)",textTransform: "none", mt: 1 }}
+                                        variant="outlined"
+                                        sx={{ borderColor: "#d5e0e9", bgcolor: "#f7fafc", color:"rgb(35,60,90)", textTransform: "none", mt: 1.5, maxWidth: "100%", justifyContent: "flex-start" }}
                                         onClick={() => setShowResponse(!showResponse)}
                                         endIcon={showResponse ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                                     >
@@ -183,18 +185,6 @@ export default function ChatMessage({ role, content, reference, response, geoloc
                             </IconButton>
                         </Tooltip>
 
-                        <Tooltip title="More options" placement="top">
-                            <IconButton
-                                size="small"
-                                sx={{
-                                    color: "#777777",
-                                    "&:hover": { color: "#393939" },
-                                    p: "2px",
-                                }}
-                            >
-                                <MoreVertIcon sx={{ fontSize: 16 }} />
-                            </IconButton>
-                        </Tooltip>
                     </Box>
                 )}
 

@@ -8,7 +8,7 @@ from utils.extraction import detect_volcano_name
 from utils.geo_location import extract_indonesia_location, get_geolocation_indonesia
 from utils.pipeline_helpers import resolve_api_url, call_api, semantic_recommend_api_improved_en, safe_json_loads, \
     recommend_api_fallback, model_chat, load_examples, crosscheck_api, find_nearest_volcano, check_if_nearest_question, \
-    get_mount_code, fetch_api_simple, filter_history, _detect_volcano_name, check_if_mount_level, BASE_URL, check_around, get_closest_gerakan_tanah_data, is_empty_response, load_volcano_cache
+    get_mount_code, get_today_eruption_events, fetch_api_simple, filter_history, _detect_volcano_name, check_if_mount_level, BASE_URL, check_around, get_closest_gerakan_tanah_data, is_empty_response, load_volcano_cache
 from concurrent.futures import ThreadPoolExecutor
 from utils.classifier import detect_conversational_intent
 from services.check_status_magma import return_status
@@ -216,6 +216,30 @@ def run_pipeline_en(user_input: str, geo_location: tuple[float, float], history:
 
         print(f"Volcano code detected: {volcano_code}")
         print(f"Detected intent: {intent} Response: {response}")
+        query_lower = user_input.lower()
+        if (
+            re.search(r"\b(erupsi|erupt|eruption|letusan|meletus)\b", query_lower)
+            and re.search(r"\b(hari ini|today|sekarang|saat ini)\b", query_lower)
+        ):
+            eruption_data = get_today_eruption_events()
+            events = eruption_data.get("events", [])
+            names = sorted({event.get("nama_gunung_api") for event in events if event.get("nama_gunung_api")})
+            if eruption_data.get("error") and not events:
+                output_text = "Today's eruption data is temporarily unavailable. Please try again shortly."
+            elif not events:
+                output_text = "No eruption events have been recorded in MAGMA today."
+            else:
+                output_text = (
+                    f"Today, MAGMA records {len(events)} eruption events from "
+                    f"{len(names)} volcanoes: {', '.join(names)}."
+                )
+            return {
+                "status": "success", "intent": "today_eruption_count",
+                "date": datetime.utcnow().isoformat(), "user_input": user_input,
+                "geo_location": geo_location,
+                "api_call": f"{BASE_URL}/api/v2/volcano/ven",
+                "output": output_text, "response": events,
+            }
         standard_intents = [
             "capability", "count_list_query", "general_chat",
             "greeting", "identity", "location_required", "out_of_scope", "status"
@@ -371,14 +395,19 @@ def run_pipeline_en(user_input: str, geo_location: tuple[float, float], history:
             volcano_url = resolve_api_url("/api/v1/home/gunung-api")
             volcano_resp = get_mount_code()
 
-            if not volcano_resp or "data" not in volcano_resp:
+            volcano_rows = (
+                volcano_resp.get("data", [])
+                if isinstance(volcano_resp, dict)
+                else volcano_resp
+            )
+            if not volcano_rows:
                 return {
                     "status": "error",
                     "api_call": volcano_url,
                     "output": "Volcano data is currently unavailable."
                 }
 
-            nearest, distance_km = find_nearest_volcano(user_lat, user_lon, volcano_resp)
+            nearest, distance_km = find_nearest_volcano(user_lat, user_lon, volcano_rows)
             if not nearest or not nearest.get("ga_code"):
                 return {
                     "status": "error",
@@ -387,20 +416,10 @@ def run_pipeline_en(user_input: str, geo_location: tuple[float, float], history:
                 }
 
             ga_code = nearest["ga_code"]
-            var_url = nearest["url"]
-            var_resp = fetch_api_simple(var_url)
-
-            if not var_resp:
-                return {
-                    "status": "error",
-                    "api_call": var_url,
-                    "output": "VAR data for the nearest volcano is not available."
-                }
-
-            final_answer = analyze_response(
-                user_input,
-                var_resp,
-                geo_location
+            volcano_name = nearest.get("ga_nama_gapi") or ga_code
+            final_answer = (
+                f"The nearest volcano to your location is Mount {volcano_name}, "
+                f"at an estimated distance of {distance_km:.2f} km."
             )
 
             return {
@@ -413,9 +432,9 @@ def run_pipeline_en(user_input: str, geo_location: tuple[float, float], history:
                     "code": ga_code,
                     "distance_km": round(distance_km, 2)
                 },
-                "api_call": var_url,
+                "api_call": volcano_url,
                 "output": final_answer,
-                "response": var_resp["data"]
+                "response": nearest
             }
 
         while attempt < max_attempts:

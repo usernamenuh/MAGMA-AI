@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Box, Typography, Button, Divider, IconButton, Tooltip } from "@mui/material";
+import { Box, Typography, Button, IconButton, Paper, Tooltip } from "@mui/material";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import CheckIcon from "@mui/icons-material/Check";
 import { BASE_URL } from "@/utils/constants.jsx";
@@ -21,18 +21,21 @@ const CodeBlock = ({ code }) => {
         <Box
             sx={{
                 position: "relative",
-                bgcolor: "#1e1e1e",
-                color: "#dcdcdc",
-                p: 2,
-                borderRadius: 2,
+                minWidth: 0,
+                bgcolor: "#17212b",
+                color: "#dce6ee",
+                p: { xs: 1.5, md: 2 },
+                pr: 6,
+                borderRadius: 1.75,
                 fontFamily: "'Fira Code', 'Roboto Mono', monospace",
-                fontSize: "0.875rem",
-                my: 2,
-                border: "1px solid #333",
+                fontSize: "0.8rem",
+                my: 1.5,
+                border: "1px solid #263746",
             }}
         >
-            <Tooltip title={copied ? "Copied!" : "Copy Code"}>
+            <Tooltip title={copied ? "Kode tersalin" : "Salin kode"}>
                 <IconButton
+                    aria-label={copied ? "Kode tersalin" : "Salin kode"}
                     onClick={handleCopy}
                     size="small"
                     sx={{
@@ -47,7 +50,7 @@ const CodeBlock = ({ code }) => {
                     {copied ? <CheckIcon fontSize="small" /> : <ContentCopyIcon fontSize="small" />}
                 </IconButton>
             </Tooltip>
-            <pre style={{ margin: 0, overflowX: "auto", whiteSpace: "pre-wrap", wordBreak: "break-all" }}>
+            <pre style={{ margin: 0, overflowX: "auto", whiteSpace: "pre", lineHeight: 1.6 }}>
         <code>{code}</code>
       </pre>
         </Box>
@@ -128,58 +131,57 @@ curl -X POST "${BASE_URL}/api/knowledge/analyze-en" \\
     return (
         <Box
             sx={{
-                pt: 5,
+                pt: { xs: 2, md: 2.5 },
                 flex: 1,
                 px: { xs: 2, md: 4 },
-                pb: 10,
-                bgcolor: "#fbfbfb",
+                pb: 5,
+                bgcolor: "#f8fafc",
                 color: "#1a1a1a",
-                minHeight: "100vh",
-                maxWidth: "900px",
+                height: "100%",
+                minHeight: 0,
+                boxSizing: "border-box",
+                overflowY: "auto",
+                overflowX: "hidden",
+                width: "100%",
+                maxWidth: "none",
             }}
         >
-            {/* Header */}
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-                <Typography variant="h4" fontWeight={700}>
-                    API Documentation
+            <Box sx={{ mb: 2.5 }}>
+                <Typography variant="h5" fontWeight={700} sx={{ color: '#18212b', letterSpacing: '-0.02em' }}>API Documentation</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, maxWidth: 760 }}>
+                    Referensi endpoint, autentikasi, dan contoh penggunaan layanan.
                 </Typography>
             </Box>
 
-            <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.7 }}>
-                This API provides an OpenAPI-compliant interface built with FastAPI.
-                Explore endpoints, request/response schemas, and test live using Swagger UI.
+            <Paper elevation={0} sx={{ p: { xs: 2, md: 2.5 }, border: '1px solid #e2e7eb', borderRadius: 2.5, mb: 2 }}>
+            <Typography variant="subtitle1" fontWeight={700} sx={{ color: '#243b53', mb: 0.5 }}>Dokumentasi interaktif</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7, mb: 2 }}>
+                Gunakan Swagger UI untuk melihat skema endpoint dan mencoba request langsung.
             </Typography>
-
-            <Divider sx={{ my: 4 }} />
-
-            <Typography variant="h6" fontWeight={600} gutterBottom>
-                Interactive API Documentation (Swagger UI)
-            </Typography>
-
-            <Box component="ol" sx={{ pl: 3 }}>
+            <Box component="ol" sx={{ pl: 2.5, my: 0, mb: 1, maxWidth: 760, '& li': { pl: 0.5 } }}>
                 <li>
-                    <Typography variant="body1" mb={1}>
-                        Open the FastAPI documentation page by clicking the button below.
+                    <Typography variant="body2" mb={1}>
+                        Buka dokumentasi FastAPI melalui tombol di bawah.
                     </Typography>
                 </li>
                 <li>
-                    <Typography variant="body1" mb={1}>
-                        You will be redirected to the interactive Swagger UI.
+                    <Typography variant="body2" mb={1}>
+                        Di Swagger UI, pilih endpoint yang ingin dicoba.
                     </Typography>
                 </li>
                 <li>
-                    <Typography variant="body1" mb={1}>
-                        Click the <strong>Authorize</strong> button on the top-right corner.
+                    <Typography variant="body2" mb={1}>
+                        Klik <strong>Authorize</strong> di kanan atas.
                     </Typography>
                 </li>
                 <li>
-                    <Typography variant="body1" mb={1}>
-                        Paste your generated API key or access token and submit.
+                    <Typography variant="body2" mb={1}>
+                        Masukkan API key atau access token yang sudah dibuat.
                     </Typography>
                 </li>
                 <li>
-                    <Typography variant="body1" mb={1}>
-                        You can now test protected endpoints directly from the documentation.
+                    <Typography variant="body2" mb={1}>
+                        Jalankan request dan lihat respons langsung di halaman tersebut.
                     </Typography>
                 </li>
             </Box>
@@ -190,75 +192,71 @@ curl -X POST "${BASE_URL}/api/knowledge/analyze-en" \\
                 href={`${BASE_URL}/docs`}
                 target="_blank"
                 rel="noopener noreferrer"
-                sx={{ borderRadius: 2, px: 4 }}
+                sx={{ borderRadius: 1.75, px: 2, boxShadow: 'none', '&:hover': { boxShadow: 'none' } }}
             >
-                Open Swagger UI
+                Buka Swagger UI
             </Button>
+            </Paper>
 
-            <Divider sx={{ my: 4 }} />
-
-            {/* API Key Usage */}
-            <Typography variant="h6" fontWeight={600} gutterBottom>
-                Using the Generated API Key
+            <Paper elevation={0} sx={{ p: { xs: 2, md: 3 }, border: '1px solid #e2e7eb', borderRadius: 2.5, mb: 2 }}>
+            <Typography variant="subtitle1" fontWeight={700} sx={{ color: '#243b53' }} gutterBottom>
+                Autentikasi dengan API key
             </Typography>
             <Typography variant="body2" mb={1} color="text.secondary">
-                Include your API Key in the <code>Authorization</code> header for server-to-server requests.
+                Sertakan API key pada header <code>Authorization</code> untuk request dari server.
             </Typography>
             <CodeBlock code={curlApiKey} />
+            </Paper>
 
-            <Divider sx={{ my: 4 }} />
-
-            {/* Bearer Token Usage */}
-            <Typography variant="h6" fontWeight={600} gutterBottom>
-                Authenticated User Access (JWT)
+            <Paper elevation={0} sx={{ p: { xs: 2, md: 3 }, border: '1px solid #e2e7eb', borderRadius: 2.5, mb: 2 }}>
+            <Typography variant="subtitle1" fontWeight={700} sx={{ color: '#243b53' }} gutterBottom>
+                Autentikasi pengguna (JWT)
             </Typography>
             <Typography variant="body2" color="text.secondary" mb={2}>
-                For logged-in users, obtain an <code>access_token</code> via the login endpoint.
+                Pengguna yang masuk dapat memperoleh <code>access_token</code> melalui endpoint login.
             </Typography>
 
-            <Typography variant="subtitle2" fontWeight={700}>1. Login</Typography>
+            <Typography variant="subtitle2" fontWeight={700}>1. Masuk</Typography>
             <CodeBlock code={curlLogin} />
 
-            <Typography variant="subtitle2" fontWeight={700} sx={{ mt: 3 }}>2. Authorized Request</Typography>
+            <Typography variant="subtitle2" fontWeight={700} sx={{ mt: 3 }}>2. Request dengan token</Typography>
             <CodeBlock code={curlBearer} />
+            </Paper>
 
-            <Divider sx={{ my: 4 }} />
-
-            <Typography variant="h6" fontWeight={600} gutterBottom>
-                Chat using API Documentation
+            <Paper elevation={0} sx={{ p: { xs: 2, md: 3 }, border: '1px solid #e2e7eb', borderRadius: 2.5, mb: 2 }}>
+            <Typography variant="subtitle1" fontWeight={700} sx={{ color: '#243b53' }} gutterBottom>
+                Chat dari data API
             </Typography>
-            <Typography variant="subtitle2" fontWeight={700}>1. Using Indonesian Language</Typography>
+            <Typography variant="subtitle2" fontWeight={700}>Bahasa Indonesia</Typography>
             <CodeBlock code={curlRAGApiDocId} />
 
-            <Typography variant="subtitle2" fontWeight={700} sx={{ mt: 3 }}>2. Using English Language</Typography>
+            <Typography variant="subtitle2" fontWeight={700} sx={{ mt: 3 }}>Bahasa Inggris</Typography>
             <CodeBlock code={curlRAGApiDocEn} />
+            </Paper>
 
-            <Divider sx={{ my: 4 }} />
-
-            <Typography variant="h6" fontWeight={600} gutterBottom>
-                Chat using Knowledge Base
+            <Paper elevation={0} sx={{ p: { xs: 2, md: 3 }, border: '1px solid #e2e7eb', borderRadius: 2.5, mb: 2 }}>
+            <Typography variant="subtitle1" fontWeight={700} sx={{ color: '#243b53' }} gutterBottom>
+                Chat dari Knowledge Base
             </Typography>
-            <Typography variant="subtitle2" fontWeight={700}>1. Using Indonesian Language</Typography>
+            <Typography variant="subtitle2" fontWeight={700}>Bahasa Indonesia</Typography>
             <CodeBlock code={curlRAGKBId} />
 
-            <Typography variant="subtitle2" fontWeight={700} sx={{ mt: 3 }}>2. Using English Language</Typography>
+            <Typography variant="subtitle2" fontWeight={700} sx={{ mt: 3 }}>Bahasa Inggris</Typography>
             <CodeBlock code={curlRAGKBEn} />
+            </Paper>
 
-            <Divider sx={{ my: 4 }} />
-
-            {/* Notes */}
-            <Box sx={{ bgcolor: "#fff3e0", p: 3, borderRadius: 2, borderLeft: "4px solid #ff9800" }}>
+            <Box sx={{ bgcolor: "#fff8eb", p: { xs: 2, md: 2.5 }, borderRadius: 2.5, border: '1px solid #f6dfb5' }}>
                 <Typography variant="subtitle2" fontWeight={700} color="#e65100" gutterBottom>
-                    Important Notes
+                    Catatan penting
                 </Typography>
                 <Typography variant="body2" sx={{ mb: 1 }}>
-                    • Generate and manage keys in the <strong>API Keys</strong> dashboard.
+                    • Buat dan kelola key di halaman <strong>API Keys</strong>.
                 </Typography>
                 <Typography variant="body2" sx={{ mb: 1 }}>
-                    • <strong>Access tokens</strong> have a limited lifespan. Use refresh tokens or re-login if you receive a <code>401 Unauthorized</code> error.
+                    • <strong>Access token</strong> memiliki masa berlaku. Masuk kembali jika menerima respons <code>401 Unauthorized</code>.
                 </Typography>
                 <Typography variant="body2">
-                    • All timestamps returned are in <strong>UTC</strong>.
+                    • Semua waktu pada respons API menggunakan <strong>UTC</strong>.
                 </Typography>
             </Box>
         </Box>

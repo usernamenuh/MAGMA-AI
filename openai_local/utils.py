@@ -45,7 +45,6 @@ def load_model():
         "n_gpu_layers": getattr(config, "n_gpu_layers", -1),
         "use_mmap": True,
         "use_mlock": False,
-        "f16_kv": getattr(config, "f16_kv", True),
         "embedding": getattr(config, "embedding_enabled", False),
         "verbose": getattr(config, "verbose", False),
         "seed": getattr(config, "seed", 0),
@@ -102,6 +101,19 @@ def format_prompt(messages: List[ChatMessage], tools: Optional[List[Tool]] = Non
     """
     Format messages into a prompt for the model.
     """
+    if config.model_name.lower().startswith("qwen"):
+        # Qwen Instruct uses ChatML, not the legacy plain role labels.
+        prompt = ""
+        if tools:
+            tool_specs = [tool.model_dump() for tool in tools]
+            prompt += "<|im_start|>system\nAvailable tools: " + json.dumps(tool_specs) + "<|im_end|>\n"
+        for message in messages:
+            content = message.content or ""
+            if message.tool_calls:
+                content += json.dumps([call.model_dump() for call in message.tool_calls])
+            prompt += f"<|im_start|>{message.role}\n{content}<|im_end|>\n"
+        return prompt + "<|im_start|>assistant\n"
+
     prompt = ""
     
     # If tools are provided, add them to system prompt

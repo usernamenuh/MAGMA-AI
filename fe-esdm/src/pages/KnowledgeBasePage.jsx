@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useState, useMemo } from "react";
 import {
     Box,
@@ -5,10 +6,12 @@ import {
     Typography,
     Tooltip,
     IconButton,
+    Chip,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import InfoIcon from "@mui/icons-material/Info";
+import ReplayIcon from "@mui/icons-material/Replay";
 import { useKnowledgeBase } from "@/hooks/useKnowledgeBase";
 import { useNavigate } from "react-router-dom";
 import ReactTable from "@/components/ReactTable";
@@ -19,7 +22,7 @@ const INITIAL_PAGE_INDEX = 0;
 
 export default function KnowledgeBasePage() {
     const navigate = useNavigate();
-    const { getDocuments, deleteDocument, loading } = useKnowledgeBase();
+    const { getDocuments, deleteDocument, retryDocument, loading } = useKnowledgeBase();
     const [confirmOpen, setConfirmOpen] = useState(false)
     const [deletedId, setDeletedId] = useState()
     const [documents, setDocuments] = useState([]);
@@ -29,6 +32,21 @@ export default function KnowledgeBasePage() {
     useEffect(() => {
         fetchDocuments(currentPageIndex);
     }, [currentPageIndex]);
+
+    useEffect(() => {
+        const hasActiveProcessing = documents.some((document) => {
+            const status = document.status?.toLowerCase();
+            return status === "pending" || status === "queued" || status === "processing";
+        });
+
+        if (!hasActiveProcessing) return undefined;
+
+        const timer = window.setTimeout(() => {
+            fetchDocuments(currentPageIndex);
+        }, 3000);
+
+        return () => window.clearTimeout(timer);
+    }, [documents, currentPageIndex]);
 
 
     const fetchDocuments = async (pageIndex) => {
@@ -62,6 +80,15 @@ export default function KnowledgeBasePage() {
         setConfirmOpen(true);
     };
 
+    const handleRetry = async (documentId) => {
+        try {
+            await retryDocument(documentId);
+            await fetchDocuments(currentPageIndex);
+        } catch (err) {
+            console.error("Failed to retry document:", err);
+        }
+    };
+
     const navigateToUpload = () => {
         navigate(`${KNOWLEDGE_BASE}/upload`);
     };
@@ -82,15 +109,17 @@ export default function KnowledgeBasePage() {
             width: 80,
         },
         {
-            Header: 'File Name',
+            Header: 'Dokumen',
             accessor: 'name',
             Cell: ({ value, row }) => (
                 <Tooltip title={value}>
                     <Typography
                         onClick={() => navigateToDetail(row.original.id)}
                         sx={{
-                            fontSize: 14,
-                            maxWidth: 500,
+                            fontSize: 13,
+                            fontWeight: 600,
+                            color: '#243b53',
+                            maxWidth: 440,
                             whiteSpace: 'nowrap',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
@@ -106,35 +135,74 @@ export default function KnowledgeBasePage() {
         {
             Header: 'Status',
             accessor: 'status',
-            Cell: ({ value }) => (
-                <Box component="span" fontWeight="bold" sx={{ color: value.toLowerCase() === 'completed' ? 'success.main' :  value.toLowerCase() === 'failed' ? 'error.main': 'warning.main' }}>
-                    {value.toUpperCase()}
-                </Box>
-            ),
+            Cell: ({ value }) => {
+                const status = (value || '').toLowerCase();
+                const tone = status === 'completed' ? { label: 'Selesai', bg: '#eaf7ef', color: '#1f7a3d' }
+                    : status === 'incomplete' ? { label: 'Kurang lengkap', bg: '#fff4dc', color: '#9a6700' }
+                    : status === 'failed' ? { label: 'Gagal', bg: '#fcebec', color: '#b4232c' }
+                        : { label: value || 'Diproses', bg: '#fff4dc', color: '#9a6700' };
+                return <Chip label={tone.label} size="small" sx={{ height: 24, fontSize: 11, fontWeight: 700, bgcolor: tone.bg, color: tone.color, borderRadius: 1.25 }} />;
+            },
         },
         {
-            Header: 'Pages',
+            Header: 'Halaman',
             accessor: 'totalPages',
         },
         {
-            Header: 'Actions',
+            Header: 'Durasi',
+            accessor: 'processingDurationSeconds',
+            Cell: ({ value }) => {
+                if (value === null || value === undefined) return '—';
+                if (value < 1) return `${Math.round(value * 1000)} ms`;
+                return `${value.toFixed(2)} s`;
+            },
+        },
+        {
+            Header: 'Keterangan',
+            accessor: 'message',
+            Cell: ({ value }) => (
+                <Tooltip title={value || ''}>
+                    <Typography
+                        sx={{
+                            fontSize: 13,
+                            color: '#607080',
+                            maxWidth: 280,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                        }}
+                    >
+                        {value || '—'}
+                    </Typography>
+                </Tooltip>
+            ),
+        },
+        {
+            Header: 'Aksi',
             id: 'actions',
             Cell: ({ row }) => (
-                <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    {row.original.status?.toLowerCase() === 'failed' && (
+                        <Tooltip title="Retry processing">
+                            <IconButton size="small" onClick={() => handleRetry(row.original.id)} sx={{ bgcolor: '#edf5ff', '&:hover': { bgcolor: '#dcecff' } }}>
+                                <ReplayIcon fontSize="small" color="primary" />
+                            </IconButton>
+                        </Tooltip>
+                    )}
                     <Tooltip title="View Details">
-                        <IconButton size="small" onClick={() => navigateToDetail(row.original.id)}>
+                        <IconButton size="small" onClick={() => navigateToDetail(row.original.id)} sx={{ bgcolor: '#f1f3f5', '&:hover': { bgcolor: '#e3e7eb' } }}>
                             <InfoIcon fontSize="small" />
                         </IconButton>
                     </Tooltip>
                     <Tooltip title="Delete">
-                        <IconButton size="small" onClick={() => handleDelete(row.original.id)} sx={{ ml: 1 }}>
+                        <IconButton size="small" onClick={() => handleDelete(row.original.id)} sx={{ bgcolor: '#fff0f0', '&:hover': { bgcolor: '#ffe0e0' } }}>
                             <DeleteIcon fontSize="small" color="error" />
                         </IconButton>
                     </Tooltip>
                 </Box>
             ),
         },
-    ], []);
+    ], [currentPageIndex]);
 
 
     return (
@@ -144,13 +212,16 @@ export default function KnowledgeBasePage() {
             pb: 10,
             display: "flex",
             flexDirection: "column",
-            height: "100vh",
+            height: "100%",
+            minHeight: 0,
+            boxSizing: "border-box",
             bgcolor: "#fbfbfb",
             color: "#000000",
-            overflow: "hidden" }}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+            overflowY: "auto",
+            overflowX: "hidden" }}>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2} gap={2} flexWrap="wrap">
                 <Box>
-                    <Typography variant="h5" fontWeight={600}>
+                    <Typography variant="h5" fontWeight={700} sx={{ color: '#1f2933' }}>
                         Knowledge Base Documents
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
@@ -161,13 +232,13 @@ export default function KnowledgeBasePage() {
                     variant="contained"
                     onClick={navigateToUpload}
                     startIcon={<CloudUploadIcon />}
-                    sx={{ bgcolor: "#00B473", textTransform: "none" }}
+                    sx={{ bgcolor: "#00B473", textTransform: "none", borderRadius: 2, px: 2, boxShadow: 'none', '&:hover': { bgcolor: '#009761', boxShadow: 'none' } }}
                 >
                     Upload Document
                 </Button>
             </Box>
 
-            <Box sx={{ mt: 3 }}>
+            <Box sx={{ mt: 3, pb: 2 }}>
                 <ReactTable
                     data={documents}
                     columns={COLUMNS}

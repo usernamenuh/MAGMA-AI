@@ -67,12 +67,15 @@ class ChatHistoryService:
                 ChatHistory.user_id == user_id,
                 ChatHistory.session_id == session_id
             )
-            .order_by(ChatHistory.created_at)
+            .order_by(ChatHistory.created_at.desc())
             .limit(limit)
         )
 
         result = await self.db.execute(stmt)
-        entities = result.scalars().all()
+        # Fetch the newest bounded window, then restore chronological order for
+        # prompt construction. Ordering ascending before LIMIT returned the
+        # oldest messages forever in long-lived WhatsApp sessions.
+        entities = list(reversed(result.scalars().all()))
 
         return self.map_list_to_dto(entities)
 

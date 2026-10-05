@@ -3,7 +3,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional, Any
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from db.session import get_db
 from models.dto.chat_history_dto import ChatHistoryDTO
 from services.auth_service import require_api_key
@@ -21,6 +21,8 @@ class ChatMessageCreate(BaseModel):
     message: str
 
 class ChatMessageResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     chat_id: str
     session_id: str
     role: str
@@ -29,9 +31,6 @@ class ChatMessageResponse(BaseModel):
     response: Optional[Any] = None
     geo_location: Optional[Any] = None
     created_at: datetime
-
-    class Config:
-        orm_mode = True
 
 # --------------------------
 # Routes

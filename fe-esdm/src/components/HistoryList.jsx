@@ -1,127 +1,65 @@
-import {
-    List,
-    ListItem,
-    ListItemText,
-    IconButton,
-    Box,
-    Typography,
-    Tooltip,
-} from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
-import HistoryIcon from "@mui/icons-material/History";
+import { useState } from "react";
+import { Box, IconButton, List, ListItemButton, ListItemText, Typography } from "@mui/material";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import { useNavigate, useParams } from "react-router-dom";
 import { useHistory } from "@/hooks/useHistory.jsx";
-import {CHAT} from "@/utils/routes.jsx";
+import { CHAT } from "@/utils/routes.jsx";
 
-export const HistoryList = ({ userId, collapsed }) => {
+export const HistoryList = ({ userId, collapsed, dark = false, query = "", onNavigate }) => {
+    const [historyVisible, setHistoryVisible] = useState(true);
     const navigate = useNavigate();
     const { id } = useParams();
     const { histories, deleteHistoryById } = useHistory(userId);
+    const visibleHistories = histories.filter((history) =>
+        (history.message || "").toLowerCase().includes(query.trim().toLowerCase())
+    );
 
-    const handleView = (historyId) => {
-        navigate(`${CHAT}/${historyId}`);
-    };
-
-    const handleDelete = async (historyId) => {
+    const handleDelete = async (event, historyId) => {
+        event.stopPropagation();
         await deleteHistoryById(historyId);
-        navigate(`${CHAT}`);
+        navigate(CHAT);
     };
 
     if (collapsed) {
-        return (
-            <Box sx={{ mt: 5, height: "100%" }}>
-                <Tooltip title="Histories" placement="right">
-                    <Box textAlign="center" mb={1}>
-                        <HistoryIcon color="action" />
-                    </Box>
-                </Tooltip>
-
-                <Box
-                    sx={{
-                        maxHeight: "200px",
-                        overflowY: "auto",
-                        overflowX: "hidden", // Hide horizontal scroll
-                    }}
-                >
-                    <List disablePadding>
-                        {histories.map((h) => (
-                            <Tooltip key={h.history_id} title={h.message || "Compliance"} placement="right">
-                                <ListItem
-                                    onClick={() => handleView(h.history_id)}
-                                    sx={{
-                                        justifyContent: 'center',
-                                        p: '8px 0',
-                                        mb: 1,
-                                        borderRadius: 1,
-                                        border: "1px solid",
-                                        borderColor: "divider",
-                                        "&:hover": { bgcolor: "action.hover", cursor: "pointer" },
-                                    }}
-                                >
-                                    <HistoryIcon fontSize="small" />
-                                </ListItem>
-                            </Tooltip>
-                        ))}
-                    </List>
-                </Box>
-            </Box>
-        );
+        return <Box sx={{ flex: 1, minHeight: 0 }} />;
     }
 
     return (
-        <Box sx={{ mt: 5, height: "100%" }}>
-            <Typography variant="h6" gutterBottom>
-                Histories
-            </Typography>
-            <Box
-                sx={{
-                    // Use a flexible height if possible, but keeping maxHeight for internal scroll
-                    maxHeight: "200px",
-                    overflowY: "auto",
-                    pr: 1,
-                }}
-            >
-                <List>
-                    {histories.map((h) => (
-                        <ListItem
-                            key={h.history_id}
-                            secondaryAction={
-                                <IconButton
-                                    edge="end"
-                                    aria-label="delete"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDelete(h.history_id);
-                                    }}
-                                >
-                                    <DeleteIcon sx={{ color: "#ff2828" }} fontSize="small" />
-                                </IconButton>
-                            }
-                            onClick={() => handleView(h.history_id)}
-                            sx={{
-                                borderRadius: 1,
-                                mb: 1,
-                                border: "1px solid",
-                                borderColor: "divider",
-                                color: id === h.history_id ? "#ffffff" : "text.primary",
-                                backgroundColor: id === h.history_id ? "#1976d2" : "background.paper",
-                                "&:hover": { 
-                                    bgcolor: id === h.history_id ? "#1565c0" : "action.hover",
-                                    cursor: "pointer" 
-                                },
-                            }}
-                        >
-                            <ListItemText
-                                primary={h.message || "Compliance"}
-                                
-                                primaryTypographyProps={{ noWrap: true, fontSize: 14 }}
-                                
-                            />
-                        </ListItem>
-                    ))}
-                </List>
+        <Box sx={{ mt: 2.5, flex: historyVisible ? 1 : "none", minHeight: 0, display: "flex", flexDirection: "column" }}>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 1.25, mb: historyVisible ? 0.75 : 0 }}>
+                <Typography variant="caption" sx={{ color: dark ? "#9b9b9b" : "text.secondary", fontWeight: 600 }}>
+                    Terbaru
+                </Typography>
+                <IconButton size="small" aria-label={historyVisible ? "Sembunyikan riwayat chat" : "Tampilkan riwayat chat"}
+                    aria-expanded={historyVisible} onClick={() => setHistoryVisible((visible) => !visible)}
+                    sx={{ width: 28, height: 28, color: dark ? "#9b9b9b" : "#68737d" }}>
+                    {historyVisible ? <KeyboardArrowDownIcon sx={{ fontSize: 20 }} /> : <KeyboardArrowRightIcon sx={{ fontSize: 20 }} />}
+                </IconButton>
             </Box>
-
+            {historyVisible && <List disablePadding sx={{ overflowY: "auto", overflowX: "hidden", pr: 0.25, scrollbarWidth: "thin", scrollbarColor: "#555 transparent" }}>
+                {visibleHistories.length === 0 && <Typography variant="body2" sx={{ px: 1.25, py: 1, color: dark ? "#777" : "text.secondary" }}>{query ? "Percakapan tidak ditemukan" : "Belum ada percakapan"}</Typography>}
+                {visibleHistories.map((history) => (
+                    <ListItemButton
+                        key={history.history_id}
+                        selected={id === String(history.history_id)}
+                        onClick={() => { navigate(`${CHAT}/${history.history_id}`); onNavigate?.(); }}
+                        sx={{
+                            minHeight: 36, borderRadius: 2, px: 1.25, py: 0.5, color: dark ? "#d7d7d7" : "text.primary",
+                            "&.Mui-selected, &.Mui-selected:hover": { bgcolor: dark ? "#2f2f2f" : "action.selected" },
+                            "&:hover": { bgcolor: dark ? "#252525" : "action.hover", "& .history-delete": { opacity: 1 } },
+                        }}
+                    >
+                        <ListItemText primary={history.message || "Percakapan baru"} primaryTypographyProps={{ noWrap: true, fontSize: 14, lineHeight: 1.4, letterSpacing: 0 }} />
+                        <IconButton className="history-delete" aria-label="Hapus percakapan" size="small"
+                            onClick={(event) => handleDelete(event, history.history_id)}
+                            sx={{ opacity: 0, color: dark ? "#aaa" : "text.secondary", ml: 0.5, "&:hover": { color: "#ff6b6b" } }}>
+                            <DeleteOutlineIcon sx={{ fontSize: 17 }} />
+                        </IconButton>
+                    </ListItemButton>
+                ))}
+            </List>}
         </Box>
     );
 };

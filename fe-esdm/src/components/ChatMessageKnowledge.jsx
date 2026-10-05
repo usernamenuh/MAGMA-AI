@@ -1,19 +1,14 @@
-import React, {useState} from "react";
-import {Box, Button, Card, CardContent, Collapse, IconButton, Tooltip, Typography} from "@mui/material";
+import React from "react";
+import {Box, Card, Chip, IconButton, Tooltip, Typography} from "@mui/material";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 import MarkdownRenderer from "@/components/MarkdownRenderer.jsx";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import ExpandLessIcon from "@mui/icons-material/ExpandLess";
-import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import AssistantIcon from "../assets/logo-esdm.png";
 import {BASE_URL} from "@/utils/constants.jsx";
 
 export default function ChatMessageKnowledge({ role, content, references=[] }) {
     const isUser = role === "user";
-    const [showResponse, setShowResponse] = useState(false);
-    const [response, setResponse] = useState()
-    const [copied, setCopied] = useState(false);
     const groupedReferences = React.useMemo(() => {
         if (!references) return [];
 
@@ -48,28 +43,20 @@ export default function ChatMessageKnowledge({ role, content, references=[] }) {
             console.error("Failed to copy text:", err);
         }
     };
-    const handleCopyResponse = () => {
-        const textToCopy = typeof response === "object"
-            ? JSON.stringify(response, null, 2)
-            : String(response);
-
-        navigator.clipboard.writeText(textToCopy);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1500);
-    };
     return (
         <Box
             sx={{
                 display: "flex",
                 justifyContent: isUser ? "flex-end" : "flex-start",
-                px: 2,
+                px: { xs: 0.5, sm: 2 },
                 py: 1,
             }}
         >
             <Box
                 sx={{
                     position: "relative",
-                    maxWidth: "80%",
+                    width: isUser ? "auto" : "100%",
+                    maxWidth: isUser ? { xs: "92%", md: "72%" } : { xs: "100%", md: "76%" },
                     // bgcolor: isUser ? "#2f2f2f" : "transparent",
                     color: "#fff",
                     borderRadius: isUser ? "18px" : "0",
@@ -86,9 +73,9 @@ export default function ChatMessageKnowledge({ role, content, references=[] }) {
                             justifyContent: "flex-end",
                             bgcolor: "#233C5A",
                             color: "#E1E6EB",
-                            borderRadius: 2,
-                            p: 1.5,
-                            maxWidth: "80%",
+                            borderRadius: "16px 16px 4px 16px",
+                            px: 2,
+                            py: 1.25,
                         }}
                     >
                         <Typography
@@ -99,38 +86,49 @@ export default function ChatMessageKnowledge({ role, content, references=[] }) {
                         </Typography>
                     </Box>
                 ) : (
-                    <Box display="flex" alignItems="flex-start" mb={2} gap={1}>
-                        <Box component="img" src={AssistantIcon} alt="Assistant" sx={{ width: 32, height: 32, mt: 0.5 }} />
+                    <Box display="flex" alignItems="flex-start" mb={2} gap={{ xs: 1, sm: 1.5 }}>
+                        <Box component="img" src={AssistantIcon} alt="ESDM Assistant" sx={{ width: 34, height: 34, mt: 0.5, objectFit: "contain" }} />
 
                         <Box sx={{ flex: 1 }}>
-                            <Card sx={{ backgroundColor: "#ffffff", borderRadius: 2, p: 2, boxShadow: 1 }}>
+                            <Typography variant="caption" sx={{ color: "#526579", fontWeight: 700, ml: 0.5, mb: 0.5, display: "block" }}>
+                                ESDM Assistant
+                            </Typography>
+                            <Card sx={{ backgroundColor: "#ffffff", borderRadius: "4px 16px 16px 16px", p: { xs: 1.5, sm: 2.25 }, border: "1px solid #e6ebf0", boxShadow: "0 4px 18px rgba(35,60,90,0.06)" }}>
                                 <MarkdownRenderer content={content} />
-                                {groupedReferences.map((reference) => {
-                                    const pageLabel = `Page ${reference.pages.join(", ")}`;
-
-                                    return (
-                                        <Button
-                                            key={reference.document_id}
-                                            variant="contained"
-                                            sx={{
-                                                bgcolor: "rgba(206,212,223,0.2)",
-                                                color: "rgb(35,60,90)",
-                                                textTransform: "none",
-                                                mt: 1,
-                                                textAlign: "left",
-                                                justifyContent: "flex-start",
-                                            }}
-                                            onClick={() =>
-                                                window.open(
-                                                    `${BASE_URL}${reference.url}#page=${reference.minPage}`,
-                                                    "_blank"
-                                                )
-                                            }
-                                        >
-                                            {reference.filename} ({pageLabel})
-                                        </Button>
-                                    );
-                                })}
+                                {groupedReferences.length > 0 && (
+                                    <Box sx={{ mt: 2, pt: 1.5, borderTop: "1px solid #edf0f3" }}>
+                                        <Typography variant="caption" sx={{ color: "#607386", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                                            Sumber dokumen
+                                        </Typography>
+                                        <Box sx={{ display: "grid", gap: 1, mt: 1 }}>
+                                        {groupedReferences.map((reference) => (
+                                            <Box
+                                                component="button"
+                                                type="button"
+                                                key={reference.document_id}
+                                                onClick={() => window.open(`${BASE_URL}${reference.url}#page=${reference.minPage}`, "_blank", "noopener,noreferrer")}
+                                                aria-label={`Buka sumber ${reference.filename}`}
+                                                title={reference.filename}
+                                                sx={{
+                                                    display: "flex", alignItems: "center", gap: 1.25,
+                                                    width: "100%", p: 1.25, borderRadius: 2,
+                                                    border: "1px solid #dce5ee", bgcolor: "#f7fafc",
+                                                    color: "#233c5a", cursor: "pointer", textAlign: "left",
+                                                    "&:hover": { bgcolor: "#eef5fb", borderColor: "#b7cadb" },
+                                                }}
+                                            >
+                                                <DescriptionOutlinedIcon fontSize="small" />
+                                                <Box sx={{ flex: 1, minWidth: 0 }}>
+                                                    <Typography variant="body2" fontWeight={650} noWrap>{reference.filename}</Typography>
+                                                    <Typography variant="caption" color="text.secondary">Halaman {reference.pages.join(", ")}</Typography>
+                                                </Box>
+                                                <Chip label="Dokumen" size="small" sx={{ display: { xs: "none", sm: "inline-flex" }, bgcolor: "#e5eef6", color: "#233c5a" }} />
+                                                <OpenInNewRoundedIcon sx={{ fontSize: 17, color: "#6f8294" }} />
+                                            </Box>
+                                        ))}
+                                        </Box>
+                                    </Box>
+                                )}
 
                             </Card>
 
@@ -168,18 +166,6 @@ export default function ChatMessageKnowledge({ role, content, references=[] }) {
                             </IconButton>
                         </Tooltip>
 
-                        <Tooltip title="More options" placement="top">
-                            <IconButton
-                                size="small"
-                                sx={{
-                                    color: "#777777",
-                                    "&:hover": { color: "#393939" },
-                                    p: "2px",
-                                }}
-                            >
-                                <MoreVertIcon sx={{ fontSize: 16 }} />
-                            </IconButton>
-                        </Tooltip>
                     </Box>
                 )}
 

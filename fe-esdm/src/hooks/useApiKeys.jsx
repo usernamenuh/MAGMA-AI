@@ -1,7 +1,6 @@
 // src/hooks/useApiKeys.jsx
-import {useState, useCallback, useEffect} from 'react';
+import {useState, useCallback} from 'react';
 import { axiosInstance } from "../api/client.jsx";
-import {USER_ID} from "@/utils/constants.jsx";
 import {useAuth} from "@/hooks/useAuth.jsx";
 
 
@@ -22,7 +21,7 @@ export const useApiKeys = () => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [user]);
 
     const generateApiKey = useCallback(async (name, validityPeriod) => {
         setLoading(true);
@@ -38,7 +37,7 @@ export const useApiKeys = () => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [user]);
 
     const revokeApiKey = useCallback(async (key) => {
         setLoading(true);

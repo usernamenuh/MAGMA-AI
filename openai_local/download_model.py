@@ -12,6 +12,12 @@ from tqdm import tqdm
 
 # Popular GGUF models
 MODELS = {
+    "qwen2.5-1.5b-instruct": {
+        "url": "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf",
+        "filename": "qwen2.5-1.5b-instruct-q4_k_m.gguf",
+        "size": "1.12 GB",
+        "description": "Qwen2.5 1.5B Instruct - Q4_K_M (CPU-friendly)"
+    },
     "mistral-7b-instruct": {
         "url": "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q4_K_M.gguf",
         "filename": "mistral-7b-instruct-v0.2.Q4_K_M.gguf",

@@ -19,6 +19,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libreoffice-writer \
     antiword \
     fonts-dejavu \
+    libgl1 \
     build-essential \
     libpq-dev \
     git \
@@ -35,8 +36,13 @@ RUN pip install --no-cache-dir torch torchvision --index-url https://download.py
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install dateparser
 
+# Docling terbaru gagal diimpor dengan constraint Pydantic 2.7 lama.
+RUN pip install --no-cache-dir --upgrade "pydantic[email]>=2.12,<3"
+
 # Pre-download docling models at build time (avoids cold-start download in prod)
 RUN python3 -c "from docling.document_converter import DocumentConverter; DocumentConverter()"
+RUN apt-get update && apt-get install -y --no-install-recommends poppler-utils \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 # Copy project code
 
 # --------------------------

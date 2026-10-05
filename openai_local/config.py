@@ -26,8 +26,8 @@ class ModelConfig:
         os.environ["CUDA_VISIBLE_DEVICES"] = cuda_devices
 
         # Model configuration
-        self.model_path = os.getenv("MODEL_PATH", "models/mistral-7b-instruct-v0.2.Q4_K_M.gguf")
-        self.model_name = os.getenv("MODEL_NAME", "mistral-7b-instruct")
+        self.model_path = os.getenv("MODEL_PATH", "models/qwen2.5-1.5b-instruct-q4_k_m.gguf")
+        self.model_name = os.getenv("MODEL_NAME", "qwen2.5-1.5b-instruct")
 
         # Performance tuning
         self.n_ctx = _safe_int("N_CTX", 4096)

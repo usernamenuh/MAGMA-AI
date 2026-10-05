@@ -7,6 +7,7 @@ import math
 import random
 import asyncio
 import unicodedata
+from contextvars import ContextVar
 from datetime import datetime, timedelta
 from difflib import SequenceMatcher
 
@@ -29,6 +30,23 @@ load_dotenv()
 
 BASE_URL = os.getenv("BASE_URL")
 OPENAI_API_BASE = os.getenv("OPENAI_API_BASE", "http://0.0.0.0:8002/v1")
+SELECTED_CHAT_MODEL = ContextVar("selected_chat_model", default=None)
+
+
+def set_chat_model(model):
+    return SELECTED_CHAT_MODEL.set(model)
+
+
+def reset_chat_model(token):
+    SELECTED_CHAT_MODEL.reset(token)
+
+
+def run_with_chat_model(model, function, *args, **kwargs):
+    token = set_chat_model(model)
+    try:
+        return function(*args, **kwargs)
+    finally:
+        reset_chat_model(token)
 
 # ---------- Cache ----------
 CACHE_FILE = "volcano_cache.json"
@@ -154,29 +172,29 @@ category_keywords = {
 # ---------- API Endpoints ----------
 endpoints = {
     "VAR": {
-        "list": "{{url}}/api/v1/magma-var",
-        "latest": "{{url}}/api/v1/magma-var",
-        "detail": "{{url}}/api/v1/magma-var/{code}",
-        "filter": "{{url}}/api/v1/magma-var/filter",
-        "detail-noticenumber": "{{url}}/api/v1/magma-var/{code}/{noticenumber}",
+        "list": "{{url}}/api/v2/volcano/var",
+        "latest": "{{url}}/api/v2/volcano/var",
+        "detail": "{{url}}/api/v2/volcano/var/{code}",
+        "filter": "{{url}}/api/v2/volcano/var/filter",
+        "detail-noticenumber": "{{url}}/api/v2/volcano/var/{code}/{noticenumber}",
     },
     "VEN": {
-        "list": "{{url}}/api/v1/home/gunung-api/informasi-letusan",
-        "latest": "{{url}}/api/v1/home/gunung-api/informasi-letusan/latest",
-        "detail": "{{url}}/api/v1/home/gunung-api/informasi-letusan/{id}",
-        "filter": "{{url}}/api/v1/home/gunung-api/informasi-letusan/filter",
+        "list": "{{url}}/api/v2/volcano/ven",
+        "latest": "{{url}}/api/v2/volcano/ven/latest",
+        "detail": "{{url}}/api/v2/volcano/ven/{id}",
+        "filter": "{{url}}/api/v2/volcano/ven/filter",
     },
     "VONA": {
-        "list": "{{url}}/api/v1/vona",
-        "latest": "{{url}}/api/v1/vona/latest",
-        "detail": "{{url}}/api/v1/vona/{uuid}",
-        "filter": "{{url}}/api/v1/vona/filter",
+        "list": "{{url}}/api/v2/volcano/vona",
+        "latest": "{{url}}/api/v2/volcano/vona/latest",
+        "detail": "{{url}}/api/v2/volcano/vona/{uuid}",
+        "filter": "{{url}}/api/v2/volcano/vona/filter",
     },
     "GERAKAN_TANAH": {
-        "list": "{{url}}/api/v1/home/gerakan-tanah",
-        "latest": "{{url}}/api/v1/home/gerakan-tanah/latest",
-        "detail": "{{url}}/api/v1/home/gerakan-tanah/{id}",
-        "filter": "{{url}}/api/v1/home/gerakan-tanah/filter",
+        "list": "{{url}}/api/v2/ground-movement",
+        "latest": "{{url}}/api/v2/ground-movement/latest",
+        "detail": "{{url}}/api/v2/ground-movement/{id}",
+        "filter": "{{url}}/api/v2/ground-movement/filter",
     },
 }
 
@@ -1689,7 +1707,7 @@ def load_volcano_cache():
     return None
 
 def get_mount_code():
-    api_url = "https://magma.esdm.go.id/api/v1/home/gunung-api"
+    api_url = resolve_api_url("/api/v2/volcano/list")
 
     try:
         session.headers.update(get_auth_header())
@@ -1720,13 +1738,34 @@ def get_mount_code():
         }
 
 
+def get_today_eruption_events(max_pages: int = 10) -> dict:
+    """Fetch today's VEN records without relying on the failing filter endpoint."""
+    today = datetime.now().strftime("%Y-%m-%d")
+    events = []
+    api_url = resolve_api_url("/api/v2/volcano/ven")
+    for page in range(1, max_pages + 1):
+        payload = call_api(api_url, params={"page": page}, max_retries=1)
+        if not isinstance(payload, dict) or payload.get("error"):
+            return {"error": "Data erupsi belum dapat diambil", "events": events, "date": today}
+        rows = payload.get("data") or []
+        if not rows:
+            break
+        events.extend(row for row in rows if row.get("local_date") == today)
+        if any(row.get("local_date") and row.get("local_date") < today for row in rows):
+            break
+    return {"date": today, "events": events}
+
+
 def resolve_api_url(api_url: str) -> str:
-    return api_url.replace("{{url}}", BASE_URL.rstrip("/"))
+    base_url = BASE_URL.rstrip("/")
+    if api_url.startswith("/"):
+        return f"{base_url}{api_url}"
+    return api_url.replace("{{url}}", base_url)
 
 
 def model_chat(
     messages,
-    model="llama3-8b-cpt-sahabatai",
+    model=None,
     temperature=0.2,
     max_tokens=600,
     stop=None,
@@ -1740,29 +1779,77 @@ def model_chat(
     for attempt in range(max_retries):
         try:
             base = os.getenv("OPENAI_API_BASE", "http://localhost:8002/v1")
+            selected = SELECTED_CHAT_MODEL.get() or model
+            is_openrouter = bool(selected and selected.startswith("openrouter:"))
+            if is_openrouter:
+                base = "https://openrouter.ai/api/v1"
+                selected_model = selected.removeprefix("openrouter:")
+            else:
+                selected_model = os.getenv("OPENAI_MODEL") or "qwen2.5-1.5b-instruct"
+            effective_max_tokens = max_tokens
+            if not is_openrouter:
+                # CPU-only local inference must finish before the API timeout.
+                local_limit = int(os.getenv("LOCAL_LLM_MAX_TOKENS", "180"))
+                effective_max_tokens = min(max_tokens, local_limit)
+            api_key = os.getenv("OPENROUTER_API_KEY") if is_openrouter else os.getenv("OPENAI_API_KEY")
+            if not api_key:
+                raise RuntimeError("OPENROUTER_API_KEY belum diisi" if is_openrouter else "OPENAI_API_KEY belum diisi")
             payload = {
-                "model": model,
+                "model": selected_model,
                 "messages": [{"role": m.role, "content": m.content} for m in messages],
                 "temperature": temperature,
-                "max_tokens": max_tokens,
+                "max_tokens": effective_max_tokens,
             }
             if stop:
                 payload["stop"] = stop
             if repetition_penalty:
                 payload["frequency_penalty"] = frequency_penalty
                 payload["presence_penalty"] = presence_penalty
+            if is_openrouter:
+                # Free reasoning models can spend the whole token budget on an
+                # internal trace and return no answer. Request answer-only output.
+                payload["reasoning"] = {"exclude": True}
+            headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json"
+            }
+            if is_openrouter:
+                headers["HTTP-Referer"] = os.getenv("OPENROUTER_SITE_URL", "http://localhost:3000")
+                headers["X-OpenRouter-Title"] = os.getenv("OPENROUTER_APP_NAME", "MAGMA AI")
             response = requests.post(
                 f"{base}/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY', 'my-super-secret-admin-key')}",
-                    "Content-Type": "application/json"
-                },
+                headers=headers,
                 json=payload,
+                timeout=(
+                    float(os.getenv("OPENROUTER_TIMEOUT_SECONDS", "30"))
+                    if is_openrouter
+                    else float(os.getenv("LOCAL_MODEL_TIMEOUT_SECONDS", "30"))
+                ),
             )
-            
-            return response.json()["choices"][0]["message"]["content"]
+            response.raise_for_status()
+            data = response.json()
+            content = data["choices"][0]["message"].get("content")
+            if not isinstance(content, str) or not content.strip():
+                raise RuntimeError("Model mengembalikan jawaban kosong")
+            content = content.strip()
+            rejected_prefixes = (
+                "user safety:",
+                "assistant safety:",
+                "here's a thinking process:",
+                "here is a thinking process:",
+            )
+            lowered_content = content.lower()
+            if is_openrouter and (
+                lowered_content.startswith(rejected_prefixes)
+                or "safety categories:" in lowered_content
+            ):
+                raise RuntimeError("Router memilih model klasifikasi/reasoning, mencoba model lain")
+            return content
 
         except Exception as e:
+            if not is_openrouter:
+                print(f"❌ Local model call failed: {e}")
+                return None
             if attempt < max_retries - 1:
                 sleep_time = 2 ** attempt + random.uniform(0, 0.5)
                 print(f"⚠️ Model call failed: {e}. Retrying in {sleep_time:.1f}s")
@@ -1883,6 +1970,9 @@ def check_if_nearest_question(user_input: str) -> bool:
 
     triggers = [
         # Indonesian
+        "gunung api terdekat",
+        "gunung terdekat",
+        "gapi terdekat",
         "apakah daerah saya aman",
         "daerah saya aman",
         "apakah wilayah saya aman",
@@ -2004,4 +2094,3 @@ def get_closest_gerakan_tanah_data(api_url, user_lat, user_lon, method="GET", pa
         page += 1
 
     return closest_data
-

@@ -2,15 +2,12 @@ import React, { useEffect, useState, useRef } from "react";
 import {
     Box,
     Typography,
-    TextField,
-    Button,
-    Stack,
     CircularProgress,
     MenuItem,
     Select,
     FormControl,
     Paper,
-    IconButton, FormControlLabel, Switch, Tooltip, Chip,
+    IconButton, FormControlLabel, Switch, Tooltip, Chip, ToggleButton, ToggleButtonGroup,
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import ChatMessage from "../components/ChatMessage.jsx";
@@ -18,10 +15,13 @@ import {
     analyzeChat,
     analyzeChatEn,
     analyzeChatKnowledgeBase,
-    analyzeChatKnowledgeBaseEn
+    analyzeChatKnowledgeBaseEn,
+    DEFAULT_CHAT_MODELS,
+    getChatModels,
+    getKnowledgeDocuments
 } from "../hooks/useAnalyze.jsx";
 import useChatHistory from "../hooks/useChatHistory.jsx";
-import {useParams} from "react-router-dom";
+import {useLocation, useParams} from "react-router-dom";
 import {useAuth} from "@/hooks/useAuth.jsx";
 import {useHistory} from "@/hooks/useHistory.jsx";
 import {PIPELINE_TYPE} from "@/utils/constants.jsx";
@@ -29,17 +29,62 @@ import ChatMessageKnowledge from "@/components/ChatMessageKnowledge.jsx";
 import {bounce} from "@/utils/layout.jsx";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import LocationOffIcon from "@mui/icons-material/LocationOff";
+import DocumentMentionInput from "../components/DocumentMentionInput.jsx";
+import MobileChatSource from "../components/MobileChatSource.jsx";
+import MobileChatLanguage from "../components/MobileChatLanguage.jsx";
+import MobileChatLocation from "../components/MobileChatLocation.jsx";
+import AssistantIcon from "../assets/logo-esdm.png";
 
 export default function ChatRAGHistory() {
     const { id: sessionId } = useParams();
+    const location = useLocation();
     const { history, fetchSessionHistory, addMessage, updateLast } = useChatHistory();
     const [prompt, setPrompt] = useState("");
     const [geoLocation, setGeoLocation] = useState(null);
     const [isUsingIPAddress, setIsUsingIPAddress] = useState(null)
     const [loading, setLoading] = useState(false);
+    const [models, setModels] = useState(DEFAULT_CHAT_MODELS);
+    const [selectedModel, setSelectedModel] = useState(() =>
+        location.state?.selectedModel ||
+        sessionStorage.getItem(`chat_model:${sessionId}`) ||
+        "local"
+    );
+    useEffect(() => {
+        const model = location.state?.selectedModel ||
+            sessionStorage.getItem(`chat_model:${sessionId}`) ||
+            "local";
+        setSelectedModel(model);
+        if (location.state?.selectedModel) {
+            sessionStorage.setItem(`chat_model:${sessionId}`, model);
+        }
+    }, [sessionId, location.state?.selectedModel]);
+    const [knowledgeDocuments, setKnowledgeDocuments] = useState([]);
+    const [selectedDocumentIds, setSelectedDocumentIds] = useState([]);
     const chatEndRef = useRef(null);
     const [locationEnabled, setLocationEnabled] = useState(true);
     const [locationName, setLocationName] = useState(null);
+
+    useEffect(() => {
+        getChatModels().then(({ data }) => {
+            const availableModels = data.items?.length ? data.items : DEFAULT_CHAT_MODELS;
+            const defaultModel = availableModels.some((item) => item.id === data.default)
+                ? data.default
+                : availableModels[0].id;
+            setModels(availableModels);
+            setSelectedModel((currentModel) =>
+                availableModels.some((item) => item.id === currentModel)
+                    ? currentModel
+                    : defaultModel
+            );
+        }).catch((error) => console.error("Failed to load models:", error));
+    }, []);
+    useEffect(() => {
+        getKnowledgeDocuments().then(({ data }) => {
+            setKnowledgeDocuments(
+                (data.items || []).filter((item) => ["COMPLETED", "INCOMPLETE"].includes(item.processing_status))
+            );
+        }).catch((error) => console.error("Failed to load knowledge documents:", error));
+    }, []);
     const {user} = useAuth();
     const [pipelineType, setPipelineType] = useState(history[0]?.type || PIPELINE_TYPE.API_DOCUMENTATION);
     const [isTypeOptionDisabled, setIsTypeOptionDisabled] = useState(true)
@@ -51,15 +96,19 @@ export default function ChatRAGHistory() {
 
     useEffect(() => {
         setPipelineType(history[0]?.type || PIPELINE_TYPE.API_DOCUMENTATION);
-        setLanguage(history[0]?.lang || 'id');
+        const savedLanguage = localStorage.getItem("chat_language");
+        const historyLanguage = history.find((message) => message.lang)?.lang;
+        setLanguage(savedLanguage || historyLanguage || "en");
     },[history])
 
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [history]);
 
-    const [geoError, setGeoError] = useState(null);
-    const [language, setLanguage] = useState("id");
+    const [, setGeoError] = useState(null);
+    const [language, setLanguage] = useState(
+        () => localStorage.getItem("chat_language") || "en"
+    );
     const { refetchHistories } = useHistory(user?.id || JSON.parse(user)?.id);
     const languages = [
         { code: "en", label: "🇬🇧 English" },
@@ -161,20 +210,40 @@ export default function ChatRAGHistory() {
 
     useEffect(() => {
         getLocation();
+        // getLocation intentionally reads the latest state for each toggle.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     },  [locationEnabled]);
 
     const handleLocationToggle = () => {
         setLocationEnabled(!locationEnabled);
     };
 
+    const setLanguageChoice = (nextLanguage) => {
+        localStorage.setItem("chat_language", nextLanguage);
+        setLanguage(nextLanguage);
+    };
+
+    const handleLanguageChange = (event) => setLanguageChoice(event.target.value);
+
 
     const handleSend = async () => {
         if (!prompt.trim()) return;
+        const cleanKnowledgePrompt = knowledgeDocuments.reduce(
+            (text, document) => text.replaceAll(`@${document.filename}`, " "),
+            prompt
+        ).replace(/\s+/g, " ").trim();
         addMessage(prompt);
         setLoading(true);
 
         try {
-            const payload = pipelineType===PIPELINE_TYPE.API_DOCUMENTATION? { user_input: prompt, geo_location: locationEnabled ? geoLocation : null, location_name: locationEnabled? locationName: null, session_id: sessionId } : { user_input: prompt, session_id: sessionId };
+            const payload = pipelineType===PIPELINE_TYPE.API_DOCUMENTATION
+                ? { user_input: prompt, geo_location: locationEnabled ? geoLocation : null, location_name: locationEnabled? locationName: null, session_id: sessionId, model: selectedModel }
+                : {
+                    user_input: cleanKnowledgePrompt || prompt,
+                    session_id: sessionId,
+                    model: selectedModel,
+                    document_ids: selectedDocumentIds.length ? selectedDocumentIds : null,
+                };
 
             let res;
             try {
@@ -194,8 +263,12 @@ export default function ChatRAGHistory() {
             // Handle specific Axios network error
             if (apiError.code === 'ERR_NETWORK') {
                 // Network error - server unreachable
-                updateLast("Maaf, server magma.esdm.go.id sedang tidak dapat diakses.\n" +
-                    "Silakan coba beberapa saat lagi.", true);
+                updateLast(
+                    language === "en"
+                        ? "Sorry, the assistant service is currently unreachable. Please try again in a few moments."
+                        : "Maaf, layanan asisten sedang tidak dapat dijangkau. Silakan coba beberapa saat lagi.",
+                    true
+                );
 
                 // You can also provide retry option
                 console.error("Network connection failed:", {
@@ -252,60 +325,97 @@ export default function ChatRAGHistory() {
         setLoading(false);
         setIsTypeOptionDisabled(false);
         setPrompt("");
+        setSelectedDocumentIds([]);
     }
     };
     return (
+        <>
+        <MobileChatSource value={pipelineType} options={pipelineTypeOptions} disabled={isTypeOptionDisabled}
+            onChange={setPipelineType} />
+        <MobileChatLanguage value={language} options={languages} onChange={setLanguageChoice} />
+        <MobileChatLocation visible={pipelineType === PIPELINE_TYPE.API_DOCUMENTATION}
+            enabled={locationEnabled} onToggle={handleLocationToggle} name={locationName} coordinates={geoLocation} />
         <Box
             sx={{
-                pt: 5,
+                pt: { xs: 0, md: 2 },
                 flex: 1,
-                px: 4,
+                px: { xs: 1.5, sm: 3, md: 4 },
                 display: "flex",
                 flexDirection: "column",
-                height: "100vh",
+                height: "100%",
+                minHeight: 0,
+                minWidth: 0,
+                boxSizing: "border-box",
                 bgcolor: "#fbfbfb",
                 color: "#000000",
+                overflow: "hidden",
             }}
         >
             {/* Header */}
             <Box
                 sx={{
-                    px: 3,
-                    py: 2,
-                    display: "flex",
-                    justifyContent: "space-between",
+                    px: { xs: 0, md: 3 },
+                    py: { xs: 1, md: 2 },
+                    display: { xs: "none", sm: "grid" },
+                    gridTemplateColumns: { sm: "minmax(0, 1fr) auto", lg: "minmax(180px, 1fr) auto minmax(320px, 1fr)" },
+                    minWidth: 0,
                     alignItems: "center",
                     flexShrink: 0,
-                    pt: 10,
+                    pt: { xs: 1, md: 1.5 },
+                    columnGap: 2,
+                    rowGap: 1,
                 }}
             >
-                <Typography variant="h5" fontWeight="600">
-                    ESDM Assistant
-                </Typography>
+                <Box sx={{ minWidth: 0, gridColumn: 1, gridRow: 1 }}>
+                    <Typography variant="h5" fontWeight="700">ESDM Assistant</Typography>
+                    <Typography variant="caption" sx={{ color: "#607386" }}>Asisten informasi MAGMA Indonesia</Typography>
+                </Box>
+                <ToggleButtonGroup
+                    exclusive
+                    size="small"
+                    value={pipelineType}
+                    disabled={isTypeOptionDisabled}
+                    onChange={(_, value) => value && setPipelineType(value)}
+                    aria-label="Pilih sumber jawaban"
+                    sx={{
+                        justifySelf: "center", gridColumn: { sm: "1 / -1", lg: 2 }, gridRow: { sm: 2, lg: 1 }, bgcolor: "#eef1f4", borderRadius: 999, p: 0.4,
+                        "& .MuiToggleButton-root": { px: { xs: 1.5, sm: 3 }, py: 0.7, border: 0, borderRadius: "999px !important", textTransform: "none", color: "#52606d", fontSize: { xs: 12, sm: 13 } },
+                        "& .Mui-selected": { bgcolor: "#fff !important", color: "#172b3f !important", boxShadow: "0 1px 5px rgba(0,0,0,.12)" },
+                    }}
+                >
+                    {pipelineTypeOptions.map((type) => <ToggleButton key={type.code} value={type.code}>{type.label}</ToggleButton>)}
+                </ToggleButtonGroup>
                 <Box
                     sx={{
                         display: "flex",
-                        justifyContent: "space-between",
                         alignItems: "center",
-                        flexShrink: 0,
-                        gap: 2,
+                        minWidth: 0,
+                        width: "auto",
+                        gap: 1.25,
+                        justifyContent: "flex-end",
+                        justifySelf: "end",
+                        gridColumn: { sm: 2, lg: 3 },
+                        gridRow: 1,
                     }}
                 >
                     {/* Location Toggle and Display */}
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    {pipelineType === PIPELINE_TYPE.API_DOCUMENTATION && <Box sx={{ display: "flex", alignItems: "center", minWidth: 0, gap: 0.75, whiteSpace: "nowrap" }}>
                         <FormControlLabel
+                            sx={{ m: 0, flexShrink: 0, gap: 0.25, "& .MuiFormControlLabel-label": { lineHeight: 1 } }}
                             control={
                                 <Switch
+                                    size="small"
                                     checked={locationEnabled}
                                     onChange={handleLocationToggle}
                                     color="primary"
+                                    inputProps={{ "aria-label": "Gunakan lokasi" }}
                                 />
                             }
                             label={
                                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                                    {locationEnabled ? <LocationOnIcon fontSize="small" /> : <LocationOffIcon fontSize="small" />}
-                                    <Typography variant="body2">
-                                        Location {locationEnabled && geoLocation && isUsingIPAddress ? '- Using IP Address': ''}
+                                    {locationEnabled ? <LocationOnIcon sx={{ fontSize: 17 }} /> : <LocationOffIcon sx={{ fontSize: 17 }} />}
+                                    <Typography variant="body2" sx={{ fontSize: 12.5 }}>
+                                        Lokasi
                                     </Typography>
                                 </Box>
                             }
@@ -322,43 +432,28 @@ export default function ChatRAGHistory() {
                                     }
                                     color="primary"
                                     variant="outlined"
+                                    sx={{ display: { sm: "none", md: "inline-flex" }, maxWidth: 125, "& .MuiChip-label": { overflow: "hidden", textOverflow: "ellipsis" } }}
                                 />
                             </Tooltip>
                         )}
-                    </Box>
-                    <FormControl size="small" sx={{ minWidth: 140, mr: 2 }}>
+                    </Box>}
+                    <FormControl size="small" sx={{ minWidth: 126, flexShrink: 0 }}>
                         <Select
                             value={language}
-                            onChange={(e) => setLanguage(e.target.value)}
+                            onChange={handleLanguageChange}
                             sx={{
-                                color: "#020202",
-                                "& .MuiOutlinedInput-notchedOutline": { borderColor: "#444" },
-                                "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#666" },
-                                "& .MuiSvgIcon-root": { color: "#aaa" },
+                                height: 36,
+                                fontSize: 13,
+                                borderRadius: 2,
+                                color: "#263746",
+                                "& .MuiOutlinedInput-notchedOutline": { borderColor: "#d8e0e6" },
+                                "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#aebbc6" },
+                                "& .MuiSvgIcon-root": { color: "#607386" },
                             }}
                         >
                             {languages.map((lang) => (
                                 <MenuItem key={lang.code} value={lang.code}>
                                     {lang.label}
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                    <FormControl size="small" sx={{ minWidth: 140 }}>
-                        <Select
-                            disabled={isTypeOptionDisabled}
-                            value={pipelineType}
-                            onChange={(e) => setPipelineType(e.target.value)}
-                            sx={{
-                                color: "#020202",
-                                "& .MuiOutlinedInput-notchedOutline": { borderColor: "#444" },
-                                "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#666" },
-                                "& .MuiSvgIcon-root": { color: "#aaa" },
-                            }}
-                        >
-                            {pipelineTypeOptions.map((type) => (
-                                <MenuItem key={type.code} value={type.code}>
-                                    {type.label}
                                 </MenuItem>
                             ))}
                         </Select>
@@ -373,18 +468,15 @@ export default function ChatRAGHistory() {
                     overflowY: "auto",
                     display: "flex",
                     flexDirection: "column",
-                    px: 3,
+                    px: { xs: 0, sm: 2, md: 3 },
                     py: 2,
                 }}
             >
                 {history.length === 0 ? (
-                    <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ textAlign: "center", mt: 10, color: "#999" }}
-                    >
-                        Start the conversation by typing belows 👇
-                    </Typography>
+                    <Box sx={{ textAlign: "center", mt: { xs: 5, md: 10 } }}>
+                        <Typography variant="h6" fontWeight={700} color="#233c5a">Lanjutkan percakapan dengan ESDM Assistant</Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>Ketik pertanyaan di bawah ini.</Typography>
+                    </Box>
                 ) : (
                     history.map((chat, i) => (
                         <Box key={i} mb={2}>
@@ -400,14 +492,15 @@ export default function ChatRAGHistory() {
                     ))
                 )}
                 {loading && (
-                    <Box sx={{ display: "flex", justifyContent: "flex-start", mb: 2 }}>
+                    <Box sx={{ display: "flex", justifyContent: "flex-start", alignItems: "flex-start", gap: 1.5, mb: 2, px: { xs: 0.5, sm: 2 } }}>
+                        <Box component="img" src={AssistantIcon} alt="ESDM Assistant" sx={{ width: 34, height: 34, objectFit: "contain" }} />
                         <Box
                             sx={{
                                 backgroundColor: "#f3f3f3",
                                 borderRadius: 2,
                                 p: 2,
                                 display: "flex",
-                                gap: 1,
+                                gap: 1, alignItems: "center", border: "1px solid #e3e9ee",
                             }}
                         >
                             <Box
@@ -419,6 +512,9 @@ export default function ChatRAGHistory() {
                                     animation: `${bounce} 0.6s infinite`,
                                 }}
                             />
+                            <Typography variant="body2" sx={{ color: "#526579", ml: 0.5 }}>
+                                {pipelineType === PIPELINE_TYPE.KNOWLEDGE_BASE ? "ESDM Assistant sedang mencari dalam dokumen…" : "ESDM Assistant sedang mengambil data MAGMA…"}
+                            </Typography>
                             <Box
                                 sx={{
                                     width: 8,
@@ -449,42 +545,46 @@ export default function ChatRAGHistory() {
             {/* Input Bar */}
             <Paper
                 sx={{
-                    borderRadius: 8,
+                    borderRadius: 4,
+                    width: "min(760px, 100%)",
+                    mx: "auto",
                     flexShrink: 0,
-                    mb: 2,
+                    mb: { xs: "max(12px, env(safe-area-inset-bottom))", sm: 2 },
+                    border: "1px solid #e0e6eb",
+                    boxShadow: "0 8px 28px rgba(35,60,90,0.08)",
                 }}
             >
-                <Stack direction="row" spacing={2} alignItems="center">
-                    <TextField
-                        fullWidth
-                        variant="outlined"
-                        multiline={true}
-                        placeholder="Ask anything..."
-                        value={prompt}
-                        onChange={(e) => setPrompt(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+                <Box>
+                    <DocumentMentionInput
+                        prompt={prompt}
+                        setPrompt={setPrompt}
+                        documents={knowledgeDocuments}
+                        selectedDocumentIds={selectedDocumentIds}
+                        setSelectedDocumentIds={setSelectedDocumentIds}
                         disabled={loading}
-                        sx={{
-                            "& .MuiOutlinedInput-root": {
-                                bgcolor: "#fbfbfb",
-                                color: "#272727",
-                                borderRadius: 8,
-                                px: 3,
-                                py: 1.5,
-                                "& fieldset": { borderColor: "#ffffff" },
-                                "&:hover fieldset": { borderColor: "#ffffff" },
-                            },
-                        }}
+                        onSend={handleSend}
+                        enabled={pipelineType === PIPELINE_TYPE.KNOWLEDGE_BASE}
                     />
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, px: 1.25, pb: 1, pt: 0.25 }}>
+                    <FormControl size="small" sx={{ minWidth: 0, maxWidth: "calc(100% - 64px)" }}>
+                        <Select value={selectedModel} disabled={loading} onChange={(e) => {
+                            setSelectedModel(e.target.value);
+                            sessionStorage.setItem(`chat_model:${sessionId}`, e.target.value);
+                        }}
+                            aria-label="Pilih model AI"
+                            sx={{ height: 34, borderRadius: 2, fontSize: 13, color: "#52606d", "& .MuiSelect-select": { py: 0.75, pl: 1.25, pr: 3.5 }, "& fieldset": { borderColor: "transparent" }, "&:hover fieldset": { borderColor: "#dce3e9" } }}>
+                            {models.map((item) => <MenuItem key={item.id} value={item.id}>{item.label}</MenuItem>)}
+                        </Select>
+                    </FormControl>
                     <IconButton
                         color="primary"
                         onClick={handleSend}
-                        disabled={loading}
+                        disabled={loading || !prompt.trim()}
+                        aria-label="Kirim pesan"
                         sx={{
-                            // bgcolor: loading ? "#ffffff" : "#424343",
-                            // "&:hover": { bgcolor: "#1565c0" },
-                            color: "#424343",
-                            p: 1.5
+                            color: "#233c5a", width: 36, height: 36,
+                            "&:hover": { bgcolor: "transparent", color: "#172b42" },
+                            "&.Mui-disabled": { bgcolor: "transparent", color: "#aeb8c1" },
                         }}
                     >
                         {loading ? (
@@ -493,8 +593,10 @@ export default function ChatRAGHistory() {
                             <SendIcon />
                         )}
                     </IconButton>
-                </Stack>
+                    </Box>
+                </Box>
             </Paper>
         </Box>
+        </>
     );
 }

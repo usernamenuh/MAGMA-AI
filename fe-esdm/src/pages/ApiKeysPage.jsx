@@ -8,12 +8,11 @@ import {
     List,
     ListItem,
     ListItemText,
-    ListItemSecondaryAction,
     IconButton,
-    Divider,
     Alert,
     Tooltip,
     Chip,
+    Paper,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import BlockIcon from "@mui/icons-material/Block";
@@ -103,86 +102,100 @@ export default function APIKeysPage() {
 
     return (
         <Box sx={{
-            pt: 5,
+            pt: { xs: 2, md: 5 },
             flex: 1,
-            px: 4,
+            px: { xs: 2, md: 4 },
+            pb: 5,
             display: "flex",
             flexDirection: "column",
             height: "100%",
-            bgcolor: "#fbfbfb",
+            minHeight: 0,
+            boxSizing: "border-box",
+            bgcolor: "#f8fafc",
             color: "#000000",
-            overflow: "hidden",
+            overflowY: "auto",
+            overflowX: "hidden",
         }}>
-            <Typography variant="h5" fontWeight={600} gutterBottom sx={{color: 'black', mt: 4}}>
-                API Keys Configuration
-            </Typography>
+            <Box sx={{ mb: 3 }}>
+                <Typography variant="h5" fontWeight={700} sx={{ color: '#18212b', letterSpacing: '-0.02em' }}>API Keys</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Kelola API key untuk mengakses layanan secara aman.</Typography>
+            </Box>
 
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-                Manage and secure your API keys for Compliance services.
-            </Typography>
+            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-            {error && <Alert severity="error">{error}</Alert>}
-
-            <Box my={3} display="flex" gap={2}>
+            <Paper elevation={0} sx={{ p: { xs: 2, md: 2.5 }, mb: 2, border: '1px solid #e2e7eb', borderRadius: 2.5 }}>
+            <Typography variant="subtitle1" fontWeight={700} sx={{ color: '#243b53', mb: 0.5 }}>Buat API key baru</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Beri nama yang mudah dikenali dan tentukan masa berlaku key.</Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'minmax(220px, 1fr) 160px auto' }, gap: 1.5, alignItems: 'center' }}>
                 <TextField
-                    label="API Key Name"
+                    label="Nama API key"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     size="small"
+                    fullWidth
                 />
                 <TextField
-                    label="Validity Period (in days)"
+                    label="Masa berlaku (hari)"
                     value={validityPeriod}
                     type="number"
                     onChange={(e) => setValidityPeriod(e.target.value)}
                     size="small"
+                    fullWidth
+                    slotProps={{ htmlInput: { min: 1 } }}
                 />
                 <Button
                     variant="contained"
                     onClick={handleGenerate}
                     disabled={loading || !name}
+                    sx={{ minHeight: 40, borderRadius: 1.75, px: 2, boxShadow: 'none', whiteSpace: 'nowrap', '&:hover': { boxShadow: 'none' } }}
                 >
-                    {loading ? <CircularProgress size={20} /> : "Generate Key"}
+                    {loading ? <CircularProgress size={20} /> : "Buat key"}
                 </Button>
             </Box>
+            </Paper>
 
             {showNewKey && apiKey && (
                 <Alert severity="success" sx={{ mb: 2 }}>
-                    New API Key: <strong>{apiKey}</strong>
+                    API key baru: <Box component="strong" sx={{ overflowWrap: 'anywhere' }}>{apiKey}</Box>
                 </Alert>
             )}
-
-            <Divider sx={{ mb: 2 }} />
 
             {loading ? (
                 <CircularProgress />
             ) : apiKeys.length === 0 ? (
-                <Typography>No API keys found.</Typography>
+                <Paper elevation={0} sx={{ p: 4, border: '1px solid #e2e7eb', borderRadius: 2.5, textAlign: 'center' }}><Typography color="text.secondary">Belum ada API key.</Typography></Paper>
             ) : (
-                <List>
+                <Paper elevation={0} sx={{ border: '1px solid #e2e7eb', borderRadius: 2.5, overflow: 'hidden' }}>
+                    <Box sx={{ px: { xs: 2, md: 2.5 }, py: 1.75, borderBottom: '1px solid #e8edf1' }}><Typography variant="subtitle1" fontWeight={700} sx={{ color: '#243b53' }}>API key tersedia <Typography component="span" variant="body2" color="text.secondary">({apiKeys.length})</Typography></Typography></Box>
+                <List disablePadding>
                     {apiKeys.map((keyObj, index) => {
                         const keyId = keyObj.api_key;
 
                         return (
                             <ListItem
                                 key={keyId}
-                                divider
                                 sx={{
-                                    bgcolor: "background.paper",
-                                    borderRadius: 1,
-                                    mb: 1,
+                                    px: { xs: 2, md: 2.5 },
+                                    py: 1.75,
+                                    borderBottom: index < apiKeys.length - 1 ? '1px solid #edf0f2' : 0,
+                                    display: 'flex',
+                                    alignItems: { xs: 'stretch', md: 'center' },
+                                    flexDirection: { xs: 'column', md: 'row' },
+                                    gap: { xs: 1.25, md: 2 },
+                                    '&:hover': { bgcolor: '#fbfcfd' },
                                 }}
                             >
                                 <ListItemText
+                                    sx={{ m: 0, minWidth: 0, flex: 1 }}
                                     primary={
-                                        <Box display="flex" alignItems="center" gap={1}>
-                                            <Typography variant="subtitle1">
+                                        <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
+                                            <Typography variant="body2" fontWeight={700} sx={{ color: '#243b53', overflowWrap: 'anywhere' }}>
                                                 {keyObj.name || `API Key #${index + 1}`}
                                             </Typography>
                                             <Chip
-                                                label={keyObj.valid ? "Valid" : "Invalid"}
+                                                label={keyObj.valid ? "Aktif" : "Tidak aktif"}
                                                 size="small"
-                                                color={keyObj.valid ? "success" : "error"}
+                                                sx={{ height: 23, fontWeight: 700, fontSize: 11, borderRadius: 1.25, bgcolor: keyObj.valid ? '#eaf7ef' : '#fcebec', color: keyObj.valid ? '#1f7a3d' : '#b4232c' }}
                                             />
                                         </Box>
                                     }
@@ -193,76 +206,76 @@ export default function APIKeysPage() {
                                                 sx={{
                                                     fontFamily: "monospace",
                                                     wordBreak: "break-all",
-                                                    bgcolor: "#f5f5f5",
-                                                    p: 1,
-                                                    borderRadius: 1,
+                                                    bgcolor: "#f8fafc",
+                                                    p: 1.25,
+                                                    borderRadius: 1.5,
+                                                    border: '1px solid #edf0f2',
                                                     mt: 1,
-                                                    maxWidth: { xs: "100%", sm: "70%", md: "50%" },
+                                                    maxWidth: '100%',
+                                                    fontSize: 12,
                                                 }}
                                             >
                                                 {showKey[keyId]
                                                     ? keyObj.api_key
                                                     : "••••••••••••••••••••••••••••••••"}
                                             </Typography>
-                                            <Typography variant="caption" color="text.secondary">
-                                                Created:{" "}
+                                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.75 }}>
+                                                Dibuat:{" "}
                                                 {new Date(keyObj.created_at + "Z").toLocaleString()}
                                                 {keyObj.validity_duration && (
-                                                    <> | Duration: {keyObj.validity_duration} days</>
+                                                    <> · Berlaku {keyObj.validity_duration} hari</>
                                                 )}
                                             </Typography>
                                         </>
                                     }
                                 />
 
-                                <ListItemSecondaryAction>
-                                    <Tooltip title={showKey[keyId] ? "Hide" : "Show"}>
-                                        <IconButton onClick={() => toggleShowKey(keyId)}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0, gap: 0.5, alignSelf: { xs: 'flex-end', md: 'center' } }}>
+                                    <Tooltip title={showKey[keyId] ? "Sembunyikan key" : "Tampilkan key"}>
+                                        <IconButton aria-label={showKey[keyId] ? 'Sembunyikan key' : 'Tampilkan key'} size="small" onClick={() => toggleShowKey(keyId)} sx={{ bgcolor: '#f1f3f5', '&:hover': { bgcolor: '#e4e9ed' } }}>
                                             {showKey[keyId] ? <VisibilityOffIcon /> : <VisibilityIcon />}
                                         </IconButton>
                                     </Tooltip>
 
-                                    <Tooltip title="Copy">
-                                        <IconButton onClick={() => handleCopy(keyObj.api_key)}>
+                                    <Tooltip title={copiedKey === keyObj.api_key ? 'Tersalin' : 'Salin key'}>
+                                        <IconButton aria-label="Salin key" size="small" onClick={() => handleCopy(keyObj.api_key)} sx={{ bgcolor: '#f1f3f5', '&:hover': { bgcolor: '#e4e9ed' } }}>
                                             <ContentCopyIcon
                                                 color={copiedKey === keyObj.api_key ? "success" : "inherit"}
                                             />
                                         </IconButton>
                                     </Tooltip>
 
-                                    <Tooltip title="Revoke Key">
+                                    <Tooltip title="Cabut key">
                                         <IconButton
-                                            edge="end"
-                                            aria-label="revoke"
+                                            aria-label="Cabut key"
                                             disabled={!keyObj?.valid}
                                             onClick={() =>
                                                 openConfirm("revoke", keyObj.api_key, keyObj.name)
                                             }
-                                            sx={{
-                                                color: keyObj?.valid ? '#d32f2f' : 'rgba(0,0,0,0.26)',
-                                                '&:hover': keyObj?.valid ? { color: '#b71c1c', backgroundColor: 'rgba(211,47,47,0.08)' } : {},
-                                            }}
+                                            size="small"
+                                            sx={{ color: keyObj?.valid ? '#b45309' : 'rgba(0,0,0,0.26)', bgcolor: keyObj?.valid ? '#fff7ed' : 'transparent', '&:hover': keyObj?.valid ? { color: '#92400e', backgroundColor: '#ffedd5' } : {} }}
                                         >
                                             <BlockIcon  />
                                         </IconButton>
                                     </Tooltip>
 
-                                    <Tooltip title="Delete Key">
+                                    <Tooltip title="Hapus key">
                                         <IconButton
-                                            edge="end"
-                                            aria-label="delete"
+                                            aria-label="Hapus key"
                                             onClick={() =>
                                                 openConfirm("delete", keyObj.api_key, keyObj.name)
                                             }
-                                        >
+                                            size="small"
+                                            sx={{ bgcolor: '#fff0f0', '&:hover': { bgcolor: '#ffe0e0' } }}>
                                             <DeleteIcon color="error" />
                                         </IconButton>
                                     </Tooltip>
-                                </ListItemSecondaryAction>
+                                </Box>
                             </ListItem>
                         );
                     })}
                 </List>
+                </Paper>
             )}
 
             <Typography
@@ -272,7 +285,7 @@ export default function APIKeysPage() {
                 textAlign="center"
                 sx={{ mt: 3 }}
             >
-                Keep your API keys secure and never share them publicly.
+                Simpan API key dengan aman dan jangan bagikan kepada orang lain.
             </Typography>
 
             <ConfirmationDialog
@@ -280,18 +293,16 @@ export default function APIKeysPage() {
                 onClose={() => setConfirmOpen(false)}
                 onOk={handleConfirmOk}
                 onCancel={() => setConfirmOpen(false)}
-                okText={confirmType === "delete"? "Delete": "Revoke"}
-                cancelText="Cancel"
+                okText={confirmType === "delete"? "Hapus": "Cabut"}
+                cancelText="Batal"
             >
                 {confirmType === "delete" ? (
                     <>
-                        Are you sure you want to permanently delete API key{" "}
-                        <strong>{textConfirmation}</strong>?
+                        Yakin ingin menghapus API key <strong>{textConfirmation}</strong> secara permanen?
                     </>
                 ) : (
                     <>
-                        Are you sure you want to revoke API key{" "}
-                        <strong>{textConfirmation}</strong>?
+                        Yakin ingin mencabut API key <strong>{textConfirmation}</strong>?
                     </>
                 )}
             </ConfirmationDialog>

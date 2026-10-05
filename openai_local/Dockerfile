@@ -31,7 +31,7 @@ RUN python setup.py build_ext --inplace
 FROM python:3.11-slim
 
 # Install bash, which is required by our entrypoint script
-RUN apt-get update && apt-get install -y bash && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends bash libgomp1 && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 

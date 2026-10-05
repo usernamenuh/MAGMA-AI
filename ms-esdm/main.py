@@ -3,6 +3,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from sqlalchemy import text
+
 from db.session import Base, sync_engine
 from routes.routes import api_router
 from services.esdm_auth import auto_login
@@ -42,6 +44,33 @@ if not DISABLE_LICENSE:
 @app.on_event("startup")
 def on_startup():
     Base.metadata.create_all(bind=sync_engine)
+    # create_all does not add fields to an existing table, so keep this
+    # lightweight schema update idempotent for existing installations.
+    with sync_engine.begin() as connection:
+        connection.execute(text(
+            "ALTER TABLE documents "
+            "ADD COLUMN IF NOT EXISTS extraction_duration_seconds DOUBLE PRECISION"
+        ))
+        connection.execute(text(
+            "ALTER TABLE documents "
+            "ADD COLUMN IF NOT EXISTS processing_duration_seconds DOUBLE PRECISION"
+        ))
+        connection.execute(text(
+            "ALTER TABLE documents "
+            "ADD COLUMN IF NOT EXISTS processing_message TEXT"
+        ))
+        connection.execute(text(
+            "ALTER TABLE documents "
+            "ADD COLUMN IF NOT EXISTS extraction_mode VARCHAR DEFAULT 'auto' NOT NULL"
+        ))
+        connection.execute(text("ALTER TABLE documents ADD COLUMN IF NOT EXISTS extraction_attempts INTEGER DEFAULT 0"))
+        connection.execute(text("ALTER TABLE documents ADD COLUMN IF NOT EXISTS extraction_coverage_percent DOUBLE PRECISION"))
+        connection.execute(text("ALTER TABLE documents ADD COLUMN IF NOT EXISTS important_text_total INTEGER DEFAULT 0"))
+        connection.execute(text("ALTER TABLE documents ADD COLUMN IF NOT EXISTS important_text_missing INTEGER DEFAULT 0"))
+        connection.execute(text("ALTER TABLE documents ADD COLUMN IF NOT EXISTS extraction_audit_status VARCHAR"))
+        connection.execute(text("ALTER TABLE documents ADD COLUMN IF NOT EXISTS missing_important_text JSON"))
+        connection.execute(text("ALTER TABLE documents ADD COLUMN IF NOT EXISTS whatsapp_session_id VARCHAR"))
+        connection.execute(text("ALTER TABLE documents ADD COLUMN IF NOT EXISTS whatsapp_notification_sent BOOLEAN DEFAULT FALSE NOT NULL"))
 
     if not DISABLE_LICENSE and license_service is not None:
         try:

@@ -1,7 +1,7 @@
 """
 Document-related database models
 """
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, JSON, Text
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, JSON, Text, Float, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from db.session import Base
@@ -16,11 +16,23 @@ class Document(Base):
     file_path = Column(String, nullable=False)
     upload_date = Column(DateTime, default=datetime.utcnow)
     processing_status = Column(String, default="PENDING")  # pending, processing, completed, error
+    extraction_mode = Column(String, default="auto", nullable=False)
     error_message = Column(Text, nullable=True)
+    processing_message = Column(Text, nullable=True)
     total_pages = Column(Integer, default=0)
+    extraction_duration_seconds = Column(Float, nullable=True)
+    processing_duration_seconds = Column(Float, nullable=True)
+    extraction_attempts = Column(Integer, default=0)
+    extraction_coverage_percent = Column(Float, nullable=True)
+    important_text_total = Column(Integer, default=0)
+    important_text_missing = Column(Integer, default=0)
+    extraction_audit_status = Column(String, nullable=True)
+    missing_important_text = Column(JSON, nullable=True)
     text_chunks_count = Column(Integer, default=0)
     images_count = Column(Integer, default=0)
     tables_count = Column(Integer, default=0)
+    whatsapp_session_id = Column(String, nullable=True)
+    whatsapp_notification_sent = Column(Boolean, default=False, nullable=False)
 
     # Relationships
     chunks = relationship("DocumentChunk", back_populates="document", cascade="all, delete-orphan")
@@ -80,6 +92,8 @@ class DocumentTable(Base):
 
 class DocumentStatus:
     PENDING = "PENDING"
+    QUEUED = "QUEUED"
     PROCESSING = "PROCESSING"
     COMPLETED = "COMPLETED"
+    INCOMPLETE = "INCOMPLETE"
     FAILED = "FAILED"

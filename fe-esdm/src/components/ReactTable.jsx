@@ -12,7 +12,6 @@ import {
     TableContainer,
     Pagination,
     PaginationItem,
-    TableFooter,
     CircularProgress,
 } from '@mui/material';
 import React, { useEffect } from 'react';
@@ -52,8 +51,7 @@ const ReactTable = ({
         prepareRow,
         pageOptions = [],
         gotoPage,
-        footerGroups,
-        state: { pageIndex, pageSize },
+        state: { pageIndex },
     } = useTable(
         {
             columns,
@@ -76,13 +74,14 @@ const ReactTable = ({
             elevation={0}
             sx={{
                 borderRadius: '6px',
-                border: '1px solid',
-                borderColor: 'divider',
-                boxShadow: 'none',
+                border: '1px solid #e2e7eb',
+                boxShadow: '0 1px 2px rgba(15, 23, 42, 0.03)',
+                overflowX: 'auto',
+                bgcolor: '#fff',
             }}
         >
-            <Table {...getTableProps()} {...tableStyle}>
-                <TableHead {...tHeadStyle} sx={{ bgcolor: '#f7f7f7', ...thStyle }}>
+            <Table {...getTableProps()} {...tableStyle} sx={{ minWidth: 920, borderCollapse: 'separate', borderSpacing: 0 }}>
+                <TableHead {...tHeadStyle} sx={{ bgcolor: '#f6f8fa', ...thStyle }}>
                     {headerGroups.map(headerGroup => (
                         <TableRow
                             {...headerGroup.getHeaderGroupProps()}
@@ -92,7 +91,16 @@ const ReactTable = ({
                             {headerGroup.headers.map(column => (
                                 <TableCell
                                     key={column.id}
-                                    sx={{ fontWeight: 'bold', fontSize: 14 }}
+                                    sx={{
+                                        py: 1.65,
+                                        fontWeight: 700,
+                                        fontSize: 11,
+                                        letterSpacing: 0.25,
+                                        textTransform: 'uppercase',
+                                        color: '#52606d',
+                                        borderColor: '#e2e7eb',
+                                        whiteSpace: 'nowrap',
+                                    }}
                                 >
                                     {column.render('Header')}
                                 </TableCell>
@@ -124,11 +132,15 @@ const ReactTable = ({
                                     {...row.getRowProps()}
                                     key={row.getRowProps().key}
                                     {...trStyle}
-                                    sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                                    sx={{
+                                        transition: 'background-color 140ms ease',
+                                        '&:hover': { bgcolor: '#f8fafc' },
+                                        '&:last-child td, &:last-child th': { borderBottom: 0 },
+                                    }}
                                 >
                                     {row.cells.map(cell => (
                                         <TableCell
-                                            sx={{ py: 1.5, fontSize: 13, ...tdStyle }}
+                                            sx={{ py: 1.8, fontSize: 13, borderColor: '#edf0f2', ...tdStyle }}
                                             {...cell.getCellProps()}
                                             key={cell.getCellProps().key}
                                         >
@@ -141,26 +153,15 @@ const ReactTable = ({
                     )}
                 </TableBody>
 
-                <TableFooter>
-                    {footerGroups.map(footerGroup => (
-                        <TableRow {...footerGroup.getFooterGroupProps()} key={footerGroup.getFooterGroupProps().key}>
-                            {footerGroup.headers.map(column => (
-                                <TableCell {...column.getFooterProps()} key={column.getFooterProps().key}>
-                                    {column.render('Footer')}
-                                </TableCell>
-                            ))}
-                        </TableRow>
-                    ))}
-                </TableFooter>
             </Table>
 
             {/* Pagination control */}
             {total > 0 && (
                 <Box
-                    p={2}
+                    px={2}
+                    py={1.25}
                     sx={{
-                        borderTop: '1px solid',
-                        borderColor: 'divider',
+                        borderTop: '1px solid #edf0f2',
                     }}
                 >
                     <Box display="flex" alignItems="center" justifyContent="space-between">

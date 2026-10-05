@@ -1,12 +1,45 @@
-version: '3.9'
-
 services:
+  db:
+    image: pgvector/pgvector:pg15
+    container_name: esdm-postgres
+    environment:
+      POSTGRES_USER: esdm_user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: esdm_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - esdm-data:/var/lib/postgresql/data
+      - ./ms-esdm/db-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U esdm_user -d esdm_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  adminer:
+    image: adminer:latest
+    container_name: esdm-adminer
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8081:8080"
+    restart: unless-stopped
+
   backend:
     build:
       context: ./ms-esdm
     container_name: ms-esdm-backend
     env_file:
-      - ./ms-esdm/.env
+      - path: ./ms-esdm/.env
+        format: raw
+    environment:
+      DOCUMENT_OCR_ENABLED: "false"
+    depends_on:
+      db:
+        condition: service_healthy
     expose:
       - "8000"
     dns:
@@ -25,6 +58,25 @@ services:
       retries: 3
       start_period: 60s
 
+  knowledge-worker:
+    image: magma-ai-staging-backend
+    container_name: ms-esdm-knowledge-worker
+    command: ["python", "-m", "worker.knowledge_worker"]
+    env_file:
+      - path: ./ms-esdm/.env
+        format: raw
+    environment:
+      DOCUMENT_OCR_ENABLED: "false"
+      EVOLUTION_INTERNAL_URL: http://evolution-api:8080
+      EVOLUTION_API_KEY: esdm-demo-evolution-key-change-before-public
+      EVOLUTION_INSTANCE: esdm-assistant
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - /mnt/data/magma-ai/blobs:/app/blobs:z
+    restart: unless-stopped
+
   openai-local:
     build:
       context: ./openai_local
@@ -42,19 +94,137 @@ services:
     build:
       context: ./fe-esdm
     container_name: fe-esdm-frontend
+    env_file:
+      - ./fe-esdm/.env
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     expose:
       - "3000"
+    ports:
+      - "3000:3000"
 
   nginx:
     image: nginx:latest
     container_name: esdm-nginx
     depends_on:
-      - frontend
-      - backend
-      - openai-local
+      frontend:
+        condition: service_started
+      backend:
+        condition: service_healthy
+      openai-local:
+        condition: service_started
     ports:
       - "80:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: esdm-n8n
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5679:5678"
+    environment:
+      TZ: Asia/Jakarta
+      GENERIC_TIMEZONE: Asia/Jakarta
+      N8N_HOST: localhost
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      WEBHOOK_URL: http://localhost:5679/
+      N8N_SECURE_COOKIE: "false"
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+      N8N_RUNNERS_ENABLED: "true"
+    volumes:
+      - n8n-data:/home/node/.n8n
+
+  evolution-db:
+    image: postgres:15
+    container_name: evolution-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: evolution_api
+      POSTGRES_USER: evolution
+      POSTGRES_PASSWORD: evolution-local-demo
+    command:
+      - postgres
+      - -c
+      - max_connections=200
+      - -c
+      - listen_addresses=*
+    volumes:
+      - evolution-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U evolution -d evolution_api"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  evolution-redis:
+    image: redis:7-alpine
+    container_name: evolution-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - evolution-redis-data:/data
+
+  evolution-api:
+    image: evoapicloud/evolution-api:v2.3.7
+    container_name: evolution-api
+    restart: unless-stopped
+    depends_on:
+      evolution-db:
+        condition: service_healthy
+      evolution-redis:
+        condition: service_started
+      n8n:
+        condition: service_started
+    ports:
+      - "127.0.0.1:8082:8080"
+    environment:
+      SERVER_NAME: evolution
+      SERVER_TYPE: http
+      SERVER_PORT: 8080
+      SERVER_URL: http://localhost:8082
+      SERVER_DISABLE_DOCS: "false"
+      SERVER_DISABLE_MANAGER: "false"
+      CORS_ORIGIN: "*"
+      CORS_METHODS: POST,GET,PUT,DELETE
+      CORS_CREDENTIALS: "true"
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://evolution:evolution-local-demo@evolution-db:5432/evolution_api
+      DATABASE_CONNECTION_CLIENT_NAME: evolution
+      DATABASE_SAVE_DATA_INSTANCE: "true"
+      DATABASE_SAVE_DATA_NEW_MESSAGE: "true"
+      DATABASE_SAVE_MESSAGE_UPDATE: "true"
+      DATABASE_SAVE_DATA_CONTACTS: "false"
+      DATABASE_SAVE_DATA_CHATS: "false"
+      DATABASE_SAVE_DATA_HISTORIC: "false"
+      DATABASE_SAVE_DATA_LABELS: "false"
+      CACHE_REDIS_ENABLED: "false"
+      CACHE_REDIS_URI: redis://evolution-redis:6379
+      CACHE_REDIS_PREFIX_KEY: evolution-cache
+      CACHE_REDIS_SAVE_INSTANCES: "true"
+      CACHE_LOCAL_ENABLED: "true"
+      AUTHENTICATION_API_KEY: esdm-demo-evolution-key-change-before-public
+      AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES: "false"
+      LANGUAGE: en
+      CONFIG_SESSION_PHONE_CLIENT: ESDM Assistant
+      CONFIG_SESSION_PHONE_NAME: Chrome
+      CONFIG_SESSION_PHONE_VERSION: 2.3000.1033773198
+      QRCODE_LIMIT: 30
+      WEBHOOK_GLOBAL_ENABLED: "false"
+      WEBSOCKET_ENABLED: "true"
+      N8N_ENABLED: "true"
+      TELEMETRY_ENABLED: "false"
+    volumes:
+      - evolution-instances:/evolution/instances
+
+volumes:
+  esdm-data:
+    external: true
+    name: magma-ai_esdm-data
+  n8n-data:
+  evolution-postgres-data:
+  evolution-redis-data:
+  evolution-instances:

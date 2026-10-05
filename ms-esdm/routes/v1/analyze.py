@@ -11,6 +11,8 @@ from services.logger import save_log
 from services.chat_history_service import ChatHistoryService
 import uuid
 import asyncio
+from functools import partial
+from utils.pipeline_helpers import run_with_chat_model
 
 router = APIRouter()
 
@@ -22,6 +24,7 @@ class AnalyzeRequest(BaseModel):
     session_id: Optional[str] = None
     geo_location: Optional[Tuple[float, float]] = None
     location_name: Optional[str] = None
+    model: Optional[str] = None
 
     @field_validator("geo_location", mode="before")
     def handle_null_list(cls, v):
@@ -71,11 +74,8 @@ async def analyze(req: AnalyzeRequest,
 
     result = await loop.run_in_executor(
         pipeline_executor,
-        run_pipeline,
-        req.user_input,
-        req.geo_location,
-        history_context,
-        req.location_name
+        partial(run_with_chat_model, req.model, run_pipeline,
+                req.user_input, req.geo_location, history_context, req.location_name)
     )
 
     if result is None or result["status"]=="error":
@@ -162,11 +162,8 @@ async def analyze_en(
     # -------------------------------
     result = await loop.run_in_executor(
         pipeline_executor,
-        run_pipeline_en,
-        req.user_input,
-        req.geo_location,
-        history_context,
-        req.location_name  
+        partial(run_with_chat_model, req.model, run_pipeline_en,
+                req.user_input, req.geo_location, history_context, req.location_name)
     )
 
     # -------------------------------

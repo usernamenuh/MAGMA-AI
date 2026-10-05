@@ -88,10 +88,13 @@ export default function ScrappingData() {
             px: 4,
             display: "flex",
             flexDirection: "column",
-            height: "100vh",
+            height: "100%",
+            minHeight: 0,
+            boxSizing: "border-box",
             bgcolor: "#fbfbfb",
             color: "#000000",
-            overflow: "hidden",
+            overflowY: "auto",
+            overflowX: "hidden",
         }}>
             <Typography variant="h5" fontWeight={600} gutterBottom sx={{color: 'black', mt: 4}}>
                 Scrapping Data
