@@ -14,12 +14,19 @@ from services.auth_service import require_api_key
 from services.chat_history_service import ChatHistoryService
 from services.whatsapp_auth_service import handle_whatsapp_auth
 from services.whatsapp_follow_ups import DynamicFollowUpGenerator, format_nara_follow_up
+from services.whatsapp_location import (
+    handle_whatsapp_location_query,
+    parse_whatsapp_coordinates,
+)
 from services.whatsapp_volcano_region import (
     answer_named_volcano_query,
     answer_ranked_volcano_query,
     answer_regional_volcano_query,
 )
 from utils.follow_ups import AFFIRM_RE, DECLINE_RE, OFFER_MARKER
+from utils.location_answers import detect_location_question
+
+_SESSION_LOCATIONS: dict[str, tuple[float, float, str | None]] = {}
 
 
 router = APIRouter()
@@ -34,7 +41,8 @@ MODE_COMMANDS = {
 API_TOPIC = re.compile(
     r"\b(?:gunung(?:\s+api)?|gempa(?:\s+bumi)?|gempabumi|erupsi|letusan|"
     r"vulkanik|pvmbg|magma|tsunami|longsor|gerakan\s+tanah|siaga|waspada|awas|"
-    r"merapi|semeru|sinabung|krakatau|bromo|agung|marapi|lewotobi|tangkuban)\b",
+    r"merapi|semeru|sinabung|krakatau|bromo|agung|marapi|lewotobi|tangkuban|"
+    r"lokasi|posisi|koordinat|terdekat|aman|dmna|dimana)\b",
     re.IGNORECASE,
 )
 DOCUMENT_TOPIC = re.compile(
@@ -48,6 +56,9 @@ class WhatsAppAnalyzeRequest(BaseModel):
     user_input: str
     session_id: str
     model: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    location_name: str | None = None
 
 
 def _route_for(message: str, mode: str, last_route: str | None) -> str:
@@ -103,9 +114,13 @@ async def analyze_whatsapp(
     session_id = req.session_id.strip()
     if not session_id.startswith("whatsapp-") or len(session_id) > 180:
         raise HTTPException(status_code=400, detail="Sesi WhatsApp tidak valid")
-    message = req.user_input.strip()
-    if not message:
+    message = (req.user_input or "").strip()
+    has_coords = req.latitude is not None and req.longitude is not None
+    if not message and not has_coords:
         return _response("Tulis pertanyaan atau ketik /help untuk melihat pilihan mode.", session_id, "auto")
+    if not message and has_coords:
+        loc_label = f", {req.location_name}" if req.location_name else ""
+        message = f"[LOKASI: {req.latitude}, {req.longitude}{loc_label}]"
 
     state = await db.get(WhatsAppAuthSession, session_id)
     if state is None:
@@ -189,6 +204,98 @@ async def analyze_whatsapp(
         await db.commit()
         return _response("Baik. Silakan tanyakan hal lain kapan saja.", session_id, state.conversation_mode or "auto")
     state.pending_follow_up = None
+
+    # ===================================================================
+    # LOCATION SHARING & COORDINATE HANDLING FOR WHATSAPP
+    # ===================================================================
+    lat, lon, loc_name = parse_whatsapp_coordinates(
+        message,
+        latitude=req.latitude,
+        longitude=req.longitude,
+        location_name=req.location_name,
+    )
+    if lat is not None and lon is not None:
+        _SESSION_LOCATIONS[session_id] = (lat, lon, loc_name)
+        loc_output, follow_up_target, nearest_list = handle_whatsapp_location_query(
+            lat, lon, candidate_name=loc_name
+        )
+        state.pending_follow_up = follow_up_target
+        state.last_route = "api"
+        await db.commit()
+
+        history_id = f"{session_id}:api"
+        chat_history = ChatHistoryService(db)
+        user_id = api_key.get("id") or api_key.get("token")
+        await chat_history.create_message(
+            user_id=user_id,
+            session_id=history_id,
+            role="user",
+            message=message,
+        )
+        await chat_history.create_message(
+            user_id=user_id,
+            session_id=history_id,
+            role="assistant",
+            message=loc_output,
+        )
+
+        resp = _response(loc_output, session_id, "api")
+        resp["response"] = nearest_list
+        resp["suggested_follow_ups"] = [follow_up_target] if follow_up_target else []
+        return resp
+
+    # Check if user asks about their own location/position/safety
+    is_asking_location = bool(
+        detect_location_question(message, lang="id")
+        or re.search(
+            r"\b(?:dmna|dimana|dmana|di mana)\s+(?:lokasi|posisi|tempat|daerah|saya)?\b|"
+            r"\b(?:lokasi|posisi)\s+(?:saya|aku)\s*(?:dmna|dimana|dmana|di mana)?\b|"
+            r"\b(?:gunung(?:\s+api)?\s+terdekat\s+(?:dari|di)?\s*(?:saya|sini|posisi\s+saya|lokasi\s+saya)|"
+            r"(?:posisi|lokasi|daerah|wilayah|tempat)\s+saya\s+(?:aman|bahaya|berbahaya)|"
+            r"apakah\s+(?:saya|di\s+sini|disini)\s+aman)\b",
+            message,
+            re.IGNORECASE,
+        )
+    )
+    if is_asking_location:
+        if session_id in _SESSION_LOCATIONS:
+            cached_lat, cached_lon, cached_name = _SESSION_LOCATIONS[session_id]
+            loc_output, follow_up_target, nearest_list = handle_whatsapp_location_query(
+                cached_lat, cached_lon, candidate_name=cached_name
+            )
+            state.pending_follow_up = follow_up_target
+            state.last_route = "api"
+            await db.commit()
+
+            history_id = f"{session_id}:api"
+            chat_history = ChatHistoryService(db)
+            user_id = api_key.get("id") or api_key.get("token")
+            await chat_history.create_message(
+                user_id=user_id,
+                session_id=history_id,
+                role="user",
+                message=message,
+            )
+            await chat_history.create_message(
+                user_id=user_id,
+                session_id=history_id,
+                role="assistant",
+                message=loc_output,
+            )
+
+            resp = _response(loc_output, session_id, "api")
+            resp["response"] = nearest_list
+            resp["suggested_follow_ups"] = [follow_up_target] if follow_up_target else []
+            return resp
+
+        guide_text = (
+            "Untuk mengetahui posisi Anda dan gunung api terdekat secara akurat:\n\n"
+            "1. Kirim Lokasi Langsung (Share Location):\n"
+            "   Klik tombol lampiran (📎) di WhatsApp > pilih 'Lokasi' > kirim lokasi Anda saat ini.\n\n"
+            "2. Atau sebutkan nama daerah Anda:\n"
+            "   Contoh: 'gunung terdekat dari Pasrujambe' atau 'gunung terdekat dari Bandung'."
+        )
+        return _response(guide_text, session_id, state.conversation_mode or "auto")
 
     mode = state.conversation_mode or "auto"
     route = _route_for(message, mode, state.last_route)
