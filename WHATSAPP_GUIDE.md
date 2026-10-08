@@ -11,19 +11,21 @@ flowchart LR
     C --> D[n8n: WhatsApp ESDM Assistant]
     D --> E{Jenis pesan}
     E -- Dokumen --> F[Unduh media dan unggah ke Knowledge Base]
-    E -- Pertanyaan MAGMA terkini --> G[Backend /analyze]
-    E -- Pertanyaan dokumen --> H[Backend /knowledge/analyze]
+    E -- Pesan teks --> G[Backend /whatsapp/analyze]
+    G --> H{Mode percakapan}
+    H -- API MAGMA --> J[Backend /analyze]
+    H -- Knowledge Base --> K[Backend /knowledge/analyze]
     F --> I[Backend /knowledge/upload-whatsapp]
-    G --> J[Kirim balasan]
-    H --> J
-    I --> J
-    J --> B
+    J --> L[Kirim balasan]
+    K --> L
+    I --> L
+    L --> B
     B --> A
 ```
 
-Evolution API menangani koneksi dan pengiriman pesan WhatsApp. n8n menjalankan workflow, mengambil isi pesan, memilih endpoint backend, lalu mengirim teks balasan melalui Evolution. Worker dokumen memproses berkas yang diterima secara terpisah dan dapat mengirim pemberitahuan hasil setelah selesai. Instance yang digunakan bernama `esdm-assistant`.
+Evolution API menangani koneksi dan pengiriman pesan WhatsApp. n8n menjalankan workflow, mengambil isi pesan, mengirim pertanyaan ke endpoint WhatsApp backend, lalu mengirim teks balasan melalui Evolution. Backend memilih sumber jawaban menurut mode percakapan. Worker dokumen memproses berkas yang diterima secara terpisah dan dapat mengirim pemberitahuan hasil setelah selesai. Instance yang digunakan bernama `esdm-assistant`.
 
-Workflow aktif di n8n saat dokumentasi ini dibuat bernama **My workflow**. Node pentingnya adalah `WhatsApp ESDM Assistant`, `Edit Fields`, `Is Document`, `Route MAGMA query`, `Ask MAGMA API`, request ke Knowledge Base, dan node pengiriman balasan. Aturan routing memakai kata kunci: pertanyaan mengenai kondisi kebencanaan terkini memakai API MAGMA; pertanyaan tentang file, laporan, proyek, skripsi, atau isi dokumen memakai Knowledge Base. Kalimat yang ambigu dapat salah diklasifikasikan, sehingga sebutkan sumber atau topik secara jelas.
+Workflow aktif di n8n saat dokumentasi ini dibuat bernama **My workflow**. Node pentingnya adalah `WhatsApp ESDM Assistant`, `Edit Fields`, `Is Document`, `Ask WhatsApp Assistant`, node unggah dokumen, dan node pengiriman balasan. Dalam mode otomatis, pertanyaan kondisi kebencanaan memakai API MAGMA dan pertanyaan dokumen memakai Knowledge Base. Pengguna dapat memilih sumber secara eksplisit lewat perintah mode berikut.
 
 ## 2. Persiapan operator
 
@@ -55,7 +57,16 @@ curl -fsS -X POST \
 
 ## 3. Menggunakan chat WhatsApp
 
-Kirim pesan ke nomor yang terhubung dengan instance `esdm-assistant` dari chat pribadi. Pertanyaan biasa tidak memerlukan login WhatsApp.
+Kirim pesan ke nomor yang terhubung dengan instance `esdm-assistant` dari chat pribadi. Pertanyaan biasa tidak memerlukan login WhatsApp. Mode tetap berlaku untuk pesan berikutnya sampai diganti.
+
+| Perintah | Fungsi |
+| --- | --- |
+| `/knowlage-base` | Paksa pertanyaan berikutnya mencari di dokumen Knowledge Base. Ejaan `/knowledge-base` juga diterima. |
+| `/api-documentation` | Paksa pertanyaan berikutnya memakai layanan informasi MAGMA/API. |
+| `/auto` | Kembali memilih sumber menurut isi pertanyaan dan konteks percakapan. |
+| `/help` | Tampilkan bantuan singkat. |
+
+Perintah juga boleh diikuti langsung oleh pertanyaan, misalnya `/api-documentation Apa informasi gempa terkini?`. Sesudah jawaban, asisten dapat menawarkan satu pertanyaan lanjutan yang relevan. Balas `ya` untuk menjalankannya, atau tulis pertanyaan lain; pertanyaan baru mengganti tawaran sebelumnya. Tawaran diperiksa terhadap pertanyaan dan tawaran yang sudah muncul agar tidak terus berulang. Jika tidak ada pertanyaan lanjutan yang dapat dipastikan sesuai sumber, tawaran tidak ditampilkan.
 
 | Tujuan | Contoh pesan | Jalur yang diharapkan |
 | --- | --- | --- |
@@ -84,7 +95,7 @@ Gunakan urutan berikut agar penyebabnya terlihat jelas.
 1. **Koneksi WhatsApp:** di Evolution Manager, pastikan instance `esdm-assistant` berstatus terhubung. Container yang berjalan belum tentu berarti sesi WhatsApp sudah tersambung.
 2. **Webhook:** periksa konfigurasi `MESSAGES_UPSERT` dengan perintah di bagian 2. Tanpa webhook ini, pesan masuk tidak sampai ke n8n.
 3. **Workflow:** periksa apakah **My workflow** aktif dan apakah ada eksekusi baru di n8n setelah pesan dikirim. Jika tidak ada eksekusi, cek webhook dan koneksi Evolution.
-4. **Node yang gagal:** bila eksekusi muncul tetapi tidak ada balasan, periksa node `Route MAGMA query`, request ke backend, dan node `sendText`. Pertanyaan dokumen dan pertanyaan MAGMA memakai endpoint berbeda.
+4. **Node yang gagal:** bila eksekusi muncul tetapi tidak ada balasan, periksa node `Ask WhatsApp Assistant`, endpoint backend `/whatsapp/analyze`, dan node `sendText`. Pemilihan Knowledge Base atau API MAGMA dilakukan di backend.
 5. **Backend dan worker:** jalankan `docker compose logs --tail=100 backend knowledge-worker n8n evolution-api`. Hindari membagikan output mentah bila memuat nomor telepon, isi pesan, atau credential.
 
 Jika QR tidak muncul, periksa DNS dari dalam container Evolution dan koneksi ke WhatsApp. Pada sesi pengembangan sebelumnya, DNS Docker pernah gagal me-resolve `web.whatsapp.com` (`EAI_AGAIN`); penambahan resolver melalui override sementara membuat QR berhasil dibuat. Override di `/tmp` **tidak menjadi bagian Compose project** dan dapat hilang saat container dibuat ulang. Jika kejadian berulang, tetapkan resolver yang bekerja pada service `evolution-api` di konfigurasi Compose setelah diverifikasi pada jaringan yang dipakai, lalu buat ulang service tersebut.

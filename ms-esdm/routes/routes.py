@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from routes.v1 import analyze, logs, scrapping, api_keys, knowledge, authentication, chat_history, blobs
+from routes.v1 import analyze, logs, scrapping, api_keys, knowledge, authentication, chat_history, blobs, whatsapp
 
 api_router = APIRouter()
 api_router.include_router(authentication.router, prefix="/auth", tags=["Authentication"])
@@ -10,3 +10,4 @@ api_router.include_router(api_keys.router, prefix="/api-keys", tags=["API Keys"]
 api_router.include_router(knowledge.router, prefix="/knowledge", tags=["Knowledge Documents"], include_in_schema=False)
 api_router.include_router(chat_history.router, prefix="/chat", tags=["chat"], include_in_schema=False)
 api_router.include_router(blobs.router, prefix="/blobs", tags=["blobs"], include_in_schema=False)
+api_router.include_router(whatsapp.router, prefix="/whatsapp", tags=["WhatsApp"], include_in_schema=False)
