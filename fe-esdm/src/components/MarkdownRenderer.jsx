@@ -22,6 +22,7 @@ const MarkdownRenderer = ({ content }) => {
                 // Paragraphs
                 "& p": {
                     margin: "0.5rem 0",
+                    whiteSpace: "pre-line",
                 },
 
                 // Lists

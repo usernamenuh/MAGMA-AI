@@ -1,18 +1,23 @@
 import json
 import re
+import html
 from datetime import datetime
 from mistralai.models.chat_completion import ChatMessage
-from utils.extraction import detect_volcano_name
-
 from utils.extraction import detect_volcano_name
 from utils.geo_location import extract_indonesia_location, get_geolocation_indonesia
 from utils.pipeline_helpers import resolve_api_url, call_api, semantic_recommend_api_improved, safe_json_loads, \
     recommend_api_fallback, model_chat, load_examples, crosscheck_api, find_nearest_volcano, check_if_nearest_question, \
-    get_mount_code, get_today_eruption_events, fetch_api_simple, filter_history, _detect_volcano_name, check_if_mount_level, BASE_URL, check_around, get_closest_gerakan_tanah_data, is_empty_response, load_volcano_cache
+    get_mount_code, get_today_eruption_events, fetch_api_simple, filter_history, _detect_volcano_name, check_if_mount_level, BASE_URL, check_around, get_closest_gerakan_tanah_data, is_empty_response, load_volcano_cache, get_volcano_var_data, \
+    get_latest_earthquake_data, get_earthquake_list, get_geohazard_location_awareness, get_latest_ground_movement_data, get_ground_movement_list
 from concurrent.futures import ThreadPoolExecutor
 from utils.classifier import detect_conversational_intent
 from services.check_status_magma import return_status
 from utils.query_normalizer import normalize_indonesian_query
+from utils.location_answers import (
+    build_location_answer,
+    detect_location_question,
+    missing_location_answer,
+)
 from datetime import datetime
 
 MAX_WORKERS = 10
@@ -55,7 +60,7 @@ def check_today_query(user_input: str) -> bool:
 
 
 def contextual_safety_followup(user_input: str, history: str) -> str | None:
-    """Answer short safety follow-ups using the previous question's topic."""
+    """Answer short safety follow-ups when no coordinates are present."""
     if not history or len(user_input.split()) > 8:
         return None
     if not re.search(r"\b(aman|bahaya|berbahaya)\b", user_input, re.IGNORECASE):
@@ -67,15 +72,13 @@ def contextual_safety_followup(user_input: str, history: str) -> str | None:
     previous_question = previous_questions[-1].lower()
     if re.search(r"\b(gempa|gempabumi)\b", previous_question):
         return (
-            "Belum bisa dipastikan aman. Informasi gempa terkini pada jawaban sebelumnya "
-            "belum terverifikasi, sehingga saya tidak bisa menilai kondisi di lokasi Anda. "
-            "Periksa pembaruan resmi BMKG dan ikuti arahan BPBD setempat."
+            "Untuk memeriksa apakah lokasi Anda aman dari gempa bumi atau berada di kawasan rawan bencana (KRB), "
+            "silakan aktifkan izin lokasi di peramban Anda atau sebutkan nama kabupaten/kota tempat Anda berada saat ini."
         )
     if re.search(r"\b(gunung|erupsi|letusan)\b", previous_question):
         return (
-            "Belum bisa disimpulkan aman hanya dari status atau laporan sebelumnya. "
-            "Kondisi dan zona bahaya dapat berubah; ikuti rekomendasi terbaru PVMBG "
-            "untuk gunung dan lokasi yang dimaksud."
+            "Untuk memeriksa apakah lokasi Anda aman dari aktivitas gunung api dan berada di luar radius bahaya, "
+            "silakan aktifkan izin lokasi di peramban Anda atau sebutkan nama daerah/kota Anda berada (mis. Sleman, Boyolali, Bandung)."
         )
     return None
 
@@ -97,24 +100,59 @@ def build_prompt(user_input, response_text, location_context=""):
             “Maaf, informasi yang dibutuhkan tidak tersedia. Silakan merujuk laporan resmi pada portal MAGMA, VSI, atau MBG.”
             Jawaban wajib menggunakan Bahasa Indonesia, satu paragraf, tanpa daftar atau penanda khusus.
             """
-    else:
 
-        # Add strict date rule ONLY if user asks about today
-        date_rule = ""
-        if is_today_query:
-            date_rule = f"""
-            - Extract ALL event dates from the data.
-            - Compare each event date strictly with this date: {current_date}.
-            - If the user asks about today AND no event exactly matches {current_date}, 
-            ignore all historical events and respond exactly with: "No data about this event today."
-            - Do NOT mention older event dates or try to connect them to today.
-            """
-
+    # Domain 1: Ground movement / Tanah Longsor
+    is_gm = any(w in user_input.lower() for w in ["gerak tanah", "gerakan tanah", "longsor", "sigertan"]) or any(w in response_text.lower() for w in ["gerakan tanah", "tanggap darurat", "sigertan", "tanah longsor", "laporan penyelidikan"])
+    if is_gm:
         return f"""
             Pertanyaan pengguna: {user_input}
+            {location_context}
 
-            Here is the data you must analyze:
+            Data laporan kejadian / tanggapan gerakan tanah dari Badan Geologi:
             {response_text}
+
+    Instruksi Jawaban:
+    - Analisis data gerakan tanah / tanah longsor di atas secara teliti.
+    - Sampaikan ringkasan laporan kejadian secara informatif, profesional, dan mudah dipahami dalam Bahasa Indonesia.
+    - Cantumkan informasi penting: judul kejadian, lokasi (kecamatan, kabupaten/kota, provinsi), waktu/tanggal kejadian, kondisi/penyebab gerakan tanah (jika ada), dampak (jika ada), dan rekomendasi mitigasi dari Badan Geologi.
+    - Jika data berupa daftar beberapa laporan, rangkum kejadian-kejadian terbaru tersebut.
+    - JANGAN menyangkutpautkan dengan status level gunung api (Level I/II/III/IV) atau istilah letusan/erupsi.
+    - Tuliskan jawaban yang alami dan jelas dalam Bahasa Indonesia formal dan profesional.
+        """
+
+    # Domain 2: Earthquake / Gempa Bumi
+    is_quake = any(w in user_input.lower() for w in ["gempa", "gempabumi", "tsunami", "seismik"]) or any(w in response_text.lower() for w in ["gempa bumi", "gempabumi", "tsunami", "magnitudo", "hiposenter", "episenter"])
+    if is_quake:
+        return f"""
+            Pertanyaan pengguna: {user_input}
+            {location_context}
+
+            Data kejadian gempa bumi / tsunami dari Badan Geologi (PVMBG) / BMKG:
+            {response_text}
+
+    Instruksi Jawaban:
+    - Analisis data gempa bumi di atas secara teliti.
+    - Sampaikan rincian informasi gempa bumi secara akurat: judul analisis geologi, waktu kejadian, magnitudo, kedalaman, wilayah/pusat gempa, potensi tsunami, dan rekomendasi mitigasi resmi Badan Geologi.
+    - Gunakan Bahasa Indonesia yang jelas, tenang, dan profesional.
+        """
+
+    # Domain 3: Volcano / Gunung Api
+    is_asking_eruption = any(w in user_input.lower() for w in ["erupsi", "letusan", "meletus"])
+    date_rule = ""
+    if is_today_query and is_asking_eruption:
+        date_rule = f"""
+        - Periksa tanggal kejadian erupsi/letusan pada data.
+        - Bandingkan dengan tanggal hari ini: {current_date}.
+        - Jika pengguna menanyakan erupsi hari ini DAN tidak ada letusan yang tercatat pada tanggal {current_date}, sampaikan bahwa belum ada catatan erupsi baru yang tercatat untuk hari ini, dan kondisi aktivitas tetap sesuai tingkat pengamatan resmi terakhir.
+        """
+    else:
+        date_rule = "- Sampaikan data pengamatan resmi atau status aktivitas gunung api terkini yang tersedia dalam data."
+
+    return f"""
+        Pertanyaan pengguna: {user_input}
+
+        Here is the data you must analyze:
+        {response_text}
 
     Your task has two internal stages, but output ONLY the final stage:
 
@@ -133,8 +171,8 @@ def build_prompt(user_input, response_text, location_context=""):
     - Tulis satu jawaban yang jelas, ringkas, dan alami dalam Bahasa Indonesia.
     - Do NOT use titles, numbers, or bullet points.
     - Do NOT fabricate information that does not exist in the data.
-    - If Stage 1 determined there is no event for today, respond **exactly**: "No data about this event today."
-    - Do NOT add "therefore", "as of today", or references to past dates.
+    - If user asked about eruption today and there is no event for today, jelaskan: "Belum ada catatan erupsi atau letusan baru yang tercatat untuk hari ini. Kondisi aktivitas tetap sesuai pengamatan resmi terakhir."
+    - JANGAN PERNAH mengeluarkan kalimat bahasa Inggris "No data about this event today."
 
     Mandatory rules:
     - Current date is {current_date}.
@@ -142,8 +180,7 @@ def build_prompt(user_input, response_text, location_context=""):
     - Keep sentences short and direct.
     - Avoid unusual terminology or unnecessary jargon.
     - Focus on producing a final answer that is easy for the general public to understand.
-        """
-
+    """
 
 
 def analyze_response(user_input, api_response, geo_location=None, max_len=2000):
@@ -215,56 +252,325 @@ def is_prefere_current_location(user_input: str) -> bool:
 
     return any(re.search(p, text) for p in patterns)
 
-def run_pipeline(user_input: str, geo_location: tuple[float, float], history: str = '', location_name: str=None):
+def run_pipeline(user_input: str, geo_location: tuple[float, float], history: str = '', location_name: str=None, location_accuracy: float | None = None):
     try:
         normalization = normalize_indonesian_query(user_input)
         if normalization.changed:
             print(f"Normalized Indonesian query: {normalization.replacements}")
             user_input = normalization.normalized
-        safety_answer = contextual_safety_followup(user_input, history)
-        if safety_answer:
-            return {
-                "status": "success",
-                "date": datetime.utcnow().isoformat(),
-                "user_input": user_input,
-                "geo_location": geo_location,
-                "api_call": None,
-                "output": safety_answer,
-                "response": None,
-            }
+        # ===================================================================
+        # AI Agent Router: Decision Engine with Tool-Specific Execution
+        # ===================================================================
+        from services.agent_router import AgentRouter
+        routed_result = AgentRouter.route_and_execute(
+            user_input=user_input,
+            geo_location=geo_location,
+            history=history,
+            location_name=location_name,
+            location_accuracy=location_accuracy,
+            lang="id",
+        )
+        if routed_result:
+            routed_result["date"] = datetime.utcnow().isoformat()
+            routed_result["user_input"] = user_input
+            if "geo_location" not in routed_result:
+                routed_result["geo_location"] = geo_location
+            return routed_result
 
-        if re.search(r"\b(gempa|gempabumi)\b", user_input, re.IGNORECASE) and check_today_query(user_input):
-            earthquake_url = resolve_api_url("/api/v1/home/gempa-bumi/latest")
-            earthquake_data = call_api(earthquake_url, max_retries=1)
-            event = earthquake_data.get("data", earthquake_data) if isinstance(earthquake_data, dict) else earthquake_data
-            if isinstance(event, list):
-                event = event[0] if event else None
-            if isinstance(event, dict):
-                event = event.get("data", event)
-            if isinstance(event, dict) and (event.get("local_datetime") or event.get("judul")):
-                details = [event.get("local_datetime"), event.get("time_zone"), event.get("lokasi")]
-                summary = ", ".join(str(value) for value in details if value) or event["judul"]
-                magnitude = event.get("magnitude")
-                if magnitude is not None:
-                    summary += f", magnitudo {magnitude}"
-                answer = f"Catatan gempa terbaru yang tersedia di MAGMA: {summary}. Periksa waktu kejadian dan pembaruan resmi sebelum menilai kondisi saat ini."
+        has_geo = bool(geo_location and any(geo_location))
+        if not has_geo:
+            safety_answer = contextual_safety_followup(user_input, history)
+            if safety_answer:
+                return {
+                    "status": "success",
+                    "date": datetime.utcnow().isoformat(),
+                    "user_input": user_input,
+                    "geo_location": geo_location,
+                    "api_call": None,
+                    "output": safety_answer,
+                    "response": None,
+                }
+
+        if re.search(r"\b(gempa|gempabumi|tsunami)\b", user_input, re.IGNORECASE):
+            detected_volcano = detect_volcano_name(user_input)
+            if not detected_volcano:
+                is_mitigation = bool(re.search(r"\b(mitigasi|panduan|keselamatan|langkah|antisipasi|tindakan|apa yang harus dilakukan)\b", user_input, re.IGNORECASE))
+                if is_mitigation:
+                    answer_parts = [
+                        "📋 Panduan Langkah Mitigasi & Keselamatan Gempa Bumi (PVMBG & BMKG):",
+                        "1. Saat Terjadi Guncangan:\n"
+                        "   • Berlindung di bawah meja yang kokoh (*Drop, Cover, Hold On*) dan lindungi kepala serta leher.\n"
+                        "   • Jauhi jendela kaca, lemari tinggi, dan benda gantung yang berpotensi jatuh.\n"
+                        "   • Jika berada di luar ruangan, cari area terbuka yang jauh dari bangunan tinggi, tiang listrik, dan tebing curam.\n"
+                        "   • Jika berada di pesisir pantai dan merasakan gempa kuat atau berayun lama, segera evakuasi ke dataran tinggi tanpa menunggu sirine.",
+                        "2. Setelah Guncangan Mereda:\n"
+                        "   • Waspadai potensi gempa bumi susulan (*aftershocks*).\n"
+                        "   • Matikan kompor dan periksa instalasi listrik/gas guna mencegah kebakaran.\n"
+                        "   • Gunakan tangga darurat untuk keluar bangunan, jangan pernah menggunakan lift.\n"
+                        "   • Pantau informasi resmi hanya dari Badan Geologi (PVMBG) dan BMKG.",
+                        "💬 Apakah Anda ingin saya tampilkan daftar kejadian gempa bumi penting lainnya yang tercatat baru-baru ini? Balas *ya* atau *tidak*."
+                    ]
+                    return {
+                        "status": "success",
+                        "date": datetime.utcnow().isoformat(),
+                        "user_input": user_input,
+                        "geo_location": geo_location,
+                        "api_call": resolve_api_url("/api/v2/earthquake-tsunami"),
+                        "output": "\n\n".join(answer_parts),
+                        "response": None,
+                    }
+
+                extracted_place = extract_indonesia_location(user_input)
+                eq = get_latest_earthquake_data()
+                answer_parts = []
+
+                if extracted_place:
+                    # User specifically asks about an area / city (e.g. "aktivitas gempa di bandung")
+                    coords = get_geolocation_indonesia(extracted_place)
+                    target_lat, target_lng = coords if coords else (None, None)
+                    loc_hazard = {}
+                    if target_lat is not None and target_lng is not None:
+                        loc_hazard = get_geohazard_location_awareness(target_lat, target_lng)
+
+                    kab = (loc_hazard.get("kab_kota") or extracted_place).upper()
+
+                    match_event = False
+                    if eq and eq.get("lokasi"):
+                        event_text = f"{eq.get('lokasi', '')} {eq.get('judul', '')}".lower()
+                        if extracted_place.lower() in event_text:
+                            match_event = True
+
+                    if match_event:
+                        dt = eq.get("datetime")
+                        mag = eq.get("magnitude")
+                        depth = eq.get("kedalaman")
+                        lok = eq.get("lokasi") or eq.get("kota_terdekat")
+                        tsunami_str = "Berpotensi tsunami" if eq.get("tsunami") else "Tidak berpotensi tsunami"
+                        answer_parts.append(
+                            f"Catatan Kejadian Gempa Bumi di Wilayah {kab}:\n"
+                            f"{eq.get('judul')}\n"
+                            f"Waktu: {dt}, Magnitudo: M {mag}, Kedalaman: {depth} km, Wilayah: {lok}. Status: {tsunami_str}."
+                        )
+                        rek = eq.get("rekomendasi")
+                        if rek:
+                            clean_rek = html.unescape(re.sub(r"<[^>]+>", " ", rek))
+                            clean_rek = re.sub(r"\s+", " ", clean_rek).strip()
+                            if len(clean_rek) > 280:
+                                clean_rek = clean_rek[:280] + "..."
+                            answer_parts.append(f"📋 Rekomendasi Resmi:\n{clean_rek}")
+                    else:
+                        answer_parts.append(
+                            f"Untuk wilayah {kab}:\n"
+                            f"Saat ini tidak ada laporan kejadian gempa bumi tektonik merusak terbaru yang tercatat di wilayah ini."
+                        )
+
+                    if loc_hazard and loc_hazard.get("earthquake"):
+                        eq_hazard = loc_hazard["earthquake"]
+                        kelas = eq_hazard.get("kelas", "Kawasan Rawan Bencana Gempabumi")
+                        desc = eq_hazard.get("namobj", "")
+                        answer_parts.append(f"Karakteristik Kerentanan Gempa:\nWilayah ini berada dalam {kelas} ({desc}).")
+
+                    nearest_name = None
+                    if target_lat is not None and target_lng is not None:
+                        try:
+                            v_list = get_mount_code() or load_volcano_cache()
+                            near_v, dist = find_nearest_volcano(target_lat, target_lng, v_list)
+                            if near_v and dist < 70:
+                                nearest_name = near_v.get("ga_nama_gapi")
+                                status_code = near_v.get("ga_status", 1)
+                                status_label = {1: "Level I (Normal)", 2: "Level II (Waspada)", 3: "Level III (Siaga)", 4: "Level IV (Awas)"}.get(status_code, "Level I (Normal)")
+                                answer_parts.append(
+                                    f"Aktivitas Seismik Vulkanik Sekitar:\n"
+                                    f"Gunung api terdekat adalah Gunung {nearest_name} (~{dist:.1f} km) dengan status {status_label}. Pemantauan seismik vulkanik saat ini berada dalam batas normal."
+                                )
+                        except Exception as e:
+                            print(f"Nearest volcano check error: {e}")
+
+                    if nearest_name:
+                        answer_parts.append(f"💬 Apakah Anda ingin saya tampilkan status dan rekomendasi resmi PVMBG untuk Gunung {nearest_name}? Balas *ya* atau *tidak*.")
+                    else:
+                        answer_parts.append("💬 Apakah Anda ingin saya cek gunung api terdekat dari lokasi Anda saat ini? Balas *ya* atau *tidak*.")
+
+                else:
+                    # User asks general/national earthquake (e.g. "Gempa bumi terbaru", "Daftar kejadian gempa bumi terkini")
+                    is_list_query = bool(re.search(r"\b(daftar|list|lainnya|semua|apa saja|riwayat|beberapa)\b", user_input, re.IGNORECASE))
+
+                    if is_list_query:
+                        eq_list = get_earthquake_list()
+                        if eq_list:
+                            answer_parts.append("📋 Daftar Kejadian Gempa Bumi Penting Terbaru (Badan Geologi / PVMBG):")
+                            for i, item in enumerate(eq_list[:5], 1):
+                                judul = item.get("judul", "Kejadian Gempa Bumi").strip()
+                                dt = item.get("local_datetime") or item.get("date") or ""
+                                mag = item.get("magnitude")
+                                mag_str = f"M {mag} — " if mag else ""
+                                dt_str = f" [{dt}]" if dt else ""
+                                short_judul = re.sub(r"^ANALISIS GEOLOGI KEJADIAN GEMPA BUMI DI\s+", "", judul, flags=re.IGNORECASE)
+                                short_judul = re.sub(r"\s+TANGGAL.*$", "", short_judul, flags=re.IGNORECASE).strip()
+                                answer_parts.append(f"{i}. {mag_str}{short_judul}{dt_str}")
+                        else:
+                            answer_parts.append("Belum ada daftar kejadian gempa bumi penting lainnya yang dapat ditampilkan saat ini.")
+
+                        answer_parts.append("💬 Apakah Anda ingin saya tampilkan panduan langkah mitigasi dan keselamatan saat terjadi gempa bumi? Balas *ya* atau *tidak*.")
+
+                        return {
+                            "status": "success",
+                            "date": datetime.utcnow().isoformat(),
+                            "user_input": user_input,
+                            "geo_location": geo_location,
+                            "api_call": resolve_api_url("/api/v2/earthquake-tsunami"),
+                            "output": "\n\n".join(answer_parts),
+                            "response": eq_list,
+                        }
+
+                    else:
+                        if eq and eq.get("judul"):
+                            source = eq.get("source", "MAGMA ESDM")
+                            judul = eq.get("judul")
+                            dt = eq.get("datetime")
+                            mag = eq.get("magnitude")
+                            depth = eq.get("kedalaman")
+                            lok = eq.get("lokasi") or eq.get("kota_terdekat")
+                            tsunami_str = "Berpotensi tsunami" if eq.get("tsunami") else "Tidak berpotensi tsunami"
+
+                            details_str = f"Waktu: {dt}, Magnitudo: M {mag}, Kedalaman: {depth} km, Wilayah: {lok}. Status: {tsunami_str}."
+                            answer_parts.append(f"Catatan gempa terkini ({source}):\n{judul}\n{details_str}")
+
+                            rek = eq.get("rekomendasi")
+                            if rek:
+                                clean_rek = html.unescape(re.sub(r"<[^>]+>", " ", rek))
+                                clean_rek = re.sub(r"\s+", " ", clean_rek).strip()
+                                if clean_rek and len(clean_rek) > 10:
+                                    if len(clean_rek) > 280:
+                                        clean_rek = clean_rek[:280] + "..."
+                                    answer_parts.append(f"📋 Rekomendasi Resmi:\n{clean_rek}")
+                        else:
+                            answer_parts.append("Belum ada laporan gempa bumi signifikan terbaru yang tercatat. Pantau terus kanal resmi Badan Geologi dan BMKG.")
+
+                        answer_parts.append("💬 Apakah Anda ingin saya tampilkan informasi gempa bumi penting lainnya yang tercatat baru-baru ini? Balas *ya* atau *tidak*.")
+
+                answer = "\n\n".join(answer_parts)
                 status = "success"
-            else:
-                answer = (
-                    "Saya belum dapat mengambil data gempa terkini dari sumber MAGMA saat ini. "
-                    "Karena itu saya tidak bisa memastikan ada atau tidaknya gempa terbaru. "
-                    "Periksa pembaruan resmi BMKG."
+
+                return {
+                    "status": status,
+                    "date": datetime.utcnow().isoformat(),
+                    "user_input": user_input,
+                    "geo_location": geo_location,
+                    "api_call": eq.get("api_url") if eq else resolve_api_url("/api/v2/earthquake-tsunami/latest"),
+                    "output": answer,
+                    "response": eq.get("raw") if eq else None,
+                }
+
+        if re.search(r"\b(gerak(?:an)?\s*tanah|tanah\s*longsor|longsoran|sigertan)\b", user_input, re.IGNORECASE):
+            is_mitigation = bool(re.search(r"\b(mitigasi|rekomendasi|langkah|antisipasi|tindakan|upaya)\b", user_input, re.IGNORECASE))
+            is_list = bool(re.search(r"\b(daftar|list|semua|apa saja|riwayat)\b", user_input, re.IGNORECASE))
+
+            answer_parts = []
+            if is_mitigation:
+                answer_parts.append(
+                    "📋 Panduan Lengkap Mitigasi Bencana Gerakan Tanah & Tanah Longsor (PVMBG - Badan Geologi, Kementerian ESDM):\n\n"
+                    "1. Kesiapsiagaan & Pencegahan (Pra-Bencana):\n"
+                    "   • Kenali Gejala & Tanda Awal:\n"
+                    "     - Munculnya retakan tanah baru melengkung atau memanjang pada lereng, jalan, atau dinding rumah.\n"
+                    "     - Tiang listrik, pohon, atau tiang pagar mulai miring secara tidak wajar.\n"
+                    "     - Pintu atau jendela mendadak sulit dibuka/ditutup akibat pergeseran struktur bangunan.\n"
+                    "     - Air sumur atau mata air mendadak keruh berlumpur, atau muncul rembesan air baru pada lereng.\n"
+                    "   • Penataan Fisik Lingkungan:\n"
+                    "     - Jangan mendirikan bangunan hunian di lereng curam atau di sempadan alur longsor.\n"
+                    "     - Jaga kelancaran drainase permukaan lereng agar air hujan tidak meresap menjenuhkan lereng.\n"
+                    "     - Hindari memotong tebing tegak lurus tanpa dinding penahan (retaining wall).\n"
+                    "     - Tanam pohon berakar dalam (akar wangi/vetiver, bambu, aren) di kawasan lereng rawan.\n\n"
+                    "2. Tindakan Saat Terjadi Longsor (Tanggap Darurat):\n"
+                    "   • Segera evakuasi menjauhi lereng atau lembah alur longsor menuju tempat terbuka yang datar dan stabil.\n"
+                    "   • Bunyikan tanda bahaya (sirine/kentongan) jika memungkinkan.\n"
+                    "   • Jangan mendekati material runtuhan karena sangat berisiko terjadi longsor susulan.\n\n"
+                    "3. Tindakan Pasca-Bencana:\n"
+                    "   • Waspadai longsor susulan terutama saat hujan deras masih terus turun.\n"
+                    "   • Jangan langsung memasuki rumah yang rusak sebelum diperiksa oleh tim ahli geologi atau BPBD.\n"
+                    "   • Pantau terus pembaruan informasi dari Badan Geologi (PVMBG) dan BPBD setempat."
                 )
-                status = "error"
-            return {
-                "status": status,
-                "date": datetime.utcnow().isoformat(),
-                "user_input": user_input,
-                "geo_location": geo_location,
-                "api_call": earthquake_url,
-                "output": answer,
-                "response": event if status == "success" else None,
-            }
+
+                return {
+                    "status": "success",
+                    "date": datetime.utcnow().isoformat(),
+                    "user_input": user_input,
+                    "geo_location": geo_location,
+                    "api_call": resolve_api_url("/api/v2/ground-movement/latest"),
+                    "output": "\n\n".join(answer_parts),
+                    "response": gm_data.get("raw") if gm_data else None,
+                }
+
+            elif is_list:
+                gm_list = get_ground_movement_list()
+                if gm_list:
+                    answer_parts.append("📋 Daftar Laporan Tanggapan Kejadian Gerakan Tanah Terbaru (Badan Geologi / PVMBG):")
+                    for i, item in enumerate(gm_list[:5], 1):
+                        judul = item.get("judul", "Laporan Gerakan Tanah").strip()
+                        waktu = item.get("local_datetime") or item.get("updated_at") or ""
+                        waktu_str = f" [{waktu}]" if waktu else ""
+                        answer_parts.append(f"{i}. {judul}{waktu_str}")
+                else:
+                    answer_parts.append("Belum ada daftar laporan kejadian gerakan tanah yang dapat ditampilkan saat ini.")
+
+                answer_parts.append("💬 Apakah Anda ingin saya tampilkan rekomendasi teknis mitigasi bencana gerakan tanah dan tanah longsor? Balas *ya* atau *tidak*.")
+
+                return {
+                    "status": "success",
+                    "date": datetime.utcnow().isoformat(),
+                    "user_input": user_input,
+                    "geo_location": geo_location,
+                    "api_call": resolve_api_url("/api/v2/ground-movement"),
+                    "output": "\n\n".join(answer_parts),
+                    "response": gm_list,
+                }
+
+            else:
+                gm_data = get_latest_ground_movement_data()
+                if gm_data and gm_data.get("judul"):
+                    judul = gm_data.get("judul").strip()
+                    dt = gm_data.get("datetime", "")
+                    pelapor = gm_data.get("pelapor", "")
+                    tipe = gm_data.get("tipe") or "Gerakan Tanah / Tanah Longsor"
+
+                    answer_parts.append(
+                        f"Laporan Tanggap Darurat Gerakan Tanah Terbaru (Badan Geologi):\n"
+                        f"📌 {judul}\n"
+                        f"Waktu Laporan: {dt} | Pelapor: {pelapor}\n"
+                        f"Tipe Gerakan: {tipe}"
+                    )
+
+                    kondisi = gm_data.get("kondisi") or {}
+                    penyebab = kondisi.get("penyebab")
+                    if penyebab:
+                        clean_penyebab = html.unescape(re.sub(r"<[^>]+>", " ", penyebab)).strip()
+                        answer_parts.append(f"Faktor Penyebab: {clean_penyebab}")
+
+                    rek_list = gm_data.get("rekomendasi")
+                    if rek_list:
+                        first_rek = ""
+                        if isinstance(rek_list, list) and len(rek_list) > 0:
+                            first_rek = html.unescape(re.sub(r"<[^>]+>", " ", str(rek_list[0]))).strip()
+                        elif isinstance(rek_list, str):
+                            first_rek = html.unescape(re.sub(r"<[^>]+>", " ", rek_list)).strip()
+                        if first_rek and len(first_rek) > 10:
+                            if len(first_rek) > 250:
+                                first_rek = first_rek[:250] + "..."
+                            answer_parts.append(f"Rekomendasi Utama: {first_rek}")
+                else:
+                    answer_parts.append("Belum ada laporan kejadian gerakan tanah terbaru yang tercatat di sistem saat ini.")
+
+                answer_parts.append("💬 Apakah Anda ingin saya tampilkan rekomendasi teknis mitigasi bencana gerakan tanah dan tanah longsor? Balas *ya* atau *tidak*.")
+
+                return {
+                    "status": "success",
+                    "date": datetime.utcnow().isoformat(),
+                    "user_input": user_input,
+                    "geo_location": geo_location,
+                    "api_call": resolve_api_url("/api/v2/ground-movement/latest"),
+                    "output": "\n\n".join(answer_parts),
+                    "response": gm_data.get("raw") if gm_data else None,
+                }
         intent, response = detect_conversational_intent(user_input, geo_location)
         volcano_url = resolve_api_url("/api/v2/volcano/list")
         volcano_resp = get_mount_code()
@@ -281,12 +587,15 @@ def run_pipeline(user_input: str, geo_location: tuple[float, float], history: st
         else:
             volcano_code = detect_volcano_name(user_input)
 
-        # Questions asking for a list by alert level are aggregate queries.
-        # Generic words such as "api" must not be fuzzily interpreted as a
-        # particular volcano name (for example Banda Api).
+        # Questions asking for a list by alert level or active volcanoes are aggregate queries.
+        # Generic words such as "api" or "aktif" must not be interpreted as a particular volcano name.
         aggregate_status_query = bool(
-            check_if_mount_level(user_input)
-            and re.search(r"\b(apa saja|daftar|semua|gunung mana)\b", user_input, re.IGNORECASE)
+            (check_if_mount_level(user_input) or re.search(r"\b(aktif|berapi|keaktifan)\b", user_input, re.IGNORECASE))
+            and re.search(r"\b(apa saja|daftar|semua|gunung mana|mana saja|list)\b", user_input, re.IGNORECASE)
+        ) or bool(
+            re.search(r"^\s*(daftar\s+)?gunung(\s+api)?\s+aktif\s*$", user_input, re.IGNORECASE)
+        ) or bool(
+            re.search(r"\bgunung(\s+api)?\s+aktif\b", user_input, re.IGNORECASE) and not any(v in user_input.lower() for v in ["merapi", "semeru", "sinabung", "krakatau", "kelud", "bromo"])
         )
         if aggregate_status_query:
             volcano_code = None
@@ -296,6 +605,84 @@ def run_pipeline(user_input: str, geo_location: tuple[float, float], history: st
 
         query_lower = user_input.lower()
         api_call_v2 = f"{BASE_URL}/api/v2/volcano/list"
+
+        loc_mode = detect_location_question(user_input, "id")
+        if loc_mode:
+            eff_geo = None
+            eff_name = location_name
+            eff_accuracy = location_accuracy
+
+            # If user asks about their own location ("saya", "aku", "sini") and device geo is available,
+            # prioritize their device location
+            is_asking_own_pos = bool(re.search(r"\b(saya|aku|kami|kita|sini|disini|posisi\s+saya|lokasi\s+saya)\b", user_input, re.IGNORECASE))
+            if is_asking_own_pos and geo_location and any(geo_location):
+                try:
+                    eff_geo = (float(geo_location[0]), float(geo_location[1]))
+                except (TypeError, ValueError):
+                    eff_geo = None
+
+            if not eff_geo:
+                # Remove volcano name phrases before extracting place names so "Gunung Banda" is not extracted as city "Banda"
+                sanitized_for_loc = re.sub(r"\b(?:gunung(?:\s+api)?|gn\.|mount|mt\.)\s+[a-zA-Z\s\-]+", "", user_input, flags=re.IGNORECASE)
+                extracted_loc = extract_indonesia_location(sanitized_for_loc)
+                if extracted_loc:
+                    loc_coords = get_geolocation_indonesia(extracted_loc)
+                    if loc_coords and any(loc_coords):
+                        eff_geo = (float(loc_coords[0]), float(loc_coords[1]))
+                        eff_name = extracted_loc
+                        eff_accuracy = None
+
+            if not eff_geo and geo_location and any(geo_location):
+                try:
+                    eff_geo = (float(geo_location[0]), float(geo_location[1]))
+                except (TypeError, ValueError):
+                    eff_geo = None
+
+            if not eff_geo:
+                return {
+                    "status": "success",
+                    "date": datetime.utcnow().isoformat(),
+                    "user_input": user_input,
+                    "geo_location": geo_location,
+                    "api_call": None,
+                    "output": missing_location_answer("id"),
+                    "response": None,
+                }
+
+            # Check if user asks safety relative to a specific volcano (from query or ongoing conversation)
+            target_volcano_name = None
+            v_match = re.search(r"gunung\s+([a-zA-Z\s\-]+?)(?:\?|$|\s+berjarak|\s+aman)", user_input, re.IGNORECASE)
+            if v_match:
+                cand = v_match.group(1).strip()
+                if cand.lower() not in {"api", "berapi", "terdekat", "saya", "aktif"}:
+                    target_volcano_name = cand
+            if not target_volcano_name and history:
+                prev_v = re.findall(r"(?:Gunung|Mount)\s+([A-Z][a-zA-Z\s\-]+?)(?:\s+adalah|\s+berstatus|\s+berjarak|\?|\.|\,)", history)
+                if prev_v:
+                    cand = prev_v[-1].strip()
+                    if cand.lower() not in {"api", "berapi", "terdekat", "aktif"}:
+                        target_volcano_name = cand
+
+            out_text, nearest_items = build_location_answer(
+                mode=loc_mode,
+                lat=eff_geo[0],
+                lon=eff_geo[1],
+                volcano_list=volcano_resp or [],
+                location_name=eff_name,
+                accuracy_m=eff_accuracy,
+                lang="id",
+                target_volcano_name=target_volcano_name,
+            )
+            return {
+                "status": "success",
+                "date": datetime.utcnow().isoformat(),
+                "user_input": user_input,
+                "geo_location": eff_geo,
+                "api_call": api_call_v2,
+                "output": out_text,
+                "response": nearest_items,
+                "nearest_volcano": nearest_items[0] if nearest_items else None,
+            }
 
         if (
             re.search(r"\b(erupsi|erupt|letusan|meletus)\b", query_lower)
@@ -410,6 +797,20 @@ def run_pipeline(user_input: str, geo_location: tuple[float, float], history: st
             "greeting", "identity", "location_required", "out_of_scope", "status"
         ]
         if intent in standard_intents:
+            # Rule #13: NEVER repeat long greeting in the middle of an ongoing conversation!
+            if history and intent in ("greeting", "identity"):
+                clean_q = re.sub(r"[^\w\s]", "", user_input.lower()).strip()
+                # If it's a greeting or casual salutation, respond concisely
+                if intent == "greeting" or clean_q in {"halo", "hai", "hi", "hey", "selamat pagi", "selamat siang", "selamat sore", "selamat malam", "assalamualaikum"}:
+                    return {
+                        "status": "success",
+                        "date": datetime.utcnow().isoformat(),
+                        "user_input": user_input,
+                        "geo_location": geo_location,
+                        "api_call": None,
+                        "output": "Halo! Ada yang bisa saya bantu terkait informasi status gunung api, gempa bumi, atau bencana geologi saat ini?",
+                        "response": None
+                    }
             return {
                 "status": "success",
                 "date": datetime.utcnow().isoformat(),
@@ -421,11 +822,11 @@ def run_pipeline(user_input: str, geo_location: tuple[float, float], history: st
             }
         is_asking_level_status = check_if_mount_level(user_input) or bool(
             re.search(
-                r"\b(status|level|tingkat|waspada|siaga|awas|normal)\b",
+                r"\b(status|level|tingkat|waspada|siaga|awas|normal|kondisi|kabar|info|aktif|keaktifan|berapi)\b",
                 user_input,
                 re.IGNORECASE,
             )
-        )
+        ) or (bool(volcano_code) and len(user_input.split()) <= 4)
         print(f"Is asking level status:: {is_asking_level_status}")
         asking_loc = is_asking_location(user_input)
         print(f"Is asking location status:: {asking_loc}")
@@ -482,6 +883,7 @@ def run_pipeline(user_input: str, geo_location: tuple[float, float], history: st
                 for volcano in selected_volcanoes:
                     level = volcano.get("ga_status")
                     name = volcano.get("ga_nama_gapi") or volcano.get("ga_code")
+                    code = volcano.get("ga_code")
                     location = ", ".join(filter(None, [
                         volcano.get("ga_kab_gapi"),
                         volcano.get("ga_prov_gapi"),
@@ -491,6 +893,18 @@ def run_pipeline(user_input: str, geo_location: tuple[float, float], history: st
                         f"{status_labels.get(level, f'Level {level}')}."
                         + (f" Lokasi: {location}." if location else "")
                     )
+                    # Ambil rekomendasi resmi PVMBG dari VAR
+                    var_data = get_volcano_var_data(code)
+                    if var_data and isinstance(var_data, dict):
+                        lap = var_data.get("laporan_terakhir") or {}
+                        rekomendasi = lap.get("rekomendasi")
+                        tgl_lap = lap.get("tanggal")
+                        if rekomendasi:
+                            output_lines.append(
+                                f"\n📋 Rekomendasi Resmi PVMBG"
+                                + (f" ({tgl_lap}):\n" if tgl_lap else ":\n")
+                                + rekomendasi.strip()
+                            )
                 output_text = "\n".join(output_lines)
             else:
                 output_text = "Data status gunung api yang diminta tidak ditemukan."
@@ -703,18 +1117,42 @@ def run_pipeline(user_input: str, geo_location: tuple[float, float], history: st
             uuid_value = uuid_match.group(1)
             api_url = api_url.replace("{uuid}", uuid_value)
 
-        if volcano_code and body is not None:
+        # Extract volcano code as string
+        norm_vcode = None
+        if volcano_code:
+            norm_vcode = volcano_code[0] if isinstance(volcano_code, (list, tuple)) and len(volcano_code) > 0 else volcano_code
+        elif code_match:
+            norm_vcode = code_match.group(1) or code_match.group(2)
 
-            if isinstance(body, list) and len(body) > 0:
-                first = body[0]
-                if isinstance(first, dict):
-                    first["code"] = volcano_code
-            elif isinstance(body, dict):
-                body["code"] = volcano_code
-        elif code_match and body is not None:
-            code_value = code_match.group(1) or code_match.group(2)
-            api_url = api_url.replace("{code}", code_value)
-            body["code"] = code_value
+        if norm_vcode:
+            if "{code}" in api_url:
+                api_url = api_url.replace("{code}", str(norm_vcode))
+            if method == "GET":
+                if not isinstance(params, dict):
+                    params = {}
+                params["code"] = str(norm_vcode)
+            else:
+                if isinstance(body, list) and len(body) > 0 and isinstance(body[0], dict):
+                    body[0]["code"] = str(norm_vcode)
+                elif isinstance(body, dict):
+                    body["code"] = str(norm_vcode)
+
+        # For GET requests: migrate any body fields to query params and set body = None
+        if method == "GET":
+            if isinstance(body, dict):
+                for k, v in body.items():
+                    if k not in params:
+                        val = v[0] if isinstance(v, (list, tuple)) and len(v) == 1 else v
+                        if val is not None:
+                            params[k] = val
+                body = None
+            elif isinstance(body, list) and len(body) > 0 and isinstance(body[0], dict):
+                for k, v in body[0].items():
+                    if k not in params:
+                        val = v[0] if isinstance(v, (list, tuple)) and len(v) == 1 else v
+                        if val is not None:
+                            params[k] = val
+                body = None
 
         if "{id}" in api_url and id_match:
             id_value = id_match.group(1)
@@ -751,6 +1189,32 @@ def run_pipeline(user_input: str, geo_location: tuple[float, float], history: st
         else:
              api_response = call_api(api_url, method=method, params=params, body=body)
 
+        # Check if query asks about last eruption (VEN_LAST) or eruption history of a volcano
+        if "/api/v2/volcano/ven" in api_url and isinstance(api_response, dict) and api_response.get("data"):
+            v_data = api_response["data"]
+            if isinstance(v_data, list) and len(v_data) > 0:
+                first_e = v_data[0]
+                g_nama = first_e.get("nama_gunung_api") or (norm_vcode if norm_vcode else "Gunung Api")
+                e_date = first_e.get("local_datetime") or first_e.get("local_date") or ""
+                e_level = first_e.get("tingkat_aktivitas") or ""
+                e_desc = first_e.get("deskripsi") or {}
+                e_vis = e_desc.get("visual") or ""
+                if e_vis:
+                    clean_vis = html.unescape(re.sub(r"<[^>]+>", " ", e_vis)).strip()
+                else:
+                    clean_vis = f"Erupsi Gunung {g_nama} tercatat pada {e_date}."
+                level_str = f"\nStatus Aktivitas Saat Ini: {e_level}" if e_level else ""
+
+                output_text = f"🌋 Catatan Erupsi Terakhir Gunung {g_nama} (PVMBG):\n{clean_vis}{level_str}"
+                return {
+                    "status": "success",
+                    "date": datetime.utcnow().isoformat(),
+                    "user_input": user_input,
+                    "geo_location": geo_location,
+                    "api_call": api_url,
+                    "output": output_text,
+                    "response": [first_e],
+                }
 
         max_tries = len(rec["recommended_api"])
 

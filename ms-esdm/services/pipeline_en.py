@@ -8,10 +8,15 @@ from utils.extraction import detect_volcano_name
 from utils.geo_location import extract_indonesia_location, get_geolocation_indonesia
 from utils.pipeline_helpers import resolve_api_url, call_api, semantic_recommend_api_improved_en, safe_json_loads, \
     recommend_api_fallback, model_chat, load_examples, crosscheck_api, find_nearest_volcano, check_if_nearest_question, \
-    get_mount_code, get_today_eruption_events, fetch_api_simple, filter_history, _detect_volcano_name, check_if_mount_level, BASE_URL, check_around, get_closest_gerakan_tanah_data, is_empty_response, load_volcano_cache
+    get_mount_code, get_today_eruption_events, fetch_api_simple, filter_history, _detect_volcano_name, check_if_mount_level, BASE_URL, check_around, get_closest_gerakan_tanah_data, is_empty_response, load_volcano_cache, get_volcano_var_data
 from concurrent.futures import ThreadPoolExecutor
 from utils.classifier import detect_conversational_intent
 from services.check_status_magma import return_status
+from utils.location_answers import (
+    build_location_answer,
+    detect_location_question,
+    missing_location_answer,
+)
 from datetime import datetime
 
 MAX_WORKERS = 10
@@ -196,8 +201,27 @@ def is_prefere_current_location(user_input: str) -> bool:
     return any(re.search(p, text) for p in patterns)
 
 
-def run_pipeline_en(user_input: str, geo_location: tuple[float, float], history: str = '', location_name: str=None):
+def run_pipeline_en(user_input: str, geo_location: tuple[float, float], history: str = '', location_name: str=None, location_accuracy: float | None = None):
     try:
+        # ===================================================================
+        # AI Agent Router: Decision Engine with Tool-Specific Execution
+        # ===================================================================
+        from services.agent_router import AgentRouter
+        routed_result = AgentRouter.route_and_execute(
+            user_input=user_input,
+            geo_location=geo_location,
+            history=history,
+            location_name=location_name,
+            location_accuracy=location_accuracy,
+            lang="en",
+        )
+        if routed_result:
+            routed_result["date"] = datetime.utcnow().isoformat()
+            routed_result["user_input"] = user_input
+            if "geo_location" not in routed_result:
+                routed_result["geo_location"] = geo_location
+            return routed_result
+
         intent, response = detect_conversational_intent(user_input, geo_location)
         volcano_url = resolve_api_url("/api/v1/home/gunung-api")
         volcano_resp = get_mount_code()
@@ -217,6 +241,62 @@ def run_pipeline_en(user_input: str, geo_location: tuple[float, float], history:
         print(f"Volcano code detected: {volcano_code}")
         print(f"Detected intent: {intent} Response: {response}")
         query_lower = user_input.lower()
+        api_call_v2 = f"{BASE_URL}/api/v2/volcano/list"
+
+        loc_mode = detect_location_question(user_input, "en")
+        if loc_mode:
+            extracted_loc = extract_indonesia_location(user_input)
+            eff_geo = None
+            eff_name = location_name
+            eff_accuracy = location_accuracy
+            if extracted_loc:
+                loc_coords = get_geolocation_indonesia(extracted_loc)
+                if loc_coords and any(loc_coords):
+                    eff_geo = (float(loc_coords[0]), float(loc_coords[1]))
+                    eff_name = extracted_loc
+                    eff_accuracy = None
+            if not eff_geo and geo_location and any(geo_location):
+                try:
+                    eff_geo = (float(geo_location[0]), float(geo_location[1]))
+                except (TypeError, ValueError):
+                    eff_geo = None
+
+            if not eff_geo:
+                return {
+                    "status": "success",
+                    "date": datetime.utcnow().isoformat(),
+                    "user_input": user_input,
+                    "geo_location": geo_location,
+                    "api_call": None,
+                    "output": missing_location_answer("en"),
+                    "response": None,
+                }
+
+            is_user_id = any(
+                re.search(rf"\b{w}\b", user_input.lower())
+                for w in ["saya", "aku", "sy", "dimana", "dmna", "dmana", "dimn", "dmn", "lokasi", "posisi", "terdekat", "aman", "sini"]
+            )
+            resp_lang = "id" if is_user_id else "en"
+
+            out_text, nearest_items = build_location_answer(
+                mode=loc_mode,
+                lat=eff_geo[0],
+                lon=eff_geo[1],
+                volcano_list=volcano_resp or [],
+                location_name=eff_name,
+                accuracy_m=eff_accuracy,
+                lang=resp_lang,
+            )
+            return {
+                "status": "success",
+                "date": datetime.utcnow().isoformat(),
+                "user_input": user_input,
+                "geo_location": eff_geo,
+                "api_call": api_call_v2,
+                "output": out_text,
+                "response": nearest_items,
+                "nearest_volcano": nearest_items[0] if nearest_items else None,
+            }
         if (
             re.search(r"\b(erupsi|erupt|eruption|letusan|meletus)\b", query_lower)
             and re.search(r"\b(hari ini|today|sekarang|saat ini)\b", query_lower)
@@ -245,6 +325,19 @@ def run_pipeline_en(user_input: str, geo_location: tuple[float, float], history:
             "greeting", "identity", "location_required", "out_of_scope", "status"
         ]
         if intent in standard_intents:
+            if history and intent in ("greeting", "identity"):
+                clean_q = re.sub(r"[^\w\s]", "", user_input.lower()).strip()
+                if intent == "greeting" or clean_q in {"hello", "hi", "hey", "good morning", "good afternoon", "good evening"}:
+                    return {
+                        "status": "success",
+                        "intent": intent,
+                        "date": datetime.utcnow().isoformat(),
+                        "user_input": user_input,
+                        "geo_location": geo_location,
+                        "api_call": None,
+                        "output": "Hello! How can I assist you further with volcano activity, earthquakes, or geological hazard info?",
+                        "response": None
+                    }
             return {
                 "status": "success",
                 "intent": intent,
@@ -293,6 +386,57 @@ def run_pipeline_en(user_input: str, geo_location: tuple[float, float], history:
                 "api_call": None,
                 "output": output_text,
                 "response": None
+            }
+
+        elif is_asking_level_status and volcano_code:
+            requested_codes = set(volcano_code if isinstance(volcano_code, list) else [volcano_code])
+            selected_volcanoes = [
+                volcano for volcano in volcano_resp
+                if volcano.get("ga_code") in requested_codes
+            ]
+            status_labels = {
+                1: "Level I (Normal)",
+                2: "Level II (Advisory / Waspada)",
+                3: "Level III (Watch / Siaga)",
+                4: "Level IV (Warning / Awas)",
+            }
+            if selected_volcanoes:
+                output_lines = []
+                for volcano in selected_volcanoes:
+                    level = volcano.get("ga_status")
+                    name = volcano.get("ga_nama_gapi") or volcano.get("ga_code")
+                    code = volcano.get("ga_code")
+                    location = ", ".join(filter(None, [
+                        volcano.get("ga_kab_gapi"),
+                        volcano.get("ga_prov_gapi"),
+                    ]))
+                    output_lines.append(
+                        f"The volcanic activity status of Mount {name} is "
+                        f"{status_labels.get(level, f'Level {level}')}."
+                        + (f" Location: {location}." if location else "")
+                    )
+                    var_data = get_volcano_var_data(code)
+                    if var_data and isinstance(var_data, dict):
+                        lap = var_data.get("laporan_terakhir") or {}
+                        rekomendasi = lap.get("rekomendasi")
+                        tgl_lap = lap.get("tanggal")
+                        if rekomendasi:
+                            output_lines.append(
+                                f"\n📋 Official PVMBG Recommendations"
+                                + (f" ({tgl_lap}):\n" if tgl_lap else ":\n")
+                                + rekomendasi.strip()
+                            )
+                output_text = "\n".join(output_lines)
+            else:
+                output_text = "The requested volcano status data could not be found."
+            return {
+                "status": "success",
+                "date": datetime.utcnow().isoformat(),
+                "user_input": user_input,
+                "geo_location": geo_location,
+                "api_call": f"{BASE_URL}/api/v2/volcano/list",
+                "output": output_text,
+                "response": selected_volcanoes,
             }
 
         elif is_asking_level_status and not volcano_code:

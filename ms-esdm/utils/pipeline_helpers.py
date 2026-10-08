@@ -26,7 +26,7 @@ from utils.extraction import detect_volcano_name
 from utils.filter import extract_date_range
 
 # ---------- Environment ----------
-load_dotenv()
+load_dotenv(override=True)
 
 BASE_URL = os.getenv("BASE_URL")
 OPENAI_API_BASE = os.getenv("OPENAI_API_BASE", "http://0.0.0.0:8002/v1")
@@ -167,6 +167,29 @@ category_keywords = {
         "landslide report",
         "landslide status",
     ],
+
+    "GEMPA_BUMI": [
+        # Indonesian
+        "gempa",
+        "gempabumi",
+        "gempa bumi",
+        "kejadian gempa",
+        "aktivitas gempa",
+        "laporan gempa",
+        "gempa terkini",
+        "gempa terbaru",
+        "tsunami",
+        "lindu",
+        "seismik gempa",
+
+        # English
+        "earthquake",
+        "quake",
+        "seismic",
+        "seismicity",
+        "latest earthquake",
+        "tsunami",
+    ],
 }
 
 # ---------- API Endpoints ----------
@@ -195,6 +218,15 @@ endpoints = {
         "latest": "{{url}}/api/v2/ground-movement/latest",
         "detail": "{{url}}/api/v2/ground-movement/{id}",
         "filter": "{{url}}/api/v2/ground-movement/filter",
+    },
+    "GEMPA_BUMI": {
+        "list": "{{url}}/api/v2/earthquake-tsunami",
+        "latest": "{{url}}/api/v2/earthquake-tsunami/latest",
+        "detail": "{{url}}/api/v2/earthquake-tsunami/{id}",
+        "filter": "{{url}}/api/v2/earthquake-tsunami/filter",
+    },
+    "GEOHAZARD": {
+        "my_location": "{{url}}/api/public/geohazard/my-location",
     },
 }
 
@@ -324,9 +356,9 @@ def check_if_mount_level(user_input: str, threshold: int = 70) -> bool:
     if contains_eruption_keyword(text):
         return False
 
-    # # Ensure it mentions status/safety keywords
-    # if not contains_status_intent(text):
-    #     return False
+    # Ensure it mentions status/safety keywords
+    if not contains_status_intent(text):
+        return False
 
     # Compare with robust queries using fuzzy matching
     max_score = max(
@@ -443,53 +475,135 @@ STOPWORDS = {
 
 
 
+VOLCANO_COMMON_ALIASES = {
+    "lewotolo": "LEW",
+    "ili lewotolok": "LEW",
+    "lewotolok": "LEW",
+    "krakatau": "KRA",
+    "anak krakatau": "KRA",
+    "marapi": "MAR",
+    "merapi": "MER",
+    "lewotobi laki-laki": "LBI",
+    "lewotobi laki laki": "LBI",
+    "lewotobi lakilaki": "LBI",
+    "lewotobi perempuan": "LBP",
+    "tangkuban perahu": "TPR",
+    "tangkuban parahu": "TPR",
+    "tangkuban": "TPR",
+    "tandikat": "TAN",
+    "dieng": "DIE",
+    "ijen": "IJN",
+    "raung": "RAU",
+    "kelud": "KEL",
+    "bromo": "BRO",
+    "semeru": "SMR",
+    "sinabung": "SIN",
+    "kerinci": "KER",
+    "soputan": "SOP",
+    "lokon": "LOK",
+    "karangetang": "KRG",
+    "ruang": "RUA",
+    "ibu": "IBU",
+    "gamalama": "GAM",
+    "dukono": "DUK",
+    "awu": "AWU",
+    "gamkonora": "GMR",
+}
+
+
 def _detect_volcano_name(text, volcano_list):
+    if not text:
+        return None
     text_low = text.lower()
     # normalize: remove volcano prefixes, keep space
     text_norm = re.sub(r"\b(gunung|gn|g|mount|mt)\.?\b", "", text_low)
-    text_norm = re.sub(r"[^\w\s]", " ", text_norm)  # replace punctuation with space
-    text_norm = re.sub(r"\s+", " ", text_norm).strip()  # normalize spaces
-    tokens = re.findall(r"\b[a-z]+\b", text_norm)
-    tokens = [t for t in tokens if t not in STOPWORDS]
+    text_norm = re.sub(r"[^\w\s]", " ", text_norm)
+    text_norm = re.sub(r"\s+", " ", text_norm).strip()
+    tokens = [t for t in re.findall(r"\b[a-z]+\b", text_norm) if t not in STOPWORDS]
+
+    # Common generic words that should never match as a solitary volcano token
+    GENERIC_WORDS = {
+        "api", "berapi", "gunungapi", "gunung", "aktif", "keaktifan", "daftar",
+        "list", "semua", "apa", "saja", "mana", "indonesia", "nasional", "daerah",
+        "provinsi", "wilayah", "terkini", "terbaru", "bencana"
+    }
+
+    # 1. Check known common aliases first
+    for alias, code in VOLCANO_COMMON_ALIASES.items():
+        if re.search(rf"\b{re.escape(alias)}\b", text_norm):
+            return [code]
+
+    if not volcano_list:
+        return None
 
     detected = []
 
-    # exact phrase match
+    # Helper to extract name and code safely
+    def _v_name(v):
+        if isinstance(v, dict):
+            return (v.get("ga_nama_gapi") or v.get("name") or "").lower()
+        return str(v).lower()
+
+    def _v_code(v):
+        if isinstance(v, dict):
+            return v.get("ga_code") or v.get("code") or ""
+        return str(v)
+
+    # 2. Exact phrase match (with prefix stripping on both sides)
     for v in volcano_list:
-        name = v["ga_nama_gapi"].lower()
-        if name in text_norm:
+        name = _v_name(v)
+        clean_name = re.sub(r"\b(gunung|gn|g|mount|mt)\.?\b", "", name).strip()
+        if clean_name and clean_name not in GENERIC_WORDS and (re.search(rf"\b{re.escape(clean_name)}\b", text_norm) or clean_name in text_norm):
             detected.append(v)
 
     if detected:
-        return [v["ga_code"] for v in detected]
+        return [_v_code(v) for v in detected if _v_code(v)]
 
-    # token match
-    for v in volcano_list:
-        name_tokens = v["ga_nama_gapi"].lower().split()
-        if set(tokens) & set(name_tokens):
-            detected.append(v)
+    # 3. Token match (excluding generic terms like 'api' so 'gunung api aktif' never matches Banda Api)
+    filtered_query_tokens = [t for t in tokens if t not in GENERIC_WORDS and len(t) > 2]
+    if filtered_query_tokens:
+        for v in volcano_list:
+            name_tokens = (
+                set(_v_name(v).split())
+                - {"gunung", "g.", "gn.", "api", "berapi", "gunungapi"}
+            )
+            if set(filtered_query_tokens) & name_tokens:
+                detected.append(v)
 
     if detected:
-        return [v["ga_code"] for v in detected]
+        return [_v_code(v) for v in detected if _v_code(v)]
 
-    # fuzzy fallback
+    # 4. Token-level fuzzy and prefix fallback (handles slight typos like 'lewotolo' -> 'lewotolok', 'ged' -> 'gede')
     best_match = None
     best_score = 0
-    for token in tokens:
+    for token in filtered_query_tokens:
+        if len(token) < 3:
+            continue
         for v in volcano_list:
-            name = v["ga_nama_gapi"].lower()
-            if len(name) <= 4:
-                continue
-            score = fuzz.ratio(token, name)
-            if score > best_score:
-                best_score = score
-                best_match = v
+            name = _v_name(v)
+            clean_name = re.sub(r"\b(gunung|gn|g|mount|mt)\.?\b", "", name).strip()
+            name_parts = clean_name.split()
+            for part in name_parts:
+                if len(part) < 3 or part in GENERIC_WORDS:
+                    continue
+                # Disambiguate between Merapi and Marapi
+                if {token, part} == {"merapi", "marapi"}:
+                    continue
+                # Prefix match for tokens with length >= 3
+                if len(token) >= 3 and part.startswith(token):
+                    score = 90
+                else:
+                    score = fuzz.ratio(token, part) if fuzz else (100 if token == part else 0)
+                if score > best_score:
+                    best_score = score
+                    best_match = v
 
-    if best_match and best_score >= 80:
-        print(f"[VOLCANO] Fuzzy match: {best_match['ga_nama_gapi']} score={best_score}")
+    if best_match and best_score >= 75:
+        print(f"[VOLCANO] Fuzzy match: {best_match.get('ga_nama_gapi')} score={best_score}")
         return [best_match["ga_code"]]
 
     return None
+
 
 # ---------- Category embeddings ----------
 def build_category_embeddings():
@@ -1640,10 +1754,23 @@ def call_api(api_url, method="GET", params=None, body=None, max_retries=2, backo
                 if body not in ({}, [], None):
                     request_kwargs["json"] = body
                 response = session.get(api_url, **request_kwargs)
+
+            if response.status_code == 401:
+                print("⚠️ API returned 401 Unauthorized. Attempting stakeholder auto-login...")
+                from services.esdm_auth import auto_login
+                if auto_login():
+                    session.headers.update(get_auth_header())
+                    continue
+
             response.raise_for_status()
             return response.json()
 
         except Exception as e:
+            if hasattr(e, "response") and getattr(e.response, "status_code", None) == 401:
+                from services.esdm_auth import auto_login
+                if auto_login():
+                    session.headers.update(get_auth_header())
+                    continue
             if attempt < max_retries - 1:
                 sleep_time = backoff ** attempt + random.uniform(0, 0.3)
                 print(f"⚠️ API call failed (attempt {attempt+1}/{max_retries}): {e}. Retrying in {sleep_time:.2f}s")
@@ -1652,11 +1779,19 @@ def call_api(api_url, method="GET", params=None, body=None, max_retries=2, backo
                 print(f"❌ API failed permanently: {e}")
                 return {"error": str(e), "api_url": api_url, "response": getattr(e, 'response', None)}
 
+
 def fetch_api_simple(api_url):
     session.headers.update(get_auth_header())
 
     try:
         response = session.get(api_url)
+        if response.status_code == 401:
+            print("⚠️ fetch_api_simple returned 401 Unauthorized. Refreshing token...")
+            from services.esdm_auth import auto_login
+            if auto_login():
+                session.headers.update(get_auth_header())
+                response = session.get(api_url)
+
         response.raise_for_status()
         return response.json()
 
@@ -1678,6 +1813,25 @@ def fetch_api_simple(api_url):
             "api_url": api_url,
             "response": safe_response
         }
+
+
+def get_volcano_var_data(volcano_code: str):
+    """
+    Fetch the latest VAR (Volcano Activity Report) detail for a volcano code,
+    including official PVMBG recommendations, recent visual/seismic observations.
+    """
+    if not volcano_code:
+        return None
+    url = resolve_api_url(f"/api/v2/volcano/var/{volcano_code}")
+    res = fetch_api_simple(url)
+    if isinstance(res, dict) and isinstance(res.get("data"), list) and res["data"]:
+        return res["data"][0]
+    if isinstance(res, list) and res:
+        return res[0]
+    if isinstance(res, dict) and not res.get("error"):
+        return res
+    return None
+
 
 def save_volcano_cache(data):
     payload = {
@@ -1710,32 +1864,17 @@ def get_mount_code():
     api_url = resolve_api_url("/api/v2/volcano/list")
 
     try:
-        session.headers.update(get_auth_header())
-        response = session.get(api_url, timeout=10)
-        response.raise_for_status()
-
-        data = response.json()
-
-        # save fresh cache
-        save_volcano_cache(data)
-
-        return data
-
+        data = fetch_api_simple(api_url)
+        if isinstance(data, list) and data:
+            save_volcano_cache(data)
+            return data
+        if isinstance(data, dict) and isinstance(data.get("data"), list) and data["data"]:
+            save_volcano_cache(data["data"])
+            return data["data"]
     except Exception as e:
         print(f"❌ Failed to get Mount code: {e}")
 
-        # fallback to cache
-        cached = load_volcano_cache()
-
-        if cached:
-            print("⚠️ Using cached volcano data")
-            return cached
-
-        return {
-            "error": str(e),
-            "api_url": api_url,
-            "response": getattr(e, "response", None),
-        }
+    return load_volcano_cache() or []
 
 
 def get_today_eruption_events(max_pages: int = 10) -> dict:
@@ -1767,7 +1906,7 @@ def model_chat(
     messages,
     model=None,
     temperature=0.2,
-    max_tokens=600,
+    max_tokens=1500,
     stop=None,
     repetition_penalty=False,
     max_retries=3
@@ -1778,22 +1917,36 @@ def model_chat(
 
     for attempt in range(max_retries):
         try:
-            base = os.getenv("OPENAI_API_BASE", "http://localhost:8002/v1")
             selected = SELECTED_CHAT_MODEL.get() or model
+            is_groq = bool(selected and selected.startswith("groq:"))
             is_openrouter = bool(selected and selected.startswith("openrouter:"))
-            if is_openrouter:
+
+            if is_groq:
+                base = "https://api.groq.com/openai/v1"
+                selected_model = selected.removeprefix("groq:")
+                api_key = os.getenv("GROQ_API_KEY")
+                if not api_key:
+                    raise RuntimeError("GROQ_API_KEY belum diisi")
+                effective_max_tokens = max_tokens
+                timeout_val = float(os.getenv("GROQ_TIMEOUT_SECONDS", "30"))
+            elif is_openrouter:
                 base = "https://openrouter.ai/api/v1"
                 selected_model = selected.removeprefix("openrouter:")
+                api_key = os.getenv("OPENROUTER_API_KEY")
+                if not api_key:
+                    raise RuntimeError("OPENROUTER_API_KEY belum diisi")
+                effective_max_tokens = max_tokens
+                timeout_val = float(os.getenv("OPENROUTER_TIMEOUT_SECONDS", "30"))
             else:
+                base = os.getenv("OPENAI_API_BASE", "http://localhost:8002/v1")
                 selected_model = os.getenv("OPENAI_MODEL") or "qwen2.5-1.5b-instruct"
-            effective_max_tokens = max_tokens
-            if not is_openrouter:
-                # CPU-only local inference must finish before the API timeout.
-                local_limit = int(os.getenv("LOCAL_LLM_MAX_TOKENS", "180"))
+                api_key = os.getenv("OPENAI_API_KEY")
+                if not api_key:
+                    raise RuntimeError("OPENAI_API_KEY belum diisi")
+                local_limit = int(os.getenv("LOCAL_LLM_MAX_TOKENS", "2048"))
                 effective_max_tokens = min(max_tokens, local_limit)
-            api_key = os.getenv("OPENROUTER_API_KEY") if is_openrouter else os.getenv("OPENAI_API_KEY")
-            if not api_key:
-                raise RuntimeError("OPENROUTER_API_KEY belum diisi" if is_openrouter else "OPENAI_API_KEY belum diisi")
+                timeout_val = float(os.getenv("LOCAL_MODEL_TIMEOUT_SECONDS", "45"))
+
             payload = {
                 "model": selected_model,
                 "messages": [{"role": m.role, "content": m.content} for m in messages],
@@ -1820,11 +1973,7 @@ def model_chat(
                 f"{base}/chat/completions",
                 headers=headers,
                 json=payload,
-                timeout=(
-                    float(os.getenv("OPENROUTER_TIMEOUT_SECONDS", "30"))
-                    if is_openrouter
-                    else float(os.getenv("LOCAL_MODEL_TIMEOUT_SECONDS", "30"))
-                ),
+                timeout=timeout_val,
             )
             response.raise_for_status()
             data = response.json()
@@ -1847,19 +1996,46 @@ def model_chat(
             return content
 
         except Exception as e:
-            if not is_openrouter:
+            if not is_openrouter and not is_groq:
                 print(f"❌ Local model call failed: {e}")
                 return None
-            if attempt < max_retries - 1:
-                sleep_time = 2 ** attempt + random.uniform(0, 0.5)
-                print(f"⚠️ Model call failed: {e}. Retrying in {sleep_time:.1f}s")
-                time.sleep(sleep_time)
-            else:
-                print(f"❌ Model call failed permanently: {e}")
-                return (
-                    "Oops! I’m having trouble connecting to the model right now. "
-                    "Please try again in a few moments."
-                )
+            # If external provider fails (429 rate limit or retries exhausted), seamlessly fallback to local model
+            if "429" in str(e) or attempt >= max_retries - 1:
+                provider_name = "Groq" if is_groq else "OpenRouter"
+                print(f"⚠️ {provider_name} failed ({e}). Falling back to local model...")
+                try:
+                    local_base = os.getenv("OPENAI_API_BASE", "http://localhost:8002/v1")
+                    local_model = os.getenv("OPENAI_MODEL") or "qwen2.5-1.5b-instruct"
+                    local_limit = int(os.getenv("LOCAL_LLM_MAX_TOKENS", "2048"))
+                    local_payload = {
+                        "model": local_model,
+                        "messages": [{"role": m.role, "content": m.content} for m in messages],
+                        "temperature": temperature,
+                        "max_tokens": min(max_tokens, local_limit),
+                    }
+                    if stop:
+                        local_payload["stop"] = stop
+                    resp = requests.post(
+                        f"{local_base}/chat/completions",
+                        headers={
+                            "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY', 'my-super-secret-admin-key')}",
+                            "Content-Type": "application/json"
+                        },
+                        json=local_payload,
+                        timeout=float(os.getenv("LOCAL_MODEL_TIMEOUT_SECONDS", "45")),
+                    )
+                    resp.raise_for_status()
+                    c = resp.json()["choices"][0]["message"].get("content")
+                    if isinstance(c, str) and c.strip():
+                        print("✅ Fallback to local model succeeded!")
+                        return c.strip()
+                except Exception as loc_err:
+                    print(f"❌ Fallback to local model also failed: {loc_err}")
+                return None
+
+            sleep_time = 2 ** attempt + random.uniform(0, 0.5)
+            print(f"⚠️ Model call failed: {e}. Retrying in {sleep_time:.1f}s")
+            time.sleep(sleep_time)
 
 
 def extract_volcano_name(text):
@@ -2091,6 +2267,133 @@ def get_closest_gerakan_tanah_data(api_url, user_lat, user_lon, method="GET", pa
         if not links.get("next"):
             break
 
-        page += 1
-
     return closest_data
+
+
+def get_latest_earthquake_data() -> dict:
+    """
+    Fetches the latest official earthquake event from MAGMA API v2.
+    Falls back to BMKG open public API if MAGMA returns None or errors.
+    """
+    api_url = resolve_api_url("/api/v2/earthquake-tsunami/latest")
+    res = call_api(api_url, max_retries=1)
+    if isinstance(res, dict) and res.get("success") and res.get("data"):
+        data = res["data"]
+        return {
+            "source": "MAGMA ESDM",
+            "api_url": api_url,
+            "judul": data.get("judul"),
+            "datetime": data.get("local_datetime") or data.get("date"),
+            "timezone": data.get("time_zone") or data.get("zone") or "WIB",
+            "magnitude": data.get("magnitude"),
+            "kedalaman": data.get("kedalaman"),
+            "lokasi": data.get("lokasi"),
+            "kota_terdekat": data.get("kota_terdekat"),
+            "tsunami": data.get("berpotensi_tsunami", False),
+            "rekomendasi": data.get("rekomendasi"),
+            "deskripsi": data.get("deskripsi"),
+            "share_url": data.get("share", {}).get("url") if isinstance(data.get("share"), dict) else None,
+            "raw": data,
+        }
+
+    # Fallback to BMKG official open API
+    try:
+        bmkg_resp = requests.get("https://data.bmkg.go.id/DataMKG/TEWS/autogempa.json", timeout=6)
+        if bmkg_resp.status_code == 200:
+            bmkg_data = bmkg_resp.json()
+            eq = bmkg_data.get("Infogempa", {}).get("gempa", {})
+            if eq:
+                return {
+                    "source": "BMKG",
+                    "api_url": "https://data.bmkg.go.id/DataMKG/TEWS/autogempa.json",
+                    "judul": f"Gempa Mag {eq.get('Magnitude')} di {eq.get('Wilayah')}",
+                    "datetime": f"{eq.get('Tanggal')} {eq.get('Jam')}",
+                    "timezone": "WIB",
+                    "magnitude": eq.get("Magnitude"),
+                    "kedalaman": eq.get("Kedalaman"),
+                    "lokasi": eq.get("Wilayah"),
+                    "kota_terdekat": eq.get("Wilayah"),
+                    "tsunami": "tidak berpotensi tsunami" in eq.get("Potensi", "").lower(),
+                    "rekomendasi": eq.get("Potensi"),
+                    "deskripsi": f"Pusat gempa: {eq.get('Wilayah')}. Dirasakan: {eq.get('Dirasakan', '-')}",
+                    "share_url": None,
+                    "raw": eq,
+                }
+    except Exception as e:
+        print(f"⚠️ BMKG fallback error: {e}")
+
+    return {}
+
+
+def get_earthquake_list() -> list:
+    """
+    Fetches the recent list of official earthquake events from MAGMA API v2.
+    """
+    api_url = resolve_api_url("/api/v2/earthquake-tsunami")
+    res = call_api(api_url, max_retries=1)
+    if isinstance(res, dict) and res.get("data"):
+        data = res["data"]
+        if isinstance(data, list):
+            return data
+    elif isinstance(res, list):
+        return res
+    return []
+
+
+def get_geohazard_location_awareness(lat: float, lng: float) -> dict:
+    """
+    Queries MAGMA Geohazard Awareness API for given latitude and longitude.
+    Returns vulnerability info for earthquake and ground movement.
+    """
+    try:
+        api_url = resolve_api_url(f"/api/public/geohazard/my-location?lat={lat}&lng={lng}")
+        res = call_api(api_url, max_retries=1)
+        if isinstance(res, dict) and res.get("success") and res.get("data"):
+            return res["data"]
+    except Exception as e:
+        print(f"⚠️ Geohazard location awareness error: {e}")
+    return {}
+
+
+def get_latest_ground_movement_data() -> dict:
+    """
+    Fetches the latest official ground movement (gerakan tanah) report from MAGMA API v2.
+    """
+    api_url = resolve_api_url("/api/v2/ground-movement/latest")
+    res = call_api(api_url, max_retries=1)
+    if isinstance(res, dict) and res.get("data"):
+        data = res["data"]
+        laporan = data.get("laporan", {})
+        tanggapan = data.get("tanggapan", {})
+        return {
+            "source": "Badan Geologi (PVMBG)",
+            "api_url": api_url,
+            "id": laporan.get("id"),
+            "judul": laporan.get("judul"),
+            "datetime": laporan.get("local_datetime"),
+            "pelapor": laporan.get("pelapor"),
+            "deskripsi": laporan.get("deskripsi"),
+            "tingkat_kerentanan": laporan.get("tingkat_kerentanan"),
+            "tipe": tanggapan.get("tipe"),
+            "dampak": tanggapan.get("dampak"),
+            "kondisi": tanggapan.get("kondisi"),
+            "rekomendasi": data.get("rekomendasi") or tanggapan.get("rekomendasi"),
+            "raw": data,
+        }
+    return {}
+
+
+def get_ground_movement_list() -> list:
+    """
+    Fetches the recent list of ground movement reports from MAGMA API v2.
+    """
+    api_url = resolve_api_url("/api/v2/ground-movement")
+    res = call_api(api_url, max_retries=1)
+    if isinstance(res, dict) and res.get("data"):
+        data = res["data"]
+        if isinstance(data, list):
+            return data
+    elif isinstance(res, list):
+        return res
+    return []
+

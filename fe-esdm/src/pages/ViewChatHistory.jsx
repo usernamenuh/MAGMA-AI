@@ -26,7 +26,7 @@ import {useAuth} from "@/hooks/useAuth.jsx";
 import {useHistory} from "@/hooks/useHistory.jsx";
 import {PIPELINE_TYPE} from "@/utils/constants.jsx";
 import ChatMessageKnowledge from "@/components/ChatMessageKnowledge.jsx";
-import {bounce} from "@/utils/layout.jsx";
+import { bounce, pulseGlow, shimmerGradient } from "@/utils/layout.jsx";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import LocationOffIcon from "@mui/icons-material/LocationOff";
 import DocumentMentionInput from "../components/DocumentMentionInput.jsx";
@@ -63,6 +63,7 @@ export default function ChatRAGHistory() {
     const chatEndRef = useRef(null);
     const [locationEnabled, setLocationEnabled] = useState(true);
     const [locationName, setLocationName] = useState(null);
+    const [locationAccuracy, setLocationAccuracy] = useState(null);
 
     useEffect(() => {
         getChatModels().then(({ data }) => {
@@ -101,13 +102,23 @@ export default function ChatRAGHistory() {
         setLanguage(savedLanguage || historyLanguage || "en");
     },[history])
 
+    // Auto-scroll to bottom when new message added or status changes
     useEffect(() => {
-        chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [history]);
+        const scrollToBottom = (behavior = "smooth") => {
+            chatEndRef.current?.scrollIntoView({ behavior, block: "end" });
+        };
+        scrollToBottom("smooth");
+        const t1 = setTimeout(() => scrollToBottom("smooth"), 120);
+        const t2 = setTimeout(() => scrollToBottom("auto"), 350);
+        return () => {
+            clearTimeout(t1);
+            clearTimeout(t2);
+        };
+    }, [history, loading]);
 
     const [, setGeoError] = useState(null);
     const [language, setLanguage] = useState(
-        () => localStorage.getItem("chat_language") || "en"
+        () => localStorage.getItem("chat_language") || "id"
     );
     const { refetchHistories } = useHistory(user?.id || JSON.parse(user)?.id);
     const languages = [
@@ -119,11 +130,6 @@ export default function ChatRAGHistory() {
         { code: PIPELINE_TYPE.API_DOCUMENTATION, label: "API Documentation" },
         { code: PIPELINE_TYPE.KNOWLEDGE_BASE, label: "Knowledge Base" },
     ]
-
-    // Auto-scroll to bottom when new message added
-    useEffect(() => {
-        chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [history]);
 
     const fetchIPLocation = async () => {
         try {
@@ -160,6 +166,7 @@ export default function ChatRAGHistory() {
         if (!locationEnabled) {
             setGeoLocation(null);
             setLocationName(null);
+            setLocationAccuracy(null);
             return;
         }
 
@@ -167,8 +174,10 @@ export default function ChatRAGHistory() {
             const tryGetLocation = (retry = 0) => {
                 navigator.geolocation.getCurrentPosition(
                     async (pos) => {
-                        const { latitude, longitude } = pos.coords;
+                        const { latitude, longitude, accuracy } = pos.coords;
                         setGeoLocation([latitude, longitude]);
+                        setLocationAccuracy(accuracy);
+                        setIsUsingIPAddress(false);
 
                         // Get location name
                         const name = await reverseGeocode(latitude, longitude);
@@ -187,12 +196,14 @@ export default function ChatRAGHistory() {
                         if (ipLoc) {
                             setGeoLocation(ipLoc);
                             setIsUsingIPAddress(true);
+                            setLocationAccuracy(null);
                         } else {
                             setGeoError(err.message);
                             setLocationName(null);
+                            setLocationAccuracy(null);
                         }
                     },
-                    { enableHighAccuracy: true, timeout: 5000 }
+                    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
                 );
             };
             tryGetLocation();
@@ -200,9 +211,12 @@ export default function ChatRAGHistory() {
             fetchIPLocation().then((loc) => {
                 if (loc) {
                     setGeoLocation(loc);
+                    setIsUsingIPAddress(true);
+                    setLocationAccuracy(null);
                 } else {
                     setGeoError("Geolocation not supported and IP fallback failed.");
                     setLocationName(null);
+                    setLocationAccuracy(null);
                 }
             });
         }
@@ -215,6 +229,9 @@ export default function ChatRAGHistory() {
     },  [locationEnabled]);
 
     const handleLocationToggle = () => {
+        if (locationEnabled) {
+            setLocationAccuracy(null);
+        }
         setLocationEnabled(!locationEnabled);
     };
 
@@ -226,20 +243,29 @@ export default function ChatRAGHistory() {
     const handleLanguageChange = (event) => setLanguageChoice(event.target.value);
 
 
-    const handleSend = async () => {
-        if (!prompt.trim()) return;
+    const handleSend = async (overridePrompt = null) => {
+        const textToSend = typeof overridePrompt === "string" ? overridePrompt : prompt;
+        if (!textToSend.trim()) return;
         const cleanKnowledgePrompt = knowledgeDocuments.reduce(
             (text, document) => text.replaceAll(`@${document.filename}`, " "),
-            prompt
+            textToSend
         ).replace(/\s+/g, " ").trim();
-        addMessage(prompt);
+        addMessage(textToSend);
         setLoading(true);
+        setPrompt("");
 
         try {
             const payload = pipelineType===PIPELINE_TYPE.API_DOCUMENTATION
-                ? { user_input: prompt, geo_location: locationEnabled ? geoLocation : null, location_name: locationEnabled? locationName: null, session_id: sessionId, model: selectedModel }
+                ? {
+                    user_input: textToSend,
+                    geo_location: locationEnabled ? geoLocation : null,
+                    location_name: locationEnabled? locationName: null,
+                    location_accuracy: locationEnabled ? locationAccuracy : null,
+                    session_id: sessionId,
+                    model: selectedModel,
+                }
                 : {
-                    user_input: cleanKnowledgePrompt || prompt,
+                    user_input: cleanKnowledgePrompt || textToSend,
                     session_id: sessionId,
                     model: selectedModel,
                     document_ids: selectedDocumentIds.length ? selectedDocumentIds : null,
@@ -482,7 +508,15 @@ export default function ChatRAGHistory() {
                         <Box key={i} mb={2}>
                             <ChatMessage role="user" content={chat.user_input} />
                             {chat.output && pipelineType === PIPELINE_TYPE.API_DOCUMENTATION && (
-                                <ChatMessage role="assistant" content={chat.output} reference={chat?.api_call} response={chat?.response} geolocation={chat?.geoLocation} />
+                                <ChatMessage
+                                    role="assistant"
+                                    content={chat.answer || chat.output}
+                                    reference={chat?.api_call}
+                                    response={chat?.response}
+                                    geolocation={chat?.geoLocation}
+                                    followUps={i === history.length - 1 ? (chat?.follow_ups || chat?.suggested_follow_ups) : null}
+                                    onSelectFollowUp={(q) => handleSend(q)}
+                                />
                             )}
                             {chat.output && pipelineType === PIPELINE_TYPE.KNOWLEDGE_BASE && (
                                 <ChatMessageKnowledge role="assistant" content={chat?.output} references={chat?.references}/>
@@ -493,53 +527,104 @@ export default function ChatRAGHistory() {
                 )}
                 {loading && (
                     <Box sx={{ display: "flex", justifyContent: "flex-start", alignItems: "flex-start", gap: 1.5, mb: 2, px: { xs: 0.5, sm: 2 } }}>
-                        <Box component="img" src={AssistantIcon} alt="ESDM Assistant" sx={{ width: 34, height: 34, objectFit: "contain" }} />
+                        <Box
+                            component="img"
+                            src={AssistantIcon}
+                            alt="ESDM Assistant"
+                            sx={{
+                                width: 34,
+                                height: 34,
+                                objectFit: "contain",
+                                borderRadius: "50%",
+                                animation: `${pulseGlow} 2s infinite ease-in-out`,
+                            }}
+                        />
                         <Box
                             sx={{
-                                backgroundColor: "#f3f3f3",
-                                borderRadius: 2,
-                                p: 2,
+                                position: "relative",
+                                overflow: "hidden",
+                                background: "linear-gradient(135deg, rgba(246, 250, 255, 0.95) 0%, rgba(240, 245, 252, 0.95) 100%)",
+                                borderRadius: "18px 18px 18px 4px",
+                                p: "12px 18px",
                                 display: "flex",
-                                gap: 1, alignItems: "center", border: "1px solid #e3e9ee",
+                                flexDirection: "column",
+                                gap: 1,
+                                border: "1px solid rgba(200, 222, 245, 0.7)",
+                                boxShadow: "0 6px 20px rgba(25, 118, 210, 0.07)",
+                                minWidth: { xs: 260, sm: 320 },
                             }}
                         >
-                            <Box
-                                sx={{
-                                    width: 8,
-                                    height: 8,
-                                    borderRadius: "50%",
-                                    backgroundColor: "#666",
-                                    animation: `${bounce} 0.6s infinite`,
-                                }}
-                            />
-                            <Typography variant="body2" sx={{ color: "#526579", ml: 0.5 }}>
-                                {pipelineType === PIPELINE_TYPE.KNOWLEDGE_BASE ? "ESDM Assistant sedang mencari dalam dokumen…" : "ESDM Assistant sedang mengambil data MAGMA…"}
+                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5 }}>
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                    <Box
+                                        sx={{
+                                            width: 8,
+                                            height: 8,
+                                            borderRadius: "50%",
+                                            backgroundColor: "#1976d2",
+                                            boxShadow: "0 0 8px #1976d2",
+                                            animation: `${bounce} 1s infinite`,
+                                        }}
+                                    />
+                                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#1e3a5f", fontSize: "0.86rem" }}>
+                                        {pipelineType === PIPELINE_TYPE.KNOWLEDGE_BASE
+                                            ? "Menganalisis Dokumen ESDM…"
+                                            : "Memproses Data Geologi MAGMA…"}
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: "flex", gap: "5px", alignItems: "center" }}>
+                                    <Box
+                                        sx={{
+                                            width: 6,
+                                            height: 6,
+                                            borderRadius: "50%",
+                                            backgroundColor: "#1976d2",
+                                            animation: `${bounce} 0.8s infinite ease-in-out`,
+                                        }}
+                                    />
+                                    <Box
+                                        sx={{
+                                            width: 6,
+                                            height: 6,
+                                            borderRadius: "50%",
+                                            backgroundColor: "#0288d1",
+                                            animation: `${bounce} 0.8s infinite ease-in-out`,
+                                            animationDelay: "0.2s",
+                                        }}
+                                    />
+                                    <Box
+                                        sx={{
+                                            width: 6,
+                                            height: 6,
+                                            borderRadius: "50%",
+                                            backgroundColor: "#00b4d8",
+                                            animation: `${bounce} 0.8s infinite ease-in-out`,
+                                            animationDelay: "0.4s",
+                                        }}
+                                    />
+                                </Box>
+                            </Box>
+                            <Typography variant="caption" sx={{ color: "#64748b", fontSize: "0.75rem", fontStyle: "italic" }}>
+                                {pipelineType === PIPELINE_TYPE.KNOWLEDGE_BASE
+                                    ? "Menghubungkan konteks dengan basis pengetahuan resmi..."
+                                    : "Menghubungi API PVMBG & memverifikasi laporan terkini..."}
                             </Typography>
+                            {/* Animated shimmering accent line */}
                             <Box
                                 sx={{
-                                    width: 8,
-                                    height: 8,
-                                    borderRadius: "50%",
-                                    backgroundColor: "#666",
-                                    animation: `${bounce} 0.6s infinite`,
-                                    animationDelay: "0.2s",
-                                }}
-                            />
-                            <Box
-                                sx={{
-                                    width: 8,
-                                    height: 8,
-                                    borderRadius: "50%",
-                                    backgroundColor: "#666",
-                                    animation: `${bounce} 0.6s infinite`,
-                                    animationDelay: "0.4s",
+                                    height: "2.5px",
+                                    width: "100%",
+                                    borderRadius: 2,
+                                    background: "linear-gradient(90deg, #1976d2 0%, #00b4d8 50%, #1976d2 100%)",
+                                    backgroundSize: "200% 100%",
+                                    animation: `${shimmerGradient} 1.8s infinite linear`,
                                 }}
                             />
                         </Box>
                     </Box>
                 )}
 
-                <div ref={chatEndRef} />
+                <Box ref={chatEndRef} sx={{ height: 48, minHeight: 48, flexShrink: 0 }} />
             </Box>
 
             {/* Input Bar */}

@@ -13,6 +13,7 @@ import uuid
 import asyncio
 from functools import partial
 from utils.pipeline_helpers import run_with_chat_model
+from utils.follow_ups import choose_follow_up, append_follow_up, resolve_follow_up_reply, OFFER_MARKER
 
 router = APIRouter()
 
@@ -24,6 +25,7 @@ class AnalyzeRequest(BaseModel):
     session_id: Optional[str] = None
     geo_location: Optional[Tuple[float, float]] = None
     location_name: Optional[str] = None
+    location_accuracy: Optional[float] = None
     model: Optional[str] = None
 
     @field_validator("geo_location", mode="before")
@@ -41,104 +43,21 @@ def build_history_context(history):
     return "\n".join(ctx)
 
 
-# --------------------------
-# Routes
-# --------------------------
-@router.post("")
-async def analyze(req: AnalyzeRequest,
-            api_key: str = Depends(require_api_key),
-            db: Session = Depends(get_db)):
+def _nearest_name(result: dict) -> Optional[str]:
+    nearest = result.get("nearest_volcano") if isinstance(result, dict) else None
+    if isinstance(nearest, dict):
+        return nearest.get("name") or nearest.get("ga_nama_gapi")
+    return None
+
+
+async def _handle_analyze(req: AnalyzeRequest, api_key, db, lang: str):
     loop = asyncio.get_running_loop()
-    # Generate session_id if not provided
     session_id = req.session_id or str(uuid.uuid4())
-    # Save chat history
-    chat_service = ChatHistoryService(db)
-    user_id = api_key.get("id")
-    history_context=None
-
-    if not user_id:
-        user_id = api_key.get("token")
-    if session_id:
-        history = await chat_service.get_session_messages(
-            user_id=user_id,
-            session_id=session_id,
-            limit=10
-        )
-        history_context = build_history_context(history)
-    await chat_service.create_message(
-        user_id=user_id,
-        session_id=session_id,
-        role="user",
-        message=req.user_input
-    )
-
-    result = await loop.run_in_executor(
-        pipeline_executor,
-        partial(run_with_chat_model, req.model, run_pipeline,
-                req.user_input, req.geo_location, history_context, req.location_name)
-    )
-
-    if result is None or result["status"]=="error":
-        log_entry = {
-            "status": "error",
-            "date": datetime.utcnow().isoformat(),
-            "user_input": req.user_input,
-            "api_call": result["api_call"],
-            "output": result["output"],
-            "geo_location": req.geo_location,
-            "session_id": session_id
-        }
-        await chat_service.create_message(
-            user_id=user_id,
-            session_id=session_id,
-            role="assistant",
-            message=result["output"],
-            api_call=result["api_call"],
-            geo_location=req.geo_location,
-        )
-        return log_entry
-
-    # Save to log.json
-    log_entry = {
-        "status": "success",
-        "date": result["date"],
-        "user_input": req.user_input,
-        "api_call": result["api_call"],
-        "output": result["output"],
-        "response": result["response"],
-        "geo_location": req.geo_location,
-        "session_id": session_id
-    }
-
-    await chat_service.create_message(
-        user_id=user_id,
-        session_id=session_id,
-        role="assistant",
-        message=result["output"],
-        api_call = result["api_call"],
-        geo_location=req.geo_location,
-        response = result["response"]
-    )
-
-    return log_entry
-
-@router.post("/en")
-async def analyze_en(
-    req: AnalyzeRequest,
-    api_key: str = Depends(require_api_key),
-    db: Session = Depends(get_db)
-):
-    loop = asyncio.get_running_loop()
-
-    # Generate session_id if not provided
-    session_id = req.session_id or str(uuid.uuid4())
-
     chat_service = ChatHistoryService(db)
     user_id = api_key.get("id") or api_key.get("token")
+    msg_lang = {"lang": "en"} if lang == "en" else {}
 
-    # -------------------------------
-    # HISTORY (IDENTICAL TO ID)
-    # -------------------------------
+    history = []
     history_context = None
     if session_id:
         history = await chat_service.get_session_messages(
@@ -148,75 +67,136 @@ async def analyze_en(
         )
         history_context = build_history_context(history)
 
-    # Save USER message
     await chat_service.create_message(
         user_id=user_id,
         session_id=session_id,
         role="user",
         message=req.user_input,
-        lang="en"
+        **msg_lang,
     )
 
-    # -------------------------------
-    # PIPELINE CALL (FIXED)
-    # -------------------------------
-    result = await loop.run_in_executor(
-        pipeline_executor,
-        partial(run_with_chat_model, req.model, run_pipeline_en,
-                req.user_input, req.geo_location, history_context, req.location_name)
-    )
-
-    # -------------------------------
-    # ERROR HANDLING (IDENTICAL)
-    # -------------------------------
-    if result["status"] == "error":
-        log_entry = {
-            "status": "error",
-            "intent": result.get("intent"),  
+    # Short replies such as "ya" / "tidak" answer the offer the assistant made
+    # at the end of its previous message.
+    effective_input = req.user_input
+    reply = resolve_follow_up_reply(req.user_input, history, lang)
+    if reply and reply[0] == "decline":
+        await chat_service.create_message(
+            user_id=user_id, session_id=session_id, role="assistant",
+            message=reply[1], geo_location=req.geo_location, **msg_lang,
+        )
+        return {
+            "status": "success",
             "date": datetime.utcnow().isoformat(),
             "user_input": req.user_input,
-            "api_call": result.get("api_call"),
-            "output": result.get("output"),
+            "api_call": None,
+            "output": reply[1],
+            "response": None,
             "geo_location": req.geo_location,
-            "session_id": session_id
+            "session_id": session_id,
+            "suggested_follow_ups": [],
+        }
+    if reply and reply[0] == "affirm":
+        effective_input = reply[1]
+        print(f"[FOLLOW-UP] '{req.user_input}' resolved to '{effective_input}'")
+
+    pipeline = run_pipeline_en if lang == "en" else run_pipeline
+    result = await loop.run_in_executor(
+        pipeline_executor,
+        partial(run_with_chat_model, req.model, pipeline,
+                effective_input, req.geo_location, history_context, req.location_name,
+                req.location_accuracy)
+    )
+
+    if result is None or result.get("status") == "error":
+        default_err = (
+            "An error occurred while processing your request." if lang == "en"
+            else "Terjadi kesalahan pada layanan pemrosesan."
+        )
+        err_output = (result.get("output") if result else None) or default_err
+        api_call = result.get("api_call") if result else None
+        await chat_service.create_message(
+            user_id=user_id, session_id=session_id, role="assistant",
+            message=err_output, api_call=api_call, geo_location=req.geo_location, **msg_lang,
+        )
+        return {
+            "status": "error",
+            "intent": result.get("intent") if result else None,
+            "date": datetime.utcnow().isoformat(),
+            "user_input": req.user_input,
+            "api_call": api_call,
+            "output": err_output,
+            "geo_location": req.geo_location,
+            "session_id": session_id,
+            "suggested_follow_ups": [],
         }
 
-        await chat_service.create_message(
-            user_id=user_id,
-            session_id=session_id,
-            role="assistant",
-            message=result.get("output"),
-            api_call=result.get("api_call"),
-            geo_location=req.geo_location,
-            lang="en"
-        )
+    output_text = result.get("output") or result.get("answer") or ""
+    clean_answer = result.get("answer") or output_text
+    if "<!--" in clean_answer:
+        clean_answer = clean_answer.split("<!--")[0].strip()
+    if "<!--" in output_text:
+        output_text = output_text.split("<!--")[0].strip()
 
-        return log_entry
-
-    # -------------------------------
-    # SUCCESS (IDENTICAL)
-    # -------------------------------
-    log_entry = {
-        "status": "success",
-        "intent": result.get("intent"),  
-        "date": result["date"],
-        "user_input": req.user_input,
-        "api_call": result["api_call"],
-        "output": result["output"],
-        "response": result["response"],
-        "geo_location": req.geo_location,
-        "session_id": session_id
-    }
+    has_explicit_follow_ups = "follow_ups" in result
+    follow_ups = result.get("follow_ups") if has_explicit_follow_ups else []
+    pending_act = result.get("pending_action") or (follow_ups[0].get("action") if follow_ups else None)
 
     await chat_service.create_message(
         user_id=user_id,
         session_id=session_id,
         role="assistant",
-        message=result["output"],
-        api_call=result["api_call"],
-        response=result["response"],
+        message=clean_answer,
+        api_call=result.get("api_call"),
         geo_location=req.geo_location,
-        lang="en"
+        response={
+            "api_response": result.get("response"),
+            "follow_ups": follow_ups,
+            "pending_action": pending_act,
+        },
+        references=[],
+        **msg_lang,
     )
 
-    return log_entry
+    suggested_follow_ups = result.get("suggested_follow_ups") or [fu.get("action", fu.get("query")) for fu in follow_ups]
+
+    return {
+        "status": "success",
+        "intent": result.get("intent"),
+        "date": result.get("date"),
+        "user_input": req.user_input,
+        "resolved_input": effective_input if effective_input != req.user_input else None,
+        "api_call": result.get("api_call"),
+        "references": [],
+        "output": clean_answer,
+        "answer": clean_answer,
+        "follow_ups": follow_ups,
+        "suggested_follow_ups": suggested_follow_ups,
+        "context": {
+            "intent": result.get("intent"),
+            "entity": result.get("entity"),
+            "pending_action": pending_act,
+            "executed_actions": (result.get("context") or {}).get("executed_actions") or [],
+        },
+        "response": result.get("response"),
+        "geo_location": req.geo_location,
+        "session_id": session_id,
+    }
+
+
+# --------------------------
+# Routes
+# --------------------------
+@router.post("")
+async def analyze(req: AnalyzeRequest,
+            api_key: str = Depends(require_api_key),
+            db: Session = Depends(get_db)):
+    return await _handle_analyze(req, api_key, db, "id")
+
+
+@router.post("/en")
+async def analyze_en(
+    req: AnalyzeRequest,
+    api_key: str = Depends(require_api_key),
+    db: Session = Depends(get_db)
+):
+    return await _handle_analyze(req, api_key, db, "en")

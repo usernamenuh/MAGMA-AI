@@ -94,7 +94,12 @@ export default function ChatMessageKnowledge({ role, content, references=[] }) {
                                 ESDM Assistant
                             </Typography>
                             <Card sx={{ backgroundColor: "#ffffff", borderRadius: "4px 16px 16px 16px", p: { xs: 1.5, sm: 2.25 }, border: "1px solid #e6ebf0", boxShadow: "0 4px 18px rgba(35,60,90,0.06)" }}>
-                                <MarkdownRenderer content={content} />
+                                {(() => {
+                                    const cleanContent = typeof content === "string"
+                                        ? content.replace(/<!--\s*PENDING_ACTION:[\s\S]*?-->/g, "").trim()
+                                        : content;
+                                    return <MarkdownRenderer content={cleanContent} />;
+                                })()}
                                 {groupedReferences.length > 0 && (
                                     <Box sx={{ mt: 2, pt: 1.5, borderTop: "1px solid #edf0f3" }}>
                                         <Typography variant="caption" sx={{ color: "#607386", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>

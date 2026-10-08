@@ -8,7 +8,7 @@ import AssistantIcon from "../assets/logo-esdm.png";
 import LocationOnRounded from "@mui/icons-material/LocationOnRounded";
 
 
-export default function ChatMessage({ role, content, reference, response, geolocation}) {
+export default function ChatMessage({ role, content, reference, response, geolocation, followUps, onSelectFollowUp}) {
     const isUser = role === "user";
     const [showResponse, setShowResponse] = useState(false);
     const [copied, setCopied] = useState(false);
@@ -78,8 +78,95 @@ export default function ChatMessage({ role, content, reference, response, geoloc
                             <Typography variant="caption" sx={{ color: "#526579", fontWeight: 700, ml: 0.5, mb: 0.5, display: "block" }}>
                                 ESDM Assistant
                             </Typography>
-                            <Card sx={{ backgroundColor: "#ffffff", borderRadius: "4px 16px 16px 16px", p: { xs: 1.5, sm: 2.25 }, border: "1px solid #e6ebf0", boxShadow: "0 4px 18px rgba(35,60,90,0.06)" }}>
-                                <MarkdownRenderer content={content} />
+                            <Card sx={{ backgroundColor: "#ffffff", borderRadius: "4px 16px 16px 16px", p: { xs: 1.5, sm: 2.25 }, pb: { xs: 2, sm: 2.75 }, border: "1px solid #e6ebf0", boxShadow: "0 4px 18px rgba(35,60,90,0.06)" }}>
+                                {(() => {
+                                    const cleanContent = typeof content === "string"
+                                        ? content.replace(/<!--\s*PENDING_ACTION:[\s\S]*?-->/g, "").trim()
+                                        : content;
+                                    return <MarkdownRenderer content={cleanContent} />;
+                                })()}
+                                {followUps && followUps.length > 0 && (
+                                    <Box sx={{ mt: 1.5, mb: 0.75, display: "flex", flexWrap: "wrap", gap: 1 }}>
+                                        {followUps.map((item, idx) => {
+                                            const CANONICAL_FALLBACKS = {
+                                                volcano_recommendation: {
+                                                    label: "Lihat rekomendasi masyarakat",
+                                                    query: "Bagaimana rekomendasi PVMBG untuk gunung api tersebut?",
+                                                },
+                                                volcano_status: {
+                                                    label: "Cek status aktivitas",
+                                                    query: "Bagaimana status aktivitas gunung api tersebut?",
+                                                },
+                                                volcano_eruption_history: {
+                                                    label: "Lihat riwayat erupsi",
+                                                    query: "Kapan erupsi terakhir gunung api tersebut?",
+                                                },
+                                                volcano_active_list: {
+                                                    label: "Gunung api aktif di atas Normal",
+                                                    query: "Gunung apa saja yang berstatus waspada, siaga, atau awas?",
+                                                },
+                                                volcano_status_level_explanation: {
+                                                    label: "Arti tingkatan status gunung api",
+                                                    query: "Jelaskan arti tingkatan status gunung api dari normal hingga awas",
+                                                },
+                                                location_safety: {
+                                                    label: "Cek gunung api terdekat",
+                                                    query: "Gunung apa yang paling dekat dengan saya?",
+                                                },
+                                                earthquake_list: {
+                                                    label: "Daftar gempa bumi terkini",
+                                                    query: "Daftar kejadian gempa bumi terkini",
+                                                },
+                                                earthquake_mitigation: {
+                                                    label: "Panduan mitigasi gempa",
+                                                    query: "Bagaimana panduan mitigasi bencana gempa bumi?",
+                                                },
+                                                ground_movement_list: {
+                                                    label: "Laporan gerakan tanah terbaru",
+                                                    query: "Laporan kejadian gerakan tanah terbaru",
+                                                },
+                                                knowledge_base: {
+                                                    label: "Panduan mitigasi bencana geologi",
+                                                    query: "Bagaimana panduan mitigasi bencana erupsi gunung api?",
+                                                },
+                                            };
+
+                                            let rawLabel = typeof item === "string" ? item : (item.label || item.action || item.query || item.id || "");
+                                            let rawQuery = typeof item === "string" ? item : (item.action || item.query || item.label || item.id || "");
+
+                                            if (CANONICAL_FALLBACKS[rawLabel]) {
+                                                rawLabel = CANONICAL_FALLBACKS[rawLabel].label;
+                                            }
+                                            if (CANONICAL_FALLBACKS[rawQuery]) {
+                                                rawQuery = CANONICAL_FALLBACKS[rawQuery].query;
+                                            }
+
+                                            return (
+                                                <Chip
+                                                    key={idx}
+                                                    label={rawLabel}
+                                                    clickable
+                                                    onClick={() => onSelectFollowUp && onSelectFollowUp(rawQuery)}
+                                                    variant="outlined"
+                                                    size="small"
+                                                    sx={{
+                                                        borderColor: "#2563eb",
+                                                        color: "#1d4ed8",
+                                                        fontWeight: 600,
+                                                        fontSize: "0.82rem",
+                                                        bgcolor: "rgba(37, 99, 235, 0.05)",
+                                                        transition: "all 0.2s ease-in-out",
+                                                        "&:hover": {
+                                                            bgcolor: "rgba(37, 99, 235, 0.15)",
+                                                            borderColor: "#1d4ed8",
+                                                            transform: "translateY(-1px)",
+                                                        }
+                                                    }}
+                                                />
+                                            );
+                                        })}
+                                    </Box>
+                                )}
                                 {geolocation && (
                                     <Box sx={{ mt: 1, display: "flex", alignItems: "center", gap: 1 }}>
                                         <Chip

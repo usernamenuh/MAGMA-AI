@@ -1,17 +1,18 @@
 import re
 def detect_volcano_name(text):
-    text_low = text.lower()
-
-    # Detect volcano name in the text
-    match = re.search(r"(gunung|gn|g|mount|mt)\s+([a-zA-Z\-]+)", text_low)
-
-    if match:
-        volcano_name = match.group(2)  # extract only the name, e.g., "sinabung"
-    else:
-        return None  # no volcano found
-
-    # Generate the code from the volcano name
-    n = volcano_name.strip().upper()
-    n = re.sub(r"[^A-Z]", "", n)
-
-    return n[:3]
+    if not text:
+        return None
+    try:
+        from utils.pipeline_helpers import _detect_volcano_name, load_volcano_cache, VOLCANO_COMMON_ALIASES
+        cached = load_volcano_cache()
+        if cached:
+            detected = _detect_volcano_name(text, cached)
+            if detected:
+                return detected[0]
+        text_norm = text.lower()
+        for alias, code in VOLCANO_COMMON_ALIASES.items():
+            if re.search(rf"\b{re.escape(alias)}\b", text_norm):
+                return code
+    except Exception:
+        pass
+    return None

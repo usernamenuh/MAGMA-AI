@@ -29,6 +29,7 @@ from services.pipeline_knowledge import run_knowledge_pipeline
 from services.pipeline_knowledge_en import run_knowledge_pipeline_en
 from services.whatsapp_auth_service import handle_whatsapp_auth, is_whatsapp_authenticated
 from utils.pipeline_helpers import reset_chat_model, set_chat_model
+from utils.follow_ups import choose_follow_up, append_follow_up, resolve_follow_up_reply
 from utils.stored_text_audit import audit_stored_document
 from utils.annotated_pdf import build_annotated_pdf, count_letters, read_pdf_letter_count
 from utils.docling_extractor import DocumentExtractionError, readable_pdf_path
@@ -86,13 +87,15 @@ def document_annotated_pdf_bytes(file_path: str, chunks: list[tuple[str, int]]):
 async def list_chat_models():
     return {
         "items": [
+            {"id": "groq:qwen/qwen3.8-27b", "label": "Groq — Qwen 3.8 27B (Sangat Cepat)"},
+            {"id": "groq:openai/gpt-oss-120b", "label": "Groq — GPT-OSS 120B"},
             {"id": "local", "label": "Qwen2.5 1.5B Q4 — Local"},
             {
                 "id": "openrouter:openrouter/free",
                 "label": "OpenRouter Free — Otomatis",
             },
         ],
-        "default": "local",
+        "default": "groq:qwen/qwen3.8-27b" if os.getenv("GROQ_API_KEY") else "local",
     }
 
 @router.post("/upload")
@@ -262,6 +265,14 @@ async def analyze(req: AnalyzeRequest,
             limit=10
         )
         history_context = build_knowledge_history_context(history)
+    else:
+        history = []
+
+    original_input = req.user_input
+    follow_up_reply = resolve_follow_up_reply(original_input, history, "id")
+    if follow_up_reply and follow_up_reply[0] == "affirm":
+        print(f"[FOLLOW-UP] '{original_input}' resolved to '{follow_up_reply[1]}'")
+        req.user_input = follow_up_reply[1]
 
     effective_document_ids = req.document_ids
     is_reference_followup = bool(re.search(
@@ -285,10 +296,25 @@ async def analyze(req: AnalyzeRequest,
         user_id=user_id,
         session_id=session_id,
         role="user",
-        message=req.user_input,
+        message=original_input,
         type="knowledge_base",
         lang="id",
     )
+
+    if follow_up_reply and follow_up_reply[0] == "decline":
+        await chat_service.create_message(
+            user_id=user_id, session_id=session_id, role="assistant",
+            message=follow_up_reply[1], references=[], type="knowledge_base", lang="id",
+        )
+        return {
+            "status": "success",
+            "date": datetime.utcnow().isoformat(),
+            "user_input": original_input,
+            "references": [],
+            "output": follow_up_reply[1],
+            "session_id": session_id,
+            "suggested_follow_ups": [],
+        }
 
     model_token = set_chat_model(req.model)
     try:
@@ -307,7 +333,8 @@ async def analyze(req: AnalyzeRequest,
             "user_input": req.user_input,
             "references": [],
             "output": error_msg,
-            "session_id": session_id
+            "session_id": session_id,
+            "suggested_follow_ups": []
         }
         await chat_service.create_message(
             user_id=user_id,
@@ -320,20 +347,26 @@ async def analyze(req: AnalyzeRequest,
         )
         return log_entry
 
+    out_text = result["output"]
+    offer = choose_follow_up(req.user_input, out_text, lang="id", is_knowledge=True)
+    follow_ups = [offer[1]] if offer else []
+    delivery_output = append_follow_up(out_text, offer, "id")
+
     log_entry = {
         "status": "success",
         "date": result["date"],
         "user_input": req.user_input,
         "references": result["references"],
-        "output": result["output"],
-        "session_id": session_id
+        "output": delivery_output,
+        "session_id": session_id,
+        "suggested_follow_ups": follow_ups
     }
 
     await chat_service.create_message(
         user_id=user_id,
         session_id=session_id,
         role="assistant",
-        message=result["output"],
+        message=delivery_output,
         references=result["references"],
         type="knowledge_base",
         lang="id"

@@ -30,9 +30,12 @@ export default function useChatHistory() {
                 updated[lastIndex] = {
                     ...lastItem,
                     output: dataOrError?.output || lastItem.output,
+                    answer: dataOrError?.answer || dataOrError?.output || lastItem.output,
                     api_call: dataOrError?.api_call || lastItem.api_call,
                     references: dataOrError?.references || lastItem.references,
                     response: dataOrError?.response || dataOrError?.message || lastItem.response,
+                    follow_ups: dataOrError?.follow_ups || dataOrError?.suggested_follow_ups || [],
+                    suggested_follow_ups: dataOrError?.suggested_follow_ups || [],
                     isError: false,
                     errorMessage: null
                 };
@@ -57,16 +60,22 @@ export default function useChatHistory() {
                     tempUserInput = msg.message;
                 } else if (msg.role === "assistant") {
                     // pair with last user input
+                    let fuList = [];
+                    if (msg.response && typeof msg.response === "object") {
+                        fuList = msg.response.follow_ups || [];
+                    }
                     mapped.push({
                         type: msg.type,
                         lang: msg.lang,
-                        references:msg.references,
+                        references: msg.references,
                         user_input: tempUserInput,
                         output: msg.message,
+                        answer: msg.message,
                         created_at: msg.created_at,
                         api_call: msg.api_call || null,
                         response: msg.response || null,
                         geoLocation: msg.geo_location || null,
+                        follow_ups: fuList,
                     });
                     
                     tempUserInput = null; // reset

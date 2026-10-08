@@ -1,6 +1,8 @@
 import { axiosInstance } from "../api/client.jsx";
 
 export const DEFAULT_CHAT_MODELS = [
+    { id: "groq:qwen/qwen3.8-27b", label: "Groq — Qwen 3.8 27B (Sangat Cepat)" },
+    { id: "groq:openai/gpt-oss-120b", label: "Groq — GPT-OSS 120B" },
     { id: "local", label: "Qwen2.5 1.5B Q4 — Local" },
     { id: "openrouter:openrouter/free", label: "OpenRouter Free — Otomatis" },
 ];
