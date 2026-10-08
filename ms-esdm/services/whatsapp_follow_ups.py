@@ -132,7 +132,7 @@ def format_nara_follow_up(question: str) -> str:
     phrase = phrase[0].lower() + phrase[1:]
     return (
         f"💬 Apakah Anda ingin tahu {phrase}? NARA bisa bantu mencari jawabannya.\n"
-        "Balas *ya* jika ingin NARA lanjutkan."
+        "Balas ya jika ingin NARA lanjutkan."
     )
 
 

@@ -62,13 +62,26 @@ def _route_for(message: str, mode: str, last_route: str | None) -> str:
     return last_route if last_route in {"api", "knowledge"} else "knowledge"
 
 
+def strip_whatsapp_asterisks(text: str) -> str:
+    """Strip all asterisk markdown formatting so WhatsApp messages are clean and plain text."""
+    if not text:
+        return ""
+    # Convert markdown bullet "* " to "- "
+    text = re.sub(r"(?m)^\s*\*\s+", "- ", text)
+    # Remove markdown bold/italic asterisks: ***text***, **text**, *text*
+    text = re.sub(r"\*{1,3}(.*?)\*{1,3}", r"\1", text)
+    # Strip any remaining stray asterisk characters
+    text = text.replace("*", "")
+    return text
+
+
 def _response(output: str, session_id: str, mode: str, *, status: str = "success") -> dict:
     return {
         "status": status,
         "date": datetime.utcnow().isoformat(),
         "session_id": session_id,
         "mode": mode,
-        "output": output,
+        "output": strip_whatsapp_asterisks(output),
         "suggested_follow_ups": [],
     }
 
@@ -104,9 +117,9 @@ async def analyze_whatsapp(
     command = command.casefold()
     if command == "/help":
         return _response(
-            "Ketik /knowlage-base untuk bertanya khusus tentang dokumen, "
-            "/api-documentation untuk informasi MAGMA, atau /auto agar dipilih sesuai pertanyaan. "
-            "Ketik /login sebelum mengunggah dokumen.", session_id, state.conversation_mode or "auto",
+            "Ketik /knowledge-base untuk bertanya khusus tentang dokumen, "
+            "/api-documentation untuk informasi resmi MAGMA Indonesia, atau /auto agar dipilih otomatis sesuai pertanyaan.\n"
+            "Ketik /login sebelum mengunggah dokumen baru.", session_id, state.conversation_mode or "auto",
         )
     if command in MODE_COMMANDS:
         state.conversation_mode = MODE_COMMANDS[command]
@@ -128,6 +141,46 @@ async def analyze_whatsapp(
     auth_result = await handle_whatsapp_auth(db, session_id, message)
     if auth_result:
         return _response(auth_result["output"], session_id, state.conversation_mode or "auto")
+
+    # ===================================================================
+    # GREETINGS & NARA IDENTITY HANDLING FOR WHATSAPP
+    # ===================================================================
+    clean_msg = re.sub(r"[^\w\s]", "", message.lower()).strip()
+    is_nara_greeting = bool(
+        clean_msg in {
+            "nara", "hai nara", "halo nara", "hallo nara", "hi nara", "hey nara", "hei nara",
+            "siapa nara", "apa itu nara", "tentang nara", "kamu siapa", "siapa kamu",
+            "halo", "hai", "hi", "hey", "hallo", "assalamualaikum", "assalamualaikum wr wb",
+            "selamat pagi", "selamat siang", "selamat sore", "selamat malam", "p", "permisi",
+            "info", "info nara", "bantuan"
+        }
+        or re.match(r"^(?:hai|halo|hallo|hi|hey|hei|selamat\s+(?:pagi|siang|sore|malam))\s+nara\b", clean_msg)
+        or clean_msg.startswith("siapa nara")
+        or clean_msg.startswith("apa itu nara")
+    )
+    if is_nara_greeting:
+        state.pending_follow_up = None
+        await db.commit()
+        intro_text = (
+            "Halo! Saya NARA, asisten virtual resmi MAGMA Indonesia (Pusat Vulkanologi dan Mitigasi Bencana Geologi / PVMBG, Badan Geologi, Kementerian ESDM).\n\n"
+            "Saya bertugas membantu Anda dalam dua layanan utama:\n"
+            "1. Informasi Kebencanaan Geologi Real-Time (API MAGMA Indonesia):\n"
+            "   - Status aktivitas 69 gunung api aktif di Indonesia dan rekomendasi jarak bahaya\n"
+            "   - Laporan kejadian gempa bumi dan tsunami terkini\n"
+            "   - Laporan kejadian gerakan tanah / tanah longsor\n"
+            "   - Pengecekan potensi bahaya geologi terdekat dari posisi Anda\n"
+            "   - Panduan mitigasi dan keselamatan bencana geologi\n\n"
+            "2. Analisis & Pencarian Dokumen Kebencanaan (Knowledge Base):\n"
+            "   - Mencari informasi, kutipan, dan ringkasan dari dokumen PDF atau buletin kebencanaan yang diunggah\n\n"
+            "Perintah Mode Percakapan di WhatsApp:\n"
+            "- Ketik /auto : Mode otomatis (asisten memilih sumber jawaban sesuai pertanyaan Anda)\n"
+            "- Ketik /api-documentation : Khusus data resmi pemantauan langsung dari API MAGMA Indonesia\n"
+            "- Ketik /knowledge-base : Khusus tanya jawab dan pencarian isi dokumen PDF\n"
+            "- Ketik /help : Menampilkan panduan bantuan ini\n"
+            "- Ketik /login : Masuk dengan email kedinasan sebelum mengunggah dokumen\n\n"
+            "Silakan ajukan pertanyaan seputar kebencanaan geologi atau dokumen yang ingin Anda tanyakan!"
+        )
+        return _response(intro_text, session_id, state.conversation_mode or "auto")
 
     if AFFIRM_RE.fullmatch(message) and state.pending_follow_up:
         message = state.pending_follow_up
@@ -182,7 +235,7 @@ async def analyze_whatsapp(
     answer = raw_answer.split(f"\n\n{OFFER_MARKER}", 1)[0].strip()
     if result.get("status") != "success" or not answer:
         answer = answer or "NARA belum berhasil mendapatkan jawaban untuk pertanyaan itu."
-        result["output"] = f"{answer}\n\n{_clarifying_follow_up(route, message)}"
+        result["output"] = strip_whatsapp_asterisks(f"{answer}\n\n{_clarifying_follow_up(route, message)}")
         result["mode"] = route
         return result
 
@@ -209,7 +262,7 @@ async def analyze_whatsapp(
         answer += f"\n\n{_clarifying_follow_up(route, message)}"
     await db.commit()
 
-    result["output"] = answer
+    result["output"] = strip_whatsapp_asterisks(answer)
     result["mode"] = route
     result["suggested_follow_ups"] = [suggestion] if suggestion else []
     return result

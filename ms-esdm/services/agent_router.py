@@ -455,7 +455,7 @@ class EarthquakeMitigationTool:
         return {
             "status": "success",
             "output": text,
-            "api_call": resolve_api_url("/api/v2/earthquake-tsunami"),
+            "api_call": None,
             "response": None,
             "intent": "EARTHQUAKE_MITIGATION",
         }
@@ -494,7 +494,7 @@ class GroundMovementMitigationTool:
         return {
             "status": "success",
             "output": text,
-            "api_call": resolve_api_url("/api/v2/ground-movement"),
+            "api_call": None,
             "response": None,
             "intent": "GROUND_MOVEMENT_MITIGATION",
         }
@@ -728,7 +728,7 @@ class KnowledgeBaseTool:
                 "references": [],
                 "raw_results": [],
                 "intent": "KNOWLEDGE_BASE",
-                "api_call": resolve_api_url("/api/v2/gunung-api/tingkat-aktivitas"),
+                "api_call": None,
             }
 
         # 2. If user specifically asks for uploaded documents, PDFs, or files while in API mode:
@@ -1424,7 +1424,9 @@ class AgentRouter:
         GREETING_WORDS = {
             "halo", "hai", "hi", "hey", "hallo", "assalamualaikum", "assalamualaikum wr wb",
             "selamat pagi", "selamat siang", "selamat sore", "selamat malam", "p", "permisi",
-            "tes", "test", "ping"
+            "tes", "test", "ping",
+            "nara", "hai nara", "halo nara", "hallo nara", "hi nara", "hey nara", "hei nara",
+            "siapa nara", "apa itu nara", "tentang nara"
         }
         GRATITUDE_WORDS = {
             "terima kasih", "terimakasih", "makasih", "makasi", "makasih banyak", "terima kasih banyak",
@@ -1432,13 +1434,16 @@ class AgentRouter:
             "siap", "siap terima kasih", "baik terima kasih", "ok terima kasih", "oke terima kasih",
             "mantap", "sip", "ok sip", "oke sip", "makasih ya", "makasih yaa"
         }
-        is_greeting = clean_q in GREETING_WORDS
+        is_greeting = (
+            clean_q in GREETING_WORDS
+            or bool(re.match(r"^(?:hai|halo|hallo|hi|hey|hei|selamat\s+(?:pagi|siang|sore|malam))\s+nara\b", clean_q))
+        )
         is_gratitude = (
             clean_q in GRATITUDE_WORDS
             or bool(re.search(r"\b(terima\s*kasih|makasih|matur\s*nuwun|hatur\s*nuhun|thanks|thank\s*you)\b", text_lower))
         ) and not bool(re.search(r"\b(gunung|gempa|tsunami|longsor|kawah|erupsi|pvmbg|magma)\b", text_lower))
         is_capability = bool(
-            re.search(r"^\s*(siapa\s+kamu|kamu\s+siapa|apa\s+kamu|kamu\s+ini\s+apa|tentang\s+kamu)\s*$", clean_q)
+            re.search(r"^\s*(siapa\s+kamu|kamu\s+siapa|apa\s+kamu|kamu\s+ini\s+apa|tentang\s+kamu|siapa\s+nara|apa\s+itu\s+nara)\s*$", clean_q)
             or re.search(r"^\s*(bisa\s+apa(?:\s+saja)?|apa\s+(?:saja\s+)?kemampuan(?:mu)?|fitur\s+apa(?:\s+saja)?|apa\s+fungsi(?:mu)?)\s*$", clean_q)
         )
 
@@ -1500,7 +1505,7 @@ class AgentRouter:
                 greet_text = "Halo! Ada yang bisa saya bantu terkait informasi status aktivitas gunung api, gempa bumi, atau bencana geologi saat ini?"
             else:
                 greet_text = (
-                    "Halo! Saya adalah **Asisten AI MAGMA Indonesia** resmi dari Badan Geologi (PVMBG) - Kementerian ESDM.\n\n"
+                    "Halo! Saya adalah **NARA**, Asisten AI resmi MAGMA Indonesia (Pusat Vulkanologi dan Mitigasi Bencana Geologi / PVMBG - Badan Geologi, Kementerian ESDM).\n\n"
                     "Saya siap membantu Anda memberikan informasi terkini seputar:\n"
                     "• 🌋 **Status Aktivitas Gunung Api** (Level I s/d Level IV) & rekomendasi jarak bahaya\n"
                     "• 🌐 **Laporan Gempa Bumi & Tsunami** terkini serta analisis geologis\n"
@@ -1557,7 +1562,7 @@ class AgentRouter:
         if is_capability:
             logger.info("[ROUTER] Intent: CAPABILITY")
             cap_text = (
-                "Saya adalah **Asisten AI MAGMA Indonesia** resmi dari Pusat Vulkanologi dan Mitigasi Bencana Geologi (PVMBG), Badan Geologi - Kementerian ESDM.\n\n"
+                "Saya adalah **NARA**, Asisten AI resmi MAGMA Indonesia (Pusat Vulkanologi dan Mitigasi Bencana Geologi / PVMBG - Badan Geologi, Kementerian ESDM).\n\n"
                 "Layanan utama yang dapat saya bantu meliputi:\n"
                 "1. 🌋 **Status Aktivitas Gunung Api**: Pemantauan real-time status Level I (Normal) hingga Level IV (Awas) untuk 69 gunung api aktif di Indonesia beserta radius rekomendasi bahaya.\n"
                 "2. 📊 **Laporan Erupsi & VAR/VONA**: Informasi riwayat letusan terbaru dan laporan evaluasi harian gunung api.\n"
@@ -1657,7 +1662,7 @@ class AgentRouter:
                 "status": "success",
                 "output": ai_output,
                 "answer": ai_output,
-                "api_call": resolve_api_url("/api/v2/gunung-api/tingkat-aktivitas"),
+                "api_call": None,
                 "response": None,
                 "references": [],
                 "follow_ups": follow_ups,
@@ -1709,7 +1714,7 @@ class AgentRouter:
                 "status": "success",
                 "output": ai_output,
                 "answer": ai_output,
-                "api_call": resolve_api_url("/api/v2/gunung-api"),
+                "api_call": None,
                 "response": None,
                 "references": [],
                 "follow_ups": follow_ups,
@@ -2325,7 +2330,7 @@ class AgentRouter:
                 "status": "success",
                 "output": ai_output,
                 "answer": ai_output,
-                "api_call": resolve_api_url("/api/v2/gunung-api"),
+                "api_call": None,
                 "response": None,
                 "references": [],
                 "follow_ups": follow_ups,

@@ -141,15 +141,22 @@ async def _handle_analyze(req: AnalyzeRequest, api_key, db, lang: str):
     follow_ups = result.get("follow_ups") if has_explicit_follow_ups else []
     pending_act = result.get("pending_action") or (follow_ups[0].get("action") if follow_ups else None)
 
+    has_valid_api_response = bool(
+        result.get("response") is not None and
+        (not isinstance(result.get("response"), (list, dict)) or len(result.get("response")) > 0)
+    )
+    effective_api_call = result.get("api_call") if has_valid_api_response else None
+    effective_response = result.get("response") if has_valid_api_response else None
+
     await chat_service.create_message(
         user_id=user_id,
         session_id=session_id,
         role="assistant",
         message=clean_answer,
-        api_call=result.get("api_call"),
+        api_call=effective_api_call,
         geo_location=req.geo_location,
         response={
-            "api_response": result.get("response"),
+            "api_response": effective_response,
             "follow_ups": follow_ups,
             "pending_action": pending_act,
         },
@@ -165,7 +172,7 @@ async def _handle_analyze(req: AnalyzeRequest, api_key, db, lang: str):
         "date": result.get("date"),
         "user_input": req.user_input,
         "resolved_input": effective_input if effective_input != req.user_input else None,
-        "api_call": result.get("api_call"),
+        "api_call": effective_api_call,
         "references": [],
         "output": clean_answer,
         "answer": clean_answer,
@@ -177,7 +184,7 @@ async def _handle_analyze(req: AnalyzeRequest, api_key, db, lang: str):
             "pending_action": pending_act,
             "executed_actions": (result.get("context") or {}).get("executed_actions") or [],
         },
-        "response": result.get("response"),
+        "response": effective_response,
         "geo_location": req.geo_location,
         "session_id": session_id,
     }

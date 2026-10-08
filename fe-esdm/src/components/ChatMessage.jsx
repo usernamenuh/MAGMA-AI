@@ -189,56 +189,70 @@ export default function ChatMessage({ role, content, reference, response, geoloc
                                 )}
 
 
-                                {reference && (
-                                    <Button
-                                        variant="outlined"
-                                        sx={{ borderColor: "#d5e0e9", bgcolor: "#f7fafc", color:"rgb(35,60,90)", textTransform: "none", mt: 1.5, maxWidth: "100%", justifyContent: "flex-start" }}
-                                        onClick={() => setShowResponse(!showResponse)}
-                                        endIcon={showResponse ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                                    >
-                                        {reference}
-                                    </Button>
-                                )}
+                                {(() => {
+                                    const hasResponseData = Boolean(
+                                        response &&
+                                        (typeof response !== "object" ||
+                                            (Array.isArray(response) ? response.length > 0 : Object.keys(response).length > 0))
+                                    );
+                                    if (!reference || !hasResponseData) return null;
+                                    return (
+                                        <Button
+                                            variant="outlined"
+                                            sx={{ borderColor: "#d5e0e9", bgcolor: "#f7fafc", color:"rgb(35,60,90)", textTransform: "none", mt: 1.5, maxWidth: "100%", justifyContent: "flex-start" }}
+                                            onClick={() => setShowResponse(!showResponse)}
+                                            endIcon={showResponse ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                                        >
+                                            {reference}
+                                        </Button>
+                                    );
+                                })()}
                             </Card>
 
-                            <Collapse in={showResponse} timeout="auto" unmountOnExit>
-                                <Card sx={{ mt: 1, backgroundColor: "#fff", borderRadius: 2, boxShadow: 1 }}>
-                                    <CardContent sx={{ p: 1.5, position: "relative" }}>
-                                        {response ? (
-                                            <Box sx={{ position: "relative", overflowX: "auto" }}>
-                                                <Tooltip title={copied ? "Copied!" : "Copy"}>
-                                                    <IconButton
-                                                        onClick={handleCopyResponse}
-                                                        size="small"
-                                                        sx={{
-                                                            position: "absolute",
-                                                            top: 6,
-                                                            right: 6,
-                                                            backgroundColor: copied ? "rgba(76,175,80,0.1)" : "transparent",
-                                                            "&:hover": { backgroundColor: "rgba(0,0,0,0.05)" },
+                            {(() => {
+                                const hasResponseData = Boolean(
+                                    response &&
+                                    (typeof response !== "object" ||
+                                        (Array.isArray(response) ? response.length > 0 : Object.keys(response).length > 0))
+                                );
+                                if (!reference || !hasResponseData) return null;
+                                return (
+                                    <Collapse in={showResponse} timeout="auto" unmountOnExit>
+                                        <Card sx={{ mt: 1, backgroundColor: "#fff", borderRadius: 2, boxShadow: 1 }}>
+                                            <CardContent sx={{ p: 1.5, position: "relative" }}>
+                                                <Box sx={{ position: "relative", overflowX: "auto" }}>
+                                                    <Tooltip title={copied ? "Copied!" : "Copy"}>
+                                                        <IconButton
+                                                            onClick={handleCopyResponse}
+                                                            size="small"
+                                                            sx={{
+                                                                position: "absolute",
+                                                                top: 6,
+                                                                right: 6,
+                                                                backgroundColor: copied ? "rgba(76,175,80,0.1)" : "transparent",
+                                                                "&:hover": { backgroundColor: "rgba(0,0,0,0.05)" },
+                                                            }}
+                                                        >
+                                                            <ContentCopyIcon fontSize="small" color={copied ? "success" : "inherit"} />
+                                                        </IconButton>
+                                                    </Tooltip>
+
+                                                    <pre
+                                                        style={{
+                                                            whiteSpace: "pre-wrap",
+                                                            wordWrap: "break-word",
+                                                            fontSize: "0.875rem",
+                                                            margin: 0,
                                                         }}
                                                     >
-                                                        <ContentCopyIcon fontSize="small" color={copied ? "success" : "inherit"} />
-                                                    </IconButton>
-                                                </Tooltip>
-
-                                                <pre
-                                                    style={{
-                                                        whiteSpace: "pre-wrap",
-                                                        wordWrap: "break-word",
-                                                        fontSize: "0.875rem",
-                                                        margin: 0,
-                                                    }}
-                                                >
-                {typeof response === "object" ? JSON.stringify(response, null, 2) : String(response)}
-              </pre>
-                                            </Box>
-                                        ) : (
-                                            <Typography variant="body2">No response data available.</Typography>
-                                        )}
-                                    </CardContent>
-                                </Card>
-                            </Collapse>
+                                                        {typeof response === "object" ? JSON.stringify(response, null, 2) : String(response)}
+                                                    </pre>
+                                                </Box>
+                                            </CardContent>
+                                        </Card>
+                                    </Collapse>
+                                );
+                            })()}
                         </Box>
                     </Box>
 
