@@ -7,7 +7,7 @@ from difflib import SequenceMatcher
 
 from mistralai.models.chat_completion import ChatMessage
 
-from utils.pipeline_helpers import model_chat
+from utils.pipeline_helpers import VOLCANO_COMMON_ALIASES, load_volcano_cache, model_chat
 
 
 def _normalized(value: str) -> str:
@@ -30,14 +30,39 @@ def _repeats(question: str, previous: list[str]) -> bool:
     return False
 
 
+def _known_volcano_from_question(question: str) -> str | None:
+    """Accept only an explicit volcano name, never a province or generic phrase."""
+    cached_names = {}
+    for volcano in load_volcano_cache() or []:
+        if not isinstance(volcano, dict):
+            continue
+        name = str(volcano.get("ga_nama_gapi") or volcano.get("name") or "").strip()
+        if name:
+            cached_names[_normalized(re.sub(r"^gunung\s+", "", name, flags=re.I))] = name
+
+    for match in re.finditer(r"\b(?:gunung(?:\s+api)?|mount)\s+([^?.!,;]+)", question, re.I):
+        words = re.findall(r"[A-Za-z][A-Za-z\-]*", match.group(1))[:4]
+        for length in range(len(words), 0, -1):
+            name = " ".join(words[:length])
+            normalized = _normalized(name)
+            if normalized in cached_names:
+                return re.sub(r"^gunung\s+", "", cached_names[normalized], flags=re.I)
+            if normalized in VOLCANO_COMMON_ALIASES:
+                return " ".join(word.capitalize() for word in words[:length])
+    return None
+
+
 def _api_candidates(question: str, answer: str) -> list[dict[str, str]]:
     text = f"{question} {answer}".casefold()
     candidates = []
-    volcano = re.search(r"\b(?:gunung(?:\s+api)?|mount)\s+([A-Za-z][A-Za-z\-]*(?:\s+[A-Za-z][A-Za-z\-]*)?)", question, re.I)
-    if volcano and volcano.group(1).split()[0].casefold() not in {
-        "api", "berapi", "aktif", "yang", "status", "ini", "terdekat",
-    }:
-        name = volcano.group(1).strip()
+    regional_names = re.findall(r"(?m)^\d+\.\s+(.+?)\s+—\s+Level\s+[1-4]", answer)
+    for regional_name in regional_names[:2]:
+        candidates.append({
+            "id": f"regional_status_{len(candidates)}",
+            "question": f"Bagaimana status dan rekomendasi resmi untuk Gunung {regional_name} saat ini?",
+        })
+    name = _known_volcano_from_question(question)
+    if name:
         candidates.extend([
             {"id": "volcano_recommendation", "question": f"Apa rekomendasi resmi PVMBG untuk Gunung {name}?"},
             {"id": "volcano_status", "question": f"Bagaimana status aktivitas Gunung {name} saat ini?"},
@@ -96,6 +121,21 @@ def _parse_json(raw: str) -> dict:
         return {}
 
 
+def format_nara_follow_up(question: str) -> str:
+    """Phrase the executable question as a natural offer from NARA."""
+    phrase = question.strip().rstrip("?. ")
+    document = re.match(r"^Dalam dokumen (.+?),\s*(.+)$", phrase, re.I)
+    if document:
+        phrase = f"{document.group(2)} menurut dokumen {document.group(1)}"
+    if phrase.casefold().startswith("apa ") and not phrase.casefold().startswith("apa saja "):
+        phrase = phrase[4:]
+    phrase = phrase[0].lower() + phrase[1:]
+    return (
+        f"💬 Apakah Anda ingin tahu {phrase}? NARA bisa bantu mencari jawabannya.\n"
+        "Balas *ya* jika ingin NARA lanjutkan."
+    )
+
+
 class DynamicFollowUpGenerator:
     """Ask the LLM after the answer, then validate against the active channel."""
 
@@ -105,7 +145,13 @@ class DynamicFollowUpGenerator:
         previous: list[str], model: str | None,
     ) -> str | None:
         clean_answer = (answer or "").strip()
-        if len(clean_answer) < 35 or re.match(r"(?i)^(maaf|tidak ditemukan|tidak ada data|terjadi kesalahan)", clean_answer):
+        if not clean_answer or re.search(
+            r"(?i)tidak ditemukan|periksa kembali ejaan|belum tersedia|tidak ada data|"
+            r"terjadi kesalahan|tidak dapat ditemukan", clean_answer,
+        ):
+            return None
+        if re.search(r"(?i)\b(jawa|sumatera|sulawesi|kalimantan|papua|maluku|lampung)\b", question) \
+                and re.search(r"(?i)seluruh gunung api di indonesia", clean_answer[:250]):
             return None
 
         if mode == "api":
@@ -139,7 +185,7 @@ class DynamicFollowUpGenerator:
             fallback = None
 
         messages = [
-            ChatMessage(role="system", content="Anda menyusun pertanyaan lanjutan ESDM Assistant. Keluarkan JSON saja."),
+            ChatMessage(role="system", content="Anda membantu NARA menyusun pertanyaan lanjutan yang relevan. Keluarkan JSON saja."),
             ChatMessage(role="user", content=prompt),
         ]
         try:

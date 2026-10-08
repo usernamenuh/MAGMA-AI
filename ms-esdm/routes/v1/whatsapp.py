@@ -13,7 +13,8 @@ from routes.v1 import analyze as api_route, knowledge as knowledge_route
 from services.auth_service import require_api_key
 from services.chat_history_service import ChatHistoryService
 from services.whatsapp_auth_service import handle_whatsapp_auth
-from services.whatsapp_follow_ups import DynamicFollowUpGenerator
+from services.whatsapp_follow_ups import DynamicFollowUpGenerator, format_nara_follow_up
+from services.whatsapp_volcano_region import answer_regional_volcano_query
 from utils.follow_ups import AFFIRM_RE, DECLINE_RE, OFFER_MARKER
 
 
@@ -66,6 +67,14 @@ def _response(output: str, session_id: str, mode: str, *, status: str = "success
         "output": output,
         "suggested_follow_ups": [],
     }
+
+
+def _clarifying_follow_up(route: str, question: str) -> str:
+    if route == "api":
+        if re.search(r"(?i)\bgunung\b", question):
+            return "💬 Gunung mana yang ingin Anda periksa berikutnya? NARA bisa bantu cek status atau rekomendasi resminya."
+        return "💬 Informasi kebencanaan apa yang ingin Anda dalami? NARA bisa bantu mencarikannya."
+    return "💬 Dokumen atau bagian mana yang ingin Anda telusuri lebih lanjut? NARA bisa bantu mencarinya."
 
 
 @router.post("/analyze")
@@ -130,12 +139,26 @@ async def analyze_whatsapp(
     await db.commit()
 
     if route == "api":
-        result = await api_route.analyze(
-            api_route.AnalyzeRequest(
-                user_input=message, session_id=f"{session_id}:api", model=req.model,
-            ), api_key=api_key, db=db,
-        )
         history_id = f"{session_id}:api"
+        regional = await answer_regional_volcano_query(message) if re.search(r"(?i)\bgunung\b", message) else None
+        if regional:
+            regional_answer, volcanoes = regional
+            chat_history = ChatHistoryService(db)
+            user_id = api_key.get("id") or api_key.get("token")
+            await chat_history.create_message(
+                user_id=user_id, session_id=history_id, role="user", message=message,
+            )
+            await chat_history.create_message(
+                user_id=user_id, session_id=history_id, role="assistant", message=regional_answer,
+            )
+            result = _response(regional_answer, session_id, route)
+            result["response"] = volcanoes
+        else:
+            result = await api_route.analyze(
+                api_route.AnalyzeRequest(
+                    user_input=message, session_id=history_id, model=req.model,
+                ), api_key=api_key, db=db,
+            )
     else:
         result = await knowledge_route.analyze(
             knowledge_route.AnalyzeRequest(
@@ -147,6 +170,8 @@ async def analyze_whatsapp(
     raw_answer = str(result.get("output") or "").strip()
     answer = raw_answer.split(f"\n\n{OFFER_MARKER}", 1)[0].strip()
     if result.get("status") != "success" or not answer:
+        answer = answer or "NARA belum berhasil mendapatkan jawaban untuk pertanyaan itu."
+        result["output"] = f"{answer}\n\n{_clarifying_follow_up(route, message)}"
         result["mode"] = route
         return result
 
@@ -168,7 +193,9 @@ async def analyze_whatsapp(
     if suggestion:
         state.pending_follow_up = suggestion
         state.recent_follow_ups = (prior_offers + [suggestion])[-12:]
-        answer += f"\n\n💬 Pertanyaan lanjutan: {suggestion}\nBalas *ya* untuk menanyakannya, atau tulis pertanyaan lain."
+        answer += f"\n\n{format_nara_follow_up(suggestion)}"
+    else:
+        answer += f"\n\n{_clarifying_follow_up(route, message)}"
     await db.commit()
 
     result["output"] = answer
