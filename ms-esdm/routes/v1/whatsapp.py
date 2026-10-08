@@ -14,7 +14,11 @@ from services.auth_service import require_api_key
 from services.chat_history_service import ChatHistoryService
 from services.whatsapp_auth_service import handle_whatsapp_auth
 from services.whatsapp_follow_ups import DynamicFollowUpGenerator, format_nara_follow_up
-from services.whatsapp_volcano_region import answer_regional_volcano_query
+from services.whatsapp_volcano_region import (
+    answer_named_volcano_query,
+    answer_ranked_volcano_query,
+    answer_regional_volcano_query,
+)
 from utils.follow_ups import AFFIRM_RE, DECLINE_RE, OFFER_MARKER
 
 
@@ -139,19 +143,26 @@ async def analyze_whatsapp(
     await db.commit()
 
     if route == "api":
+        # A reply such as "Iyaa gunung Talang" names a volcano; the filler must
+        # not be fuzzy-matched to the distinct volcano named Iya.
+        message = re.sub(r"(?i)^\s*(?:iya+|ya+|oke+|ok|betul)\s+(?=(?:gunung|gn\.?)\b)", "", message).strip()
         history_id = f"{session_id}:api"
-        regional = await answer_regional_volcano_query(message) if re.search(r"(?i)\bgunung\b", message) else None
-        if regional:
-            regional_answer, volcanoes = regional
+        volcano_result = await answer_ranked_volcano_query(message)
+        if not volcano_result and re.search(r"(?i)\bgunung\b", message):
+            volcano_result = await answer_regional_volcano_query(message)
+        if not volcano_result:
+            volcano_result = await answer_named_volcano_query(message)
+        if volcano_result:
+            volcano_answer, volcanoes = volcano_result
             chat_history = ChatHistoryService(db)
             user_id = api_key.get("id") or api_key.get("token")
             await chat_history.create_message(
                 user_id=user_id, session_id=history_id, role="user", message=message,
             )
             await chat_history.create_message(
-                user_id=user_id, session_id=history_id, role="assistant", message=regional_answer,
+                user_id=user_id, session_id=history_id, role="assistant", message=volcano_answer,
             )
-            result = _response(regional_answer, session_id, route)
+            result = _response(volcano_answer, session_id, route)
             result["response"] = volcanoes
         else:
             result = await api_route.analyze(

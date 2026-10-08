@@ -1,7 +1,11 @@
 import asyncio
 
 from services import whatsapp_follow_ups as follow_ups
-from services.whatsapp_volcano_region import regional_volcano_answer
+from services.whatsapp_volcano_region import (
+    named_volcano_answer,
+    ranked_volcano_answer,
+    regional_volcano_answer,
+)
 
 
 def test_region_is_not_treated_as_volcano(monkeypatch):
@@ -67,3 +71,28 @@ def test_region_answer_has_executable_follow_up_candidate(monkeypatch):
         references=[], previous=[], model=None,
     ))
     assert suggestion == candidates[0]["question"]
+
+
+def test_top_three_is_not_confused_with_gunung_paling():
+    volcanoes = [
+        {"ga_nama_gapi": "Iya", "ga_status": 2},
+        {"ga_nama_gapi": "Talang", "ga_status": 1},
+        {"ga_nama_gapi": "Semeru", "ga_status": 3},
+        {"ga_nama_gapi": "Merapi", "ga_status": 3},
+    ]
+    answer, chosen = ranked_volcano_answer("Top 3 gunung api paling aktif", volcanoes)
+    assert len(chosen) == 3
+    assert "tidak memuat peringkat gunung api ‘paling aktif’" in answer
+    assert "Gunung Paling" not in answer
+    assert "frekuensi erupsi" in answer
+
+
+def test_short_volcano_reply_uses_exact_name():
+    volcanoes = [
+        {"ga_nama_gapi": "Iya", "ga_status": 2},
+        {"ga_nama_gapi": "Talang", "ga_status": 1, "ga_prov_gapi": "Sumatera Barat"},
+    ]
+    answer, chosen = named_volcano_answer("Gunung Talang", volcanoes)
+    assert chosen[0]["ga_nama_gapi"] == "Talang"
+    assert "Level 1 (Normal)" in answer
+    assert "Gunung Iya" not in answer

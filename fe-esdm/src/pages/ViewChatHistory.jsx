@@ -26,14 +26,13 @@ import {useAuth} from "@/hooks/useAuth.jsx";
 import {useHistory} from "@/hooks/useHistory.jsx";
 import {PIPELINE_TYPE} from "@/utils/constants.jsx";
 import ChatMessageKnowledge from "@/components/ChatMessageKnowledge.jsx";
-import { bounce, pulseGlow, shimmerGradient } from "@/utils/layout.jsx";
+import ChatProcessingIndicator from "../components/ChatProcessingIndicator.jsx";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import LocationOffIcon from "@mui/icons-material/LocationOff";
 import DocumentMentionInput from "../components/DocumentMentionInput.jsx";
 import MobileChatSource from "../components/MobileChatSource.jsx";
 import MobileChatLanguage from "../components/MobileChatLanguage.jsx";
 import MobileChatLocation from "../components/MobileChatLocation.jsx";
-import AssistantIcon from "../assets/logo-esdm.png";
 
 export default function ChatRAGHistory() {
     const { id: sessionId } = useParams();
@@ -525,104 +524,7 @@ export default function ChatRAGHistory() {
                         </Box>
                     ))
                 )}
-                {loading && (
-                    <Box sx={{ display: "flex", justifyContent: "flex-start", alignItems: "flex-start", gap: 1.5, mb: 2, px: { xs: 0.5, sm: 2 } }}>
-                        <Box
-                            component="img"
-                            src={AssistantIcon}
-                            alt="ESDM Assistant"
-                            sx={{
-                                width: 34,
-                                height: 34,
-                                objectFit: "contain",
-                                borderRadius: "50%",
-                                animation: `${pulseGlow} 2s infinite ease-in-out`,
-                            }}
-                        />
-                        <Box
-                            sx={{
-                                position: "relative",
-                                overflow: "hidden",
-                                background: "linear-gradient(135deg, rgba(246, 250, 255, 0.95) 0%, rgba(240, 245, 252, 0.95) 100%)",
-                                borderRadius: "18px 18px 18px 4px",
-                                p: "12px 18px",
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: 1,
-                                border: "1px solid rgba(200, 222, 245, 0.7)",
-                                boxShadow: "0 6px 20px rgba(25, 118, 210, 0.07)",
-                                minWidth: { xs: 260, sm: 320 },
-                            }}
-                        >
-                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5 }}>
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                    <Box
-                                        sx={{
-                                            width: 8,
-                                            height: 8,
-                                            borderRadius: "50%",
-                                            backgroundColor: "#1976d2",
-                                            boxShadow: "0 0 8px #1976d2",
-                                            animation: `${bounce} 1s infinite`,
-                                        }}
-                                    />
-                                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#1e3a5f", fontSize: "0.86rem" }}>
-                                        {pipelineType === PIPELINE_TYPE.KNOWLEDGE_BASE
-                                            ? "Menganalisis Dokumen ESDM…"
-                                            : "Memproses Data Geologi MAGMA…"}
-                                    </Typography>
-                                </Box>
-                                <Box sx={{ display: "flex", gap: "5px", alignItems: "center" }}>
-                                    <Box
-                                        sx={{
-                                            width: 6,
-                                            height: 6,
-                                            borderRadius: "50%",
-                                            backgroundColor: "#1976d2",
-                                            animation: `${bounce} 0.8s infinite ease-in-out`,
-                                        }}
-                                    />
-                                    <Box
-                                        sx={{
-                                            width: 6,
-                                            height: 6,
-                                            borderRadius: "50%",
-                                            backgroundColor: "#0288d1",
-                                            animation: `${bounce} 0.8s infinite ease-in-out`,
-                                            animationDelay: "0.2s",
-                                        }}
-                                    />
-                                    <Box
-                                        sx={{
-                                            width: 6,
-                                            height: 6,
-                                            borderRadius: "50%",
-                                            backgroundColor: "#00b4d8",
-                                            animation: `${bounce} 0.8s infinite ease-in-out`,
-                                            animationDelay: "0.4s",
-                                        }}
-                                    />
-                                </Box>
-                            </Box>
-                            <Typography variant="caption" sx={{ color: "#64748b", fontSize: "0.75rem", fontStyle: "italic" }}>
-                                {pipelineType === PIPELINE_TYPE.KNOWLEDGE_BASE
-                                    ? "Menghubungkan konteks dengan basis pengetahuan resmi..."
-                                    : "Menghubungi API PVMBG & memverifikasi laporan terkini..."}
-                            </Typography>
-                            {/* Animated shimmering accent line */}
-                            <Box
-                                sx={{
-                                    height: "2.5px",
-                                    width: "100%",
-                                    borderRadius: 2,
-                                    background: "linear-gradient(90deg, #1976d2 0%, #00b4d8 50%, #1976d2 100%)",
-                                    backgroundSize: "200% 100%",
-                                    animation: `${shimmerGradient} 1.8s infinite linear`,
-                                }}
-                            />
-                        </Box>
-                    </Box>
-                )}
+                {loading && <ChatProcessingIndicator pipelineType={pipelineType} />}
 
                 <Box ref={chatEndRef} sx={{ height: 48, minHeight: 48, flexShrink: 0 }} />
             </Box>

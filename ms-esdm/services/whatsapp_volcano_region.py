@@ -71,3 +71,64 @@ def regional_volcano_answer(question: str, volcanoes: list[dict]) -> tuple[str, 
 async def answer_regional_volcano_query(question: str) -> tuple[str, list[dict]] | None:
     volcanoes = await asyncio.to_thread(get_mount_code)
     return regional_volcano_answer(question, volcanoes or [])
+
+
+def ranked_volcano_answer(question: str, volcanoes: list[dict]) -> tuple[str, list[dict]] | None:
+    """Show highest alert levels without presenting them as an eruption-frequency ranking."""
+    if not re.search(r"(?i)\bgunung(?:\s+api)?\b", question) or not re.search(
+        r"(?i)\btop\s*\d+\b|paling\s+aktif|teraktif", question
+    ):
+        return None
+    requested = re.search(r"(?i)\btop\s*(\d+)\b", question)
+    count = min(max(int(requested.group(1)), 1), 10) if requested else 3
+    eligible = [item for item in volcanoes if isinstance(item, dict)
+                and item.get("ga_nama_gapi") and item.get("ga_status") in (2, 3, 4)]
+    eligible.sort(key=lambda item: (-item["ga_status"], item["ga_nama_gapi"].casefold()))
+    chosen = eligible[:count]
+    if not chosen:
+        return ("Daftar PVMBG yang tersedia belum menunjukkan gunung api berstatus di atas Normal. "
+                "Status aktivitas tidak sama dengan jumlah kejadian erupsi.", [])
+    lines = [
+        "Daftar status PVMBG yang digunakan NARA tidak memuat peringkat gunung api ‘paling aktif’. "
+        f"Jika yang dimaksud tingkat kewaspadaan tertinggi, berikut {len(chosen)} contoh dari data "
+        "yang tersedia (status sama diurutkan menurut nama, bukan frekuensi erupsi):"
+    ]
+    for index, item in enumerate(chosen, 1):
+        lines.append(
+            f"{index}. {item['ga_nama_gapi']} — Level {item['ga_status']} "
+            f"({STATUS_NAMES[item['ga_status']]})"
+        )
+    return "\n".join(lines), chosen
+
+
+async def answer_ranked_volcano_query(question: str) -> tuple[str, list[dict]] | None:
+    if not re.search(r"(?i)\btop\s*\d+\b|paling\s+aktif|teraktif", question):
+        return None
+    volcanoes = await asyncio.to_thread(get_mount_code)
+    return ranked_volcano_answer(question, volcanoes or [])
+
+
+def named_volcano_answer(question: str, volcanoes: list[dict]) -> tuple[str, list[dict]] | None:
+    """Resolve a short volcano-name reply exactly, without fuzzy matching 'Iyaa' to Iya."""
+    match = re.fullmatch(r"(?i)(?:gunung|gn\.?)\s+([\w\s-]+?)(?:\s+(?:sekarang|saat\s+ini))?[?.!]*", question.strip())
+    if not match:
+        return None
+    requested = " ".join(match.group(1).casefold().split())
+    volcano = next((item for item in volcanoes if isinstance(item, dict)
+                    and str(item.get("ga_nama_gapi") or "").casefold() == requested), None)
+    if not volcano or volcano.get("ga_status") not in STATUS_NAMES:
+        return None
+    name = volcano["ga_nama_gapi"]
+    level = volcano["ga_status"]
+    location = ", ".join(filter(None, [volcano.get("ga_kab_gapi"), volcano.get("ga_prov_gapi")]))
+    answer = f"Status Gunung {name} menurut daftar PVMBG yang tersedia: Level {level} ({STATUS_NAMES[level]})."
+    if location:
+        answer += f" Lokasi: {location}."
+    return answer, [volcano]
+
+
+async def answer_named_volcano_query(question: str) -> tuple[str, list[dict]] | None:
+    if not re.match(r"(?i)^\s*(?:gunung|gn\.?)\s+", question):
+        return None
+    volcanoes = await asyncio.to_thread(get_mount_code)
+    return named_volcano_answer(question, volcanoes or [])
