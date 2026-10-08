@@ -96,3 +96,22 @@ def test_short_volcano_reply_uses_exact_name():
     assert chosen[0]["ga_nama_gapi"] == "Talang"
     assert "Level 1 (Normal)" in answer
     assert "Gunung Iya" not in answer
+
+
+def test_answered_volcano_status_and_recommendation_are_not_suggested():
+    answer = (
+        "Status aktivitas Gunung Ciremai adalah Level I (Normal). Lokasi: Kuningan, Jawa Barat.\n\n"
+        "📋 Rekomendasi Resmi PVMBG (2026-10-07):\n"
+        "Masyarakat dan pengunjung/wisatawan agar tidak turun ke dasar kawah, dan hanya dapat beraktivitas "
+        "di sepanjang bibir kawah terkait potensi gas vulkanik."
+    )
+    candidates = follow_ups._api_candidates("Saya ingin memeriksa Gunung Ciremai.", answer)
+    candidate_questions = [c["question"] for c in candidates]
+    candidate_ids = [c["id"] for c in candidates]
+
+    # Neither status nor recommendation should be offered because they are already in the answer
+    assert "volcano_status" not in candidate_ids
+    assert "volcano_recommendation" not in candidate_ids
+    assert not any("status aktivitas Gunung Ciremai" in q for q in candidate_questions)
+    assert not any("rekomendasi resmi PVMBG untuk Gunung Ciremai" in q for q in candidate_questions)
+

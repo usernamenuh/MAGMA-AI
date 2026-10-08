@@ -1,9 +1,8 @@
-"""WhatsApp-only conversation modes and answer follow-ups."""
-
+import asyncio
 import re
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,12 +11,14 @@ from models.whatsapp_auth_session import WhatsAppAuthSession
 from routes.v1 import analyze as api_route, knowledge as knowledge_route
 from services.auth_service import require_api_key
 from services.chat_history_service import ChatHistoryService
+from services.tts_service import send_whatsapp_voice_note
 from services.whatsapp_auth_service import handle_whatsapp_auth
 from services.whatsapp_follow_ups import DynamicFollowUpGenerator, format_nara_follow_up
 from services.whatsapp_location import (
     handle_whatsapp_location_query,
     parse_whatsapp_coordinates,
 )
+from services.whisper_transcriber import transcribe_base64_audio
 from services.whatsapp_volcano_region import (
     answer_named_volcano_query,
     answer_ranked_volcano_query,
@@ -53,12 +54,14 @@ DOCUMENT_TOPIC = re.compile(
 
 
 class WhatsAppAnalyzeRequest(BaseModel):
-    user_input: str
+    user_input: str = ""
     session_id: str
     model: str | None = None
     latitude: float | None = None
     longitude: float | None = None
     location_name: str | None = None
+    audio_base64: str | None = None
+    audio_mimetype: str | None = None
 
 
 def _route_for(message: str, mode: str, last_route: str | None) -> str:
@@ -108,13 +111,38 @@ def _clarifying_follow_up(route: str, question: str) -> str:
 @router.post("/analyze")
 async def analyze_whatsapp(
     req: WhatsAppAnalyzeRequest,
+    background_tasks: BackgroundTasks,
     api_key: dict = Depends(require_api_key),
     db: AsyncSession = Depends(get_db),
 ):
     session_id = req.session_id.strip()
     if not session_id.startswith("whatsapp-") or len(session_id) > 180:
         raise HTTPException(status_code=400, detail="Sesi WhatsApp tidak valid")
-    message = (req.user_input or "").strip()
+    is_voice_note = False
+    transcribed_text = None
+    if req.audio_base64 and req.audio_base64.strip():
+        try:
+            mime = req.audio_mimetype or "audio/ogg"
+            transcribed_text = transcribe_base64_audio(req.audio_base64, mimetype=mime)
+            if transcribed_text and transcribed_text.strip():
+                message = transcribed_text.strip()
+                is_voice_note = True
+            else:
+                return _response(
+                    "NARA tidak dapat menangkap suara dari pesan suara ini dengan jelas. "
+                    "Silakan coba rekam ulang atau ketik pertanyaan Anda.",
+                    session_id,
+                    "auto",
+                )
+        except Exception as exc:
+            return _response(
+                "Terjadi kendala saat memproses pesan suara. Silakan coba kembali atau ketikkan pertanyaan Anda.",
+                session_id,
+                "auto",
+            )
+    else:
+        message = (req.user_input or "").strip()
+
     has_coords = req.latitude is not None and req.longitude is not None
     if not message and not has_coords:
         return _response("Tulis pertanyaan atau ketik /help untuk melihat pilihan mode.", session_id, "auto")
@@ -128,13 +156,72 @@ async def analyze_whatsapp(
         db.add(state)
         await db.flush()
 
+    wants_voice = bool(
+        re.search(
+            r"\b(?:pakai|dengan|lewat|minta|kirim(?:kan)?)\s+(?:suara|vn|voice|audio|rekaman)\b|"
+            r"\b(?:suara|vn|audio)\s+(?:dong|aja|saja|ya)?\b",
+            message.lower(),
+        )
+    )
+    should_send_voice = is_voice_note or wants_voice or bool(getattr(state, "voice_mode", False))
+
+    def _maybe_send_voice(text_to_speak: str):
+        if should_send_voice and text_to_speak and text_to_speak.strip():
+            sender_num = session_id.removeprefix("whatsapp-")
+            background_tasks.add_task(send_whatsapp_voice_note, sender_num, text_to_speak)
+
     command, _, inline_question = message.partition(" ")
     command = command.casefold()
+
+    if command in {"/voice", "/suara", "/voice-mode"}:
+        sub_arg = inline_question.strip().casefold()
+        if sub_arg in {"off", "mati", "nonaktif", "disable"}:
+            state.voice_mode = False
+            await db.commit()
+            return _response(
+                "Mode pesan suara dinonaktifkan. NARA akan membalas dengan teks saja.\n"
+                "Ketik /voice kapan saja untuk mengaktifkan kembali pesan suara.",
+                session_id,
+                state.conversation_mode or "auto",
+            )
+        elif sub_arg in {"on", "aktif", "enable"} or not sub_arg:
+            state.voice_mode = True
+            await db.commit()
+            desc = (
+                "Mode pesan suara aktif! 🎙️\n\n"
+                "Setiap jawaban NARA berikutnya akan disertai Pesan Suara (Voice Note) resmi.\n"
+                "Ketik /voice off atau /text untuk kembali ke mode teks saja."
+            )
+            _maybe_send_voice(desc)
+            return _response(desc, session_id, state.conversation_mode or "auto")
+        else:
+            # Inline question with voice mode enabled (e.g. "/voice bagaimana status Merapi?")
+            state.voice_mode = True
+            await db.commit()
+            message = inline_question.strip()
+
+    elif command in {"/text", "/teks"}:
+        state.voice_mode = False
+        await db.commit()
+        return _response(
+            "Mode teks aktif. NARA akan membalas dengan pesan teks saja.\n"
+            "Ketik /voice untuk mengaktifkan pesan suara.",
+            session_id,
+            state.conversation_mode or "auto",
+        )
+
     if command == "/help":
         return _response(
-            "Ketik /knowledge-base untuk bertanya khusus tentang dokumen, "
-            "/api-documentation untuk informasi resmi MAGMA Indonesia, atau /auto agar dipilih otomatis sesuai pertanyaan.\n"
-            "Ketik /login sebelum mengunggah dokumen baru.", session_id, state.conversation_mode or "auto",
+            "Perintah Mode Percakapan NARA di WhatsApp:\n\n"
+            "- Ketik /voice : Mengaktifkan mode pesan suara (setiap jawaban akan disertai Voice Note)\n"
+            "- Ketik /voice off (atau /text) : Nonaktifkan pesan suara, kembali ke mode teks saja\n"
+            "- Ketik /auto : Mode otomatis (sumber jawaban dipilih otomatis sesuai pertanyaan)\n"
+            "- Ketik /api-documentation : Khusus data resmi pemantauan langsung dari API MAGMA Indonesia\n"
+            "- Ketik /knowledge-base : Khusus tanya jawab dan pencarian isi dokumen PDF\n"
+            "- Ketik /help : Menampilkan panduan bantuan ini\n"
+            "- Ketik /login : Masuk dengan email kedinasan sebelum mengunggah dokumen",
+            session_id,
+            state.conversation_mode or "auto",
         )
     if command in MODE_COMMANDS:
         state.conversation_mode = MODE_COMMANDS[command]
@@ -188,6 +275,7 @@ async def analyze_whatsapp(
             "2. Analisis & Pencarian Dokumen Kebencanaan (Knowledge Base):\n"
             "   - Mencari informasi, kutipan, dan ringkasan dari dokumen PDF atau buletin kebencanaan yang diunggah\n\n"
             "Perintah Mode Percakapan di WhatsApp:\n"
+            "- Ketik /voice : Mengaktifkan mode pesan suara (setiap jawaban akan disertai Voice Note)\n"
             "- Ketik /auto : Mode otomatis (asisten memilih sumber jawaban sesuai pertanyaan Anda)\n"
             "- Ketik /api-documentation : Khusus data resmi pemantauan langsung dari API MAGMA Indonesia\n"
             "- Ketik /knowledge-base : Khusus tanya jawab dan pencarian isi dokumen PDF\n"
@@ -195,6 +283,9 @@ async def analyze_whatsapp(
             "- Ketik /login : Masuk dengan email kedinasan sebelum mengunggah dokumen\n\n"
             "Silakan ajukan pertanyaan seputar kebencanaan geologi atau dokumen yang ingin Anda tanyakan!"
         )
+        _maybe_send_voice(intro_text)
+        if is_voice_note and transcribed_text:
+            intro_text = f"🎙️ Pesan Suara: \"{transcribed_text}\"\n\n{intro_text}"
         return _response(intro_text, session_id, state.conversation_mode or "auto")
 
     if AFFIRM_RE.fullmatch(message) and state.pending_follow_up:
@@ -239,7 +330,12 @@ async def analyze_whatsapp(
             message=loc_output,
         )
 
-        resp = _response(loc_output, session_id, "api")
+        loc_display = loc_output
+        _maybe_send_voice(loc_output)
+        if is_voice_note and transcribed_text:
+            loc_display = f"🎙️ Pesan Suara: \"{transcribed_text}\"\n\n{loc_output}"
+
+        resp = _response(loc_display, session_id, "api")
         resp["response"] = nearest_list
         resp["suggested_follow_ups"] = [follow_up_target] if follow_up_target else []
         return resp
@@ -283,7 +379,12 @@ async def analyze_whatsapp(
                 message=loc_output,
             )
 
-            resp = _response(loc_output, session_id, "api")
+            loc_display = loc_output
+            _maybe_send_voice(loc_output)
+            if is_voice_note and transcribed_text:
+                loc_display = f"🎙️ Pesan Suara: \"{transcribed_text}\"\n\n{loc_output}"
+
+            resp = _response(loc_display, session_id, "api")
             resp["response"] = nearest_list
             resp["suggested_follow_ups"] = [follow_up_target] if follow_up_target else []
             return resp
@@ -295,6 +396,9 @@ async def analyze_whatsapp(
             "2. Atau sebutkan nama daerah Anda:\n"
             "   Contoh: 'gunung terdekat dari Pasrujambe' atau 'gunung terdekat dari Bandung'."
         )
+        _maybe_send_voice(guide_text)
+        if is_voice_note and transcribed_text:
+            guide_text = f"🎙️ Pesan Suara: \"{transcribed_text}\"\n\n{guide_text}"
         return _response(guide_text, session_id, state.conversation_mode or "auto")
 
     mode = state.conversation_mode or "auto"
@@ -342,6 +446,7 @@ async def analyze_whatsapp(
     answer = raw_answer.split(f"\n\n{OFFER_MARKER}", 1)[0].strip()
     if result.get("status") != "success" or not answer:
         answer = answer or "NARA belum berhasil mendapatkan jawaban untuk pertanyaan itu."
+        _maybe_send_voice(answer)
         result["output"] = strip_whatsapp_asterisks(f"{answer}\n\n{_clarifying_follow_up(route, message)}")
         result["mode"] = route
         return result
@@ -369,6 +474,9 @@ async def analyze_whatsapp(
         answer += f"\n\n{_clarifying_follow_up(route, message)}"
     await db.commit()
 
+    _maybe_send_voice(answer)
+    if is_voice_note and transcribed_text:
+        answer = f"🎙️ Pesan Suara: \"{transcribed_text}\"\n\n{answer}"
     result["output"] = strip_whatsapp_asterisks(answer)
     result["mode"] = route
     result["suggested_follow_ups"] = [suggestion] if suggestion else []

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, Integer, JSON, String, Text
+from sqlalchemy import Boolean, Column, DateTime, Integer, JSON, String, Text
 
 from db.session import Base
 
@@ -15,7 +15,9 @@ class WhatsAppAuthSession(Base):
     failed_attempts = Column(Integer, nullable=False, default=0)
     authenticated_until = Column(DateTime, nullable=True)
     conversation_mode = Column(String(24), nullable=False, default="auto")
+    voice_mode = Column(Boolean, nullable=False, default=False)
     last_route = Column(String(24), nullable=True)
     pending_follow_up = Column(Text, nullable=True)
     recent_follow_ups = Column(JSON, nullable=False, default=list)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+

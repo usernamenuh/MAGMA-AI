@@ -54,56 +54,149 @@ def _known_volcano_from_question(question: str) -> str | None:
 
 def _api_candidates(question: str, answer: str) -> list[dict[str, str]]:
     text = f"{question} {answer}".casefold()
+    answered_lower = (answer or "").casefold()
+    asked_lower = (question or "").casefold()
     candidates = []
+
     regional_names = re.findall(r"(?m)^\d+\.\s+(.+?)\s+—\s+Level\s+[1-4]", answer)
     for regional_name in regional_names[:2]:
         candidates.append({
             "id": f"regional_status_{len(candidates)}",
             "question": f"Bagaimana status dan rekomendasi resmi untuk Gunung {regional_name} saat ini?",
         })
+
+    answered_status = bool(
+        re.search(r"\b(?:status\s+aktivitas\s+gunung|level\s+(?:i{1,3}|iv|[1-4])\b|tingkat\s+aktivitas)", answered_lower)
+        or re.search(r"level\s+[1-4iv]+.*(?:normal|waspada|siaga|awas)", answered_lower)
+    )
+    answered_recommendation = bool(
+        re.search(r"rekomendasi\s+(?:resmi\s+)?pvmbg", answered_lower)
+        or re.search(r"(?:masyarakat|pengunjung|wisatawan)\s+(?:dan|agar|dihimbau|diimbau|tidak|dilarang)", answered_lower)
+        or re.search(r"radius\s+(?:rekomendasi\s+)?bahaya", answered_lower)
+    )
+    answered_eruption = bool(
+        re.search(r"erupsi\s+terakhir|letusan\s+terakhir|terakhir\s+(?:kali\s+)?(?:meletus|mengalami\s+erupsi)", answered_lower)
+    )
+    answered_status_meaning = bool(
+        re.search(r"definisi/arti|tingkat\s+dasar\s+\(baseline\)", answered_lower)
+        or (re.search(r"level\s+(?:i\b|1\b|normal)", answered_lower) and re.search(r"level\s+(?:ii\b|2\b|waspada)", answered_lower) and re.search(r"level\s+(?:iii\b|3\b|siaga)", answered_lower))
+    )
+    answered_active_list = bool(
+        re.search(r"gunung\s+apa\s+saja\s+yang\s+berstatus\s+(?:waspada|siaga|awas)", answered_lower)
+        or (re.search(r"daftar\s+gunung|gunung\s+api\s+.*yang\s+berstatus", answered_lower) and re.search(r"waspada|siaga|awas", answered_lower))
+    )
+    answered_quake_latest = bool(re.search(r"magnitudo|kedalaman|pusat\s+gempa|koordinat", answered_lower))
+    answered_gm_latest = bool(re.search(r"laporan\s+kejadian|lokasi\s+kejadian|dampak\s+gerakan\s+tanah", answered_lower))
+
     name = _known_volcano_from_question(question)
+    if not name:
+        for match in re.finditer(r"\b(?:gunung(?:\s+api)?|mount)\s+([^?.!,;\n]+)", answer, re.I):
+            words = re.findall(r"[A-Za-z][A-Za-z\-]*", match.group(1))[:4]
+            for length in range(len(words), 0, -1):
+                cname = " ".join(words[:length])
+                norm = _normalized(cname)
+                for volcano in load_volcano_cache() or []:
+                    if not isinstance(volcano, dict):
+                        continue
+                    vname = str(volcano.get("ga_nama_gapi") or volcano.get("name") or "").strip()
+                    if norm == _normalized(re.sub(r"^gunung\s+", "", vname, flags=re.I)):
+                        name = re.sub(r"^gunung\s+", "", vname, flags=re.I)
+                        break
+                if name:
+                    break
+            if name:
+                break
+
     if name:
-        candidates.extend([
-            {"id": "volcano_recommendation", "question": f"Apa rekomendasi resmi PVMBG untuk Gunung {name}?"},
-            {"id": "volcano_status", "question": f"Bagaimana status aktivitas Gunung {name} saat ini?"},
-            {"id": "volcano_eruption", "question": f"Kapan erupsi terakhir Gunung {name}?"},
-        ])
+        if not answered_eruption:
+            candidates.append({
+                "id": "volcano_eruption",
+                "question": f"Kapan erupsi terakhir Gunung {name}?",
+            })
+
+        # Sibling volcanoes in the same province
+        volcano_province = None
+        prov_match = re.search(r"(?:Lokasi|Provinsi|Prov\.)\s*:\s*(?:[^,\n]+,\s*)?([A-Za-z\s]+)", answer)
+        if prov_match:
+            volcano_province = prov_match.group(1).strip()
+        if not volcano_province:
+            for v in load_volcano_cache() or []:
+                if not isinstance(v, dict):
+                    continue
+                vname = str(v.get("ga_nama_gapi") or v.get("name") or "").strip()
+                if _normalized(re.sub(r"^gunung\s+", "", vname, flags=re.I)) == _normalized(name):
+                    raw_prov = str(v.get("ga_prov_gapi") or "").strip()
+                    if raw_prov:
+                        volcano_province = raw_prov.split(",")[0].strip()
+                    break
+        if volcano_province and len(volcano_province) >= 4 and not re.search(rf"\b{re.escape(volcano_province.casefold())}\b", asked_lower):
+            short_prov = re.sub(r"(?i)\s*(?:dan|,).*$", "", volcano_province).strip()
+            candidates.append({
+                "id": "regional_siblings",
+                "question": f"Gunung api aktif apa lagi yang berada di {short_prov}?",
+            })
+
+        candidates.append({
+            "id": "volcano_hazard",
+            "question": f"Bagaimana potensi bahaya atau karakteristik letusan Gunung {name}?",
+        })
+
+        if not answered_recommendation and not re.search(r"rekomendasi|imbauan|radius", asked_lower):
+            candidates.append({
+                "id": "volcano_recommendation",
+                "question": f"Apa rekomendasi resmi PVMBG untuk Gunung {name}?",
+            })
+        if not answered_status and not re.search(r"status|kondisi|bagaimana|periksa", asked_lower):
+            candidates.append({
+                "id": "volcano_status",
+                "question": f"Bagaimana status aktivitas Gunung {name} saat ini?",
+            })
+
     if re.search(r"\bgempa|gempabumi|earthquake\b", text):
-        candidates.extend([
-            {"id": "earthquake_latest", "question": "Apa rincian gempa bumi terbaru?"},
-            {"id": "earthquake_list", "question": "Apa saja kejadian gempa bumi terkini lainnya?"},
-            {"id": "earthquake_mitigation", "question": "Bagaimana panduan mitigasi saat terjadi gempa bumi?"},
-        ])
+        if not answered_quake_latest and not re.search(r"terbaru|terkini|terakhir", asked_lower):
+            candidates.append({"id": "earthquake_latest", "question": "Apa rincian gempa bumi terbaru?"})
+        candidates.append({"id": "earthquake_list", "question": "Apa saja kejadian gempa bumi terkini lainnya?"})
+        candidates.append({"id": "earthquake_mitigation", "question": "Bagaimana panduan mitigasi saat terjadi gempa bumi?"})
+
     if re.search(r"longsor|gerakan tanah", text):
-        candidates.extend([
-            {"id": "ground_movement_latest", "question": "Apa laporan gerakan tanah terbaru?"},
-            {"id": "ground_movement_mitigation", "question": "Bagaimana panduan mitigasi gerakan tanah?"},
-        ])
+        if not answered_gm_latest and not re.search(r"terbaru|terkini|terakhir", asked_lower):
+            candidates.append({"id": "ground_movement_latest", "question": "Apa laporan gerakan tanah terbaru?"})
+        candidates.append({"id": "ground_movement_mitigation", "question": "Bagaimana panduan mitigasi gerakan tanah?"})
+
     if re.search(r"gunung|vulkan|erupsi|status|siaga|waspada|awas", text):
-        candidates.extend([
-            {"id": "volcano_active_list", "question": "Gunung apa saja yang berstatus Waspada, Siaga, atau Awas saat ini?"},
-            {"id": "volcano_status_levels", "question": "Apa arti tiap tingkat status aktivitas gunung api?"},
-        ])
-    asked = question.casefold()
+        if not answered_active_list and not re.search(r"daftar|berapa|apa saja|mana saja", asked_lower):
+            candidates.append({"id": "volcano_active_list", "question": "Gunung apa saja yang berstatus Waspada, Siaga, atau Awas saat ini?"})
+        if not answered_status_meaning and not re.search(r"arti|makna|maksud|definisi|tingkat", asked_lower):
+            candidates.append({"id": "volcano_status_levels", "question": "Apa arti tiap tingkat status aktivitas gunung api?"})
+
     asked_status_meaning = bool(
-        re.search(r"arti|makna|maksud|tingkat|level|definisi", asked)
-        and re.search(r"status|aktivitas|normal|waspada|siaga|awas", asked)
+        re.search(r"arti|makna|maksud|tingkat|level|definisi", asked_lower)
+        and re.search(r"status|aktivitas|normal|waspada|siaga|awas", asked_lower)
     )
     asked_active_list = bool(
-        re.search(r"berapa|daftar|apa saja|mana saja|jumlah", asked)
-        and re.search(r"gunung|status|siaga|waspada|awas", asked)
+        re.search(r"berapa|daftar|apa saja|mana saja|jumlah", asked_lower)
+        and re.search(r"gunung|status|siaga|waspada|awas", asked_lower)
     )
-    asked_latest_quake = bool(re.search(r"gempa", asked) and re.search(r"terbaru|terkini|terakhir", asked))
-    asked_quake_mitigation = bool(re.search(r"gempa", asked) and re.search(r"mitigasi|panduan|keselamatan", asked))
+    asked_latest_quake = bool(re.search(r"gempa", asked_lower) and re.search(r"terbaru|terkini|terakhir", asked_lower))
+    asked_quake_mitigation = bool(re.search(r"gempa", asked_lower) and re.search(r"mitigasi|panduan|keselamatan", asked_lower))
+    asked_eruption = bool(re.search(r"erupsi|letusan", asked_lower) and re.search(r"kapan|terakhir|sejarah", asked_lower))
+
     excluded = set()
-    if asked_status_meaning:
+    if asked_status_meaning or answered_status_meaning:
         excluded.add("volcano_status_levels")
-    if asked_active_list:
+    if asked_active_list or answered_active_list:
         excluded.add("volcano_active_list")
-    if asked_latest_quake:
+    if asked_latest_quake or answered_quake_latest:
         excluded.add("earthquake_latest")
     if asked_quake_mitigation:
         excluded.add("earthquake_mitigation")
+    if asked_eruption or answered_eruption:
+        excluded.add("volcano_eruption")
+    if answered_status:
+        excluded.add("volcano_status")
+    if answered_recommendation:
+        excluded.add("volcano_recommendation")
+
     return [item for item in {item["id"]: item for item in candidates}.values()
             if item["id"] not in excluded]
 
@@ -162,7 +255,8 @@ class DynamicFollowUpGenerator:
             prompt = (
                 "Pilih SATU pertanyaan lanjutan paling relevan setelah jawaban MAGMA. "
                 "Pilih hanya id dari daftar, jangan membuat pertanyaan baru. "
-                "Hindari topik yang sudah terjawab. Balas JSON {\"id\":\"...\"}.\n"
+                "PENTING: Jangan pilih pertanyaan yang topiknya sudah dijawab pada teks jawaban di atas! "
+                "Balas JSON {\"id\":\"...\"}.\n"
                 f"Pertanyaan: {question[:400]}\nJawaban: {clean_answer[:1400]}\n"
                 f"Pilihan: {json.dumps(candidates, ensure_ascii=False)}"
             )
