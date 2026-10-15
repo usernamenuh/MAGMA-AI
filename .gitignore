@@ -45,6 +45,7 @@ license_key*
 *.override.yml
 
 # ── Database / Vector Store ──────────────────────────────
+/data/
 *.db
 *.sqlite
 *.sqlite3
@@ -90,3 +91,20 @@ concurrency_log/
 *.orig
 .claude
 .wolf
+
+# Only reviewed, public-safe images from the local collection.
+# Other captures may contain WhatsApp QR codes, tokens, phone numbers, or document text.
+docs/images/*
+!docs/images/login-desktop.png
+!docs/images/login-mobile.png
+!docs/images/register-desktop.png
+!docs/images/chat-knowledge-base.png
+!docs/images/knowledge-base-daftar-dokumen.png
+!docs/images/n8n-workflow-whatsapp.png
+!docs/images/evolution-detail-instance-tombol-qr.png
+!docs/images/n8n-01-overview.png
+!docs/images/n8n-02-menu.png
+!docs/images/n8n-03-import-file.png
+!docs/images/evolution-01-instances.png
+!docs/images/evolution-03-instance-card.png
+!docs/images/evolution-04-get-qr.png

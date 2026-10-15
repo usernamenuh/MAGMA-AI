@@ -156,17 +156,11 @@ async def analyze_whatsapp(
         db.add(state)
         await db.flush()
 
-    wants_voice = bool(
-        re.search(
-            r"\b(?:pakai|dengan|lewat|minta|kirim(?:kan)?)\s+(?:suara|vn|voice|audio|rekaman)\b|"
-            r"\b(?:suara|vn|audio)\s+(?:dong|aja|saja|ya)?\b",
-            message.lower(),
-        )
-    )
-    should_send_voice = is_voice_note or wants_voice or bool(getattr(state, "voice_mode", False))
-
     def _maybe_send_voice(text_to_speak: str):
-        if should_send_voice and text_to_speak and text_to_speak.strip():
+        # The reply format follows the session preference, not the input format.
+        # A voice note can still be transcribed while /voice off or /text is active.
+        # Check the current value so an inline "/voice <question>" also gets audio.
+        if state.voice_mode and text_to_speak and text_to_speak.strip():
             sender_num = session_id.removeprefix("whatsapp-")
             background_tasks.add_task(send_whatsapp_voice_note, sender_num, text_to_speak)
 

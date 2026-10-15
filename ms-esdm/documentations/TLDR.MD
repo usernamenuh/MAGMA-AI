@@ -1,4 +1,6 @@
-# **Vendor → Client Shipping Flow (Docker + Licensing)**
+# Arsip rancangan distribusi image dan lisensi
+
+> **Dokumen historis.** Diagram, path, nama image, dan perintah di bawah menggambarkan rancangan distribusi lama, bukan Compose MAGMA AI yang ada di repositori ini. Untuk menjalankan proyek saat ini, gunakan [panduan pemasangan](../../docs/INSTALLATION_GUIDE.md). Jangan menyalin contoh Dockerfile atau `docker-compose up` di bawah tanpa mencocokkannya dengan berkas proyek.
 
 ```
 [ Vendor Repo ]
@@ -51,7 +53,7 @@
 
 ---
 
-## **Step-by-Step Summary**
+## Step-by-Step Summary
 
 1. **Vendor side:**
    - Generate RSA keys (`private_key.pem` / `public_key.pem`)  
@@ -71,13 +73,13 @@
 
 ---
 
-## **Key Security Points**
+## Key Security Points
 
 - `private_key.pem` **never leaves vendor** → prevents license forgery  
 - Client can only use the license you provide  
 - Public key is safe to include in container → allows verification  
 
-## **1️⃣ Structure Your Repo for Vendor vs Client**
+## 1. Structure Your Repo for Vendor vs Client
 
 Repo can look like this for building images:
 
@@ -105,14 +107,14 @@ product-root/
 └── README.md
 ```
 
-✅ **Important:**
+**Important:**
 
 * The `license/` folder **never gets copied into the Docker image**
 * The **public key** is embedded inside `licensing/verify.py` → safe to ship
 
 ---
 
-## **2️⃣ Dockerfile Example (ms-esdm)**
+## 2. Dockerfile Example (ms-esdm)
 
 Make sure **private files never get copied**:
 
@@ -176,7 +178,7 @@ CMD ["uvicorn", "ms-esdm.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
 ---
 
-## **3️⃣ Generate License (Vendor Only)**
+## 3. Generate License (Vendor Only)
 
 On your **local machine**, you run:
 
@@ -197,7 +199,7 @@ This creates **license/license.json** for the client.
 
 ---
 
-## **4️⃣ Build Docker Images**
+## 4. Build Docker Images
 
 ```bash
 docker build -t ms-esdm:1.0 ./ms-esdm
@@ -213,7 +215,7 @@ You now have **client-ready images** that include:
 
 ---
 
-## **5️⃣ Ship to Client**
+## 5. Ship to Client
 
 Give the client:
 

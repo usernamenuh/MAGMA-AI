@@ -1,14 +1,24 @@
-# Local model: Qwen2.5 1.5B Instruct
+# Model lokal Qwen2.5 1.5B Instruct
 
-The CPU deployment uses `qwen2.5-1.5b-instruct-q4_k_m.gguf`
-(1,117,320,736 bytes) from the official Qwen repository:
-https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF
+Service `openai-local` menjalankan model `qwen2.5-1.5b-instruct-q4_k_m.gguf`. Unduh berkasnya dari [repositori GGUF resmi Qwen](https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/tree/main); Git tidak menyertakannya.
 
-Expected SHA-256:
-`6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e`
+## Unduh dan verifikasi
 
-The Docker bind mount is `/mnt/data/magma-ai/models` -> `/app/models`.
-Set these values in `openai_local/.env`:
+Jalankan dari root repositori. Perintah ini memerlukan `curl` dan `sha256sum` pada host Linux.
+
+```bash
+mkdir -p data/models
+curl -fL --retry 3 \
+  -o data/models/qwen2.5-1.5b-instruct-q4_k_m.gguf \
+  https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf
+printf '%s  %s\n' \
+  '6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e' \
+  'data/models/qwen2.5-1.5b-instruct-q4_k_m.gguf' | sha256sum -c -
+```
+
+`sha256sum` menampilkan `OK` jika checksum cocok. Jika gagal, periksa berkas unduhan dan hash pada sumber resmi sebelum menggunakannya.
+
+Compose memasang `./data/models` ke `/app/models`. Konfigurasi `openai_local/.env` harus sesuai dengan lokasi di dalam container:
 
 ```dotenv
 MODEL_PATH=models/qwen2.5-1.5b-instruct-q4_k_m.gguf
@@ -17,26 +27,18 @@ N_CTX=4096
 N_GPU_LAYERS=0
 ```
 
-Set `OPENAI_MODEL=qwen2.5-1.5b-instruct` in `ms-esdm/.env`.
-Keep existing API credentials unchanged. Do not put credentials in this document.
+Di `ms-esdm/.env`, gunakan `OPENAI_MODEL=qwen2.5-1.5b-instruct`. Jika `API_KEY` untuk service lokal diisi, samakan dengan `OPENAI_API_KEY` pada backend. Jangan masukkan kunci ke dokumen atau commit.
 
-The local runtime dependency is upgraded to llama-cpp-python 0.3.16 for
-Qwen2 support. `utils.format_prompt` uses ChatML for Qwen models.
-The web model selector retains the stable `local` ID, with a Qwen label.
-Changing the chat model does not change the document embedding model and
-does not require document re-upload or re-embedding.
+## Jalankan dan periksa
 
-After downloading the model, rebuild and recreate only affected services:
+Setelah mengikuti [panduan pemasangan](../docs/INSTALLATION_GUIDE.md), jalankan service dengan nama proyek Compose yang sama:
 
-```sh
-docker compose build openai-local backend
-docker compose up -d --no-deps openai-local backend
-docker exec esdm-nginx nginx -t
-docker exec esdm-nginx nginx -s reload
-curl -i http://localhost/api/knowledge/models
+```bash
+docker compose -p magma-ai-staging up -d --build openai-local backend
+docker compose -p magma-ai-staging ps openai-local backend
+curl -f http://localhost/api/knowledge/models
 ```
 
-Backend initialization may take time: wait for it to become healthy before
-testing the web endpoint. RAM use is greater than the GGUF file size and
-depends on context length and other running services. Test grounded answers
-on actual documents before relying on this small model.
+Tunggu hingga backend sehat sebelum menguji endpoint. Jika service gagal memuat model, periksa `docker compose -p magma-ai-staging logs --tail=100 openai-local` dan nilai `MODEL_PATH`.
+
+Pergantian model chat tidak mengubah embedding dokumen. Service ini memakai `llama-cpp-python` 0.3.16 dan format prompt ChatML untuk Qwen. Siapkan RAM lebih besar dari ukuran berkas GGUF; kebutuhan pastinya bergantung pada panjang konteks dan layanan lain yang berjalan.

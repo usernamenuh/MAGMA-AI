@@ -1,0 +1,635 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "205bc560-fd48-4c38-a80f-c3a00226668d",
+              "leftValue": "={{ $json.body.data.key.fromMe }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -128,
+        -304
+      ],
+      "id": "d889a783-558d-4886-b4b9-6a048e15ba03",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "460fd7c6-8ba2-44c3-9343-7fc566550a29",
+              "name": "sender",
+              "value": "={{ ($json.body.data.key.remoteJidAlt || $json.body.data.key.remoteJid).replace('@s.whatsapp.net', '').replace('@lid', '') }}",
+              "type": "string"
+            },
+            {
+              "id": "021e0692-de5c-4e8a-99de-eaf7b89d91b4",
+              "name": "message",
+              "value": "={{ ($json.body.data.message?.locationMessage || $json.body.data.message?.liveLocationMessage) ? ('[LOKASI: ' + ($json.body.data.message?.locationMessage?.degreesLatitude ?? $json.body.data.message?.liveLocationMessage?.degreesLatitude) + ', ' + ($json.body.data.message?.locationMessage?.degreesLongitude ?? $json.body.data.message?.liveLocationMessage?.degreesLongitude) + (($json.body.data.message?.locationMessage?.name || $json.body.data.message?.locationMessage?.address) ? (', ' + ($json.body.data.message?.locationMessage?.name || $json.body.data.message?.locationMessage?.address)) : '') + ']') : ($json.body.data.message?.conversation || $json.body.data.message?.extendedTextMessage?.text || '') }}",
+              "type": "string"
+            },
+            {
+              "id": "afdefcbf-7686-4a29-9eb1-09c3c045a6b4",
+              "name": "instance",
+              "value": "={{ $json.body.instance }}",
+              "type": "string"
+            },
+            {
+              "id": "f29aed7a-9edf-4716-a9ca-7a6b3aded67a",
+              "name": "is_document",
+              "value": "={{ !!$json.body.data.message?.documentMessage }}",
+              "type": "boolean"
+            },
+            {
+              "id": "4c9d352d-8837-44f9-bcf7-0cd2abdbdfa1",
+              "name": "file_name",
+              "value": "={{ $json.body.data.message?.documentMessage?.fileName || 'dokumen' }}",
+              "type": "string"
+            },
+            {
+              "id": "95641791-844e-463b-ad7d-82b09053ac01",
+              "name": "mime_type",
+              "value": "={{ $json.body.data.message?.documentMessage?.mimetype || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "loc-lat-node",
+              "name": "latitude",
+              "value": "={{ $json.body.data.message?.locationMessage?.degreesLatitude ?? $json.body.data.message?.liveLocationMessage?.degreesLatitude ?? null }}",
+              "type": "number"
+            },
+            {
+              "id": "loc-lon-node",
+              "name": "longitude",
+              "value": "={{ $json.body.data.message?.locationMessage?.degreesLongitude ?? $json.body.data.message?.liveLocationMessage?.degreesLongitude ?? null }}",
+              "type": "number"
+            },
+            {
+              "id": "loc-name-node",
+              "name": "location_name",
+              "value": "={{ $json.body.data.message?.locationMessage?.name || $json.body.data.message?.locationMessage?.address || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "is-audio-assignment-id",
+              "name": "is_audio",
+              "value": "={{ !!$json.body.data.message?.audioMessage }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        128,
+        -320
+      ],
+      "id": "df7616af-bbe8-45aa-9753-1ecda2251c60",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:8000/whatsapp/analyze",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer REPLACE_WITH_MS_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "user_input",
+              "value": "={{ $json.message }}"
+            },
+            {
+              "name": "session_id",
+              "value": "={{ 'whatsapp-' + $json.sender }}"
+            },
+            {
+              "name": "model",
+              "value": "openrouter:openrouter/free"
+            },
+            {
+              "name": "latitude",
+              "value": "={{ $json.latitude }}"
+            },
+            {
+              "name": "longitude",
+              "value": "={{ $json.longitude }}"
+            },
+            {
+              "name": "location_name",
+              "value": "={{ $json.location_name }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        992,
+        -80
+      ],
+      "id": "2c766c3d-918e-407c-ad2e-5f0d4cfde9ad",
+      "name": "Ask WhatsApp Assistant"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://evolution-api:8080/message/sendText/esdm-assistant",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "REPLACE_WITH_EVOLUTION_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $('Edit Fields').item.json.sender }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.output }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1376,
+        -304
+      ],
+      "id": "27c4bedf-4110-4f6b-bfe5-fe532fd3aabf",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-incoming",
+        "options": {
+          "noResponseBody": false
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -336,
+        -304
+      ],
+      "id": "6cef9186-55e3-44c4-b789-4e6655b65571",
+      "name": "WhatsApp ESDM Assistant",
+      "webhookId": "eb6d4c3f-f1e3-41e4-87d0-6f8e3d90e6e9"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3bfbd4e3-6c60-40fd-9565-758e8ff79535",
+              "leftValue": "={{ $json.is_document }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        352,
+        -320
+      ],
+      "id": "952a1e0f-9e2e-4841-8c65-38fdcf16bba4",
+      "name": "Is Document"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://evolution-api:8080/chat/getBase64FromMediaMessage/esdm-assistant",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "REPLACE_WITH_EVOLUTION_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "={{ $('WhatsApp ESDM Assistant').item.json.body.data }}"
+            },
+            {
+              "name": "convertToMp4",
+              "value": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        592,
+        -448
+      ],
+      "id": "0a5cbda5-3527-4cb4-b255-af110e63962e",
+      "name": "Download WhatsApp Document"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:8000/knowledge/upload-whatsapp",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer REPLACE_WITH_MS_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "session_id",
+              "value": "={{ 'whatsapp-' + $('Edit Fields').item.json.sender }}"
+            },
+            {
+              "name": "filename",
+              "value": "={{ $json.fileName || $('Edit Fields').item.json.file_name }}"
+            },
+            {
+              "name": "mimetype",
+              "value": "={{ $json.mimetype || $('Edit Fields').item.json.mime_type }}"
+            },
+            {
+              "name": "base64_data",
+              "value": "={{ $json.base64 }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        848,
+        -464
+      ],
+      "id": "9898f76c-a558-44c4-b254-4a838ce67ac7",
+      "name": "Upload Document to Knowledge Base"
+    },
+    {
+      "parameters": {
+        "content": "## Pemrosesan dan respons\nJika berisi dokumen, file diunduh lalu dikirim ke Knowledge Base. Pesan tanpa dokumen diteruskan ke layanan asisten. Hasil dari kedua jalur dikirim kembali melalui WhatsApp.",
+        "height": 672,
+        "width": 976
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        528,
+        -592
+      ],
+      "typeVersion": 1,
+      "id": "96d73f51-3c4f-4176-b2a5-6b7b652294bb",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Penerimaan dan klasifikasi pesan\nPesan masuk melalui webhook WhatsApp. Workflow memeriksa pesan, menyiapkan data yang diperlukan, lalu menentukan apakah pesan berisi dokumen.",
+        "height": 672,
+        "width": 912,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -432,
+        -592
+      ],
+      "typeVersion": 1,
+      "id": "2f9c4913-45e2-451f-8e45-cc1357120255",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "cond-is-audio-id",
+              "leftValue": "={{ $json.is_audio }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        592,
+        -160
+      ],
+      "id": "node-is-audio-id",
+      "name": "Is Audio"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://evolution-api:8080/chat/getBase64FromMediaMessage/esdm-assistant",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "REPLACE_WITH_EVOLUTION_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "={{ $('WhatsApp ESDM Assistant').item.json.body.data }}"
+            },
+            {
+              "name": "convertToMp4",
+              "value": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        848,
+        -272
+      ],
+      "id": "node-dl-audio-id",
+      "name": "Download WhatsApp Audio"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:8000/whatsapp/analyze",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer REPLACE_WITH_MS_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "user_input"
+            },
+            {
+              "name": "session_id",
+              "value": "={{ 'whatsapp-' + $('Edit Fields').item.json.sender }}"
+            },
+            {
+              "name": "model",
+              "value": "openrouter:openrouter/free"
+            },
+            {
+              "name": "audio_base64",
+              "value": "={{ $json.base64 }}"
+            },
+            {
+              "name": "audio_mimetype",
+              "value": "={{ $json.mimetype || 'audio/ogg; codecs=opus' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1072,
+        -288
+      ],
+      "id": "node-ask-audio-id",
+      "name": "Ask WhatsApp Assistant (Audio)"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Is Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp ESDM Assistant": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        []
+      ]
+    },
+    "Is Document": {
+      "main": [
+        [
+          {
+            "node": "Download WhatsApp Document",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download WhatsApp Document": {
+      "main": [
+        [
+          {
+            "node": "Upload Document to Knowledge Base",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Document to Knowledge Base": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask WhatsApp Assistant": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Audio": {
+      "main": [
+        [
+          {
+            "node": "Download WhatsApp Audio",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ask WhatsApp Assistant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download WhatsApp Audio": {
+      "main": [
+        [
+          {
+            "node": "Ask WhatsApp Assistant (Audio)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask WhatsApp Assistant (Audio)": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "152059f2-563d-4cd3-9521-5a6210bb109b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a92731bd332dc14b62cbbfee0a1ea261b7137019c6c1cbd047e4e07fc988a00e"
+  },
+  "nodeGroups": [],
+  "id": "8kXuk3wq4hAX7fJN",
+  "tags": []
+}

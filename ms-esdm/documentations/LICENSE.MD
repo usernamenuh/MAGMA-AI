@@ -1,13 +1,15 @@
-# 🔐 Licensing Guide
+# Arsip panduan lisensi backend
+
+> **Dokumen historis.** Contoh di bawah berasal dari rancangan lisensi lama dan bukan panduan pemasangan MAGMA AI saat ini. Compose menjalankan backend dengan konfigurasi di `ms-esdm/.env`; ikuti [panduan pemasangan](../../docs/INSTALLATION_GUIDE.md) untuk instalasi baru. Periksa `ms-esdm/main.py` dan `ms-esdm/licensing/` sebelum menggunakan kembali contoh lisensi ini.
 
 ## Overview
 
 This application enforces a signed license file with the following limits:
 
-* `max_users` – Maximum number of users allowed
-* `max_machines` – Maximum number of activated machines
-* `valid_from` – License start date
-* `valid_until` – License expiration date
+* `max_users`: Maximum number of users allowed
+* `max_machines`: Maximum number of activated machines
+* `valid_from`: License start date
+* `valid_until`: License expiration date
 
 The license is:
 
@@ -22,7 +24,7 @@ The database only stores activated machine fingerprints.
 
 ---
 
-# 📁 License File Location
+## License File Location
 
 Create this folder:
 
@@ -38,11 +40,11 @@ ms-esdm/license/license.json
 
 ---
 
-# 🧪 Development Mode (Quick Start)
+## Development Mode (Historical Example)
 
 If you just want to run the system locally:
 
-### 1️⃣ Add this test license:
+### 1. Add this test license
 
 ```json
 {
@@ -55,28 +57,11 @@ If you just want to run the system locally:
 }
 ```
 
-### 2️⃣ Temporarily disable signature verification
+### 2. Verifikasi tanda tangan
 
-In:
+Contoh lisensi dengan `"signature": "DEV"` tidak memiliki tanda tangan RSA yang sah. Jangan mengubah `verify_signature()` agar selalu mengembalikan `True`. Untuk pengujian lokal, gunakan konfigurasi `DISABLE_LICENSE` yang disediakan backend sesuai kebijakan lingkungan pengembangan, atau buat lisensi uji yang ditandatangani dengan kunci pengujian. Jangan gunakan konfigurasi pengujian untuk akses publik.
 
-```
-licensing/verify.py
-```
-
-Replace:
-
-```python
-def verify_signature(license_dict: dict) -> bool:
-```
-
-With:
-
-```python
-def verify_signature(license_dict: dict) -> bool:
-    return True
-```
-
-### 3️⃣ Run application
+### 3. Run application
 
 ```bash
 cd ms-esdm
@@ -85,9 +70,9 @@ uvicorn main:app --reload
 
 ---
 
-# 🔒 Production Mode (Signed License)
+## Production Mode (Signed License)
 
-## Step 1 – Generate RSA Keys (One Time Only)
+## Step 1: Generate RSA Keys (One Time Only)
 
 Run:
 
@@ -103,7 +88,7 @@ You now have:
 
 ---
 
-## Step 2 – Embed Public Key In App
+## Step 2: Embed Public Key In App
 
 Open `public_key.pem`
 
@@ -124,7 +109,7 @@ MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQE...
 
 ---
 
-## Step 3 – Generate Signed License
+## Step 3: Generate Signed License
 
 Create file `generate_license.py` (vendor side only):
 
@@ -176,7 +161,7 @@ ms-esdm/license/license.json
 
 ---
 
-# 🚀 How To Run (Production Mode)
+## How To Run (Production Mode)
 
 ```bash
 cd ms-esdm
@@ -192,7 +177,7 @@ If license is:
 
 ---
 
-# 🗄 Database Table
+## Database Table
 
 Auto-created at startup:
 
@@ -207,12 +192,12 @@ This table stores:
 
 ---
 
-# 🔎 Check License Status
+## Check License Status
 
-Endpoint:
+Endpoint backend langsung (melalui Nginx: `GET /api/license/status`):
 
 ```
-GET /api/license/status
+GET /license/status
 ```
 
 Example response:
@@ -228,7 +213,7 @@ Example response:
 
 ---
 
-# 🔄 Updating License
+## Updating License
 
 To upgrade:
 
@@ -237,7 +222,7 @@ To upgrade:
 
 ---
 
-# ⚠️ Important Security Notes
+## Important Security Notes
 
 * Never commit `private_key.pem`
 * Never commit real `license.json`
@@ -250,7 +235,7 @@ private_key.pem
 
 ---
 
-# 🧠 How Enforcement Works
+## How Enforcement Works
 
 | Check                  | When                       |
 | ---------------------- | -------------------------- |
@@ -261,17 +246,17 @@ private_key.pem
 
 ---
 
-# 🧪 Testing Licensing Module
+## Testing Licensing Module
 
 You can test the license enforcement code without starting the full app using `pytest`.
 
-### 1️⃣ Install test dependencies
+### 1. Install test dependencies
 
 ```bash
 pip install pytest pytest-mock
 ```
 
-### 2️⃣ Run test file
+### 2. Run test file
 
 ```bash
 pytest tests/test_licensing.py -v
@@ -279,7 +264,7 @@ pytest tests/test_licensing.py -v
 
 ---
 
-# 🎯 Summary
+## Summary
 
 License file is:
 

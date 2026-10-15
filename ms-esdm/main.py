@@ -72,6 +72,7 @@ def on_startup():
         connection.execute(text("ALTER TABLE documents ADD COLUMN IF NOT EXISTS whatsapp_session_id VARCHAR"))
         connection.execute(text("ALTER TABLE documents ADD COLUMN IF NOT EXISTS whatsapp_notification_sent BOOLEAN DEFAULT FALSE NOT NULL"))
         connection.execute(text("ALTER TABLE whatsapp_auth_sessions ADD COLUMN IF NOT EXISTS conversation_mode VARCHAR(24) DEFAULT 'auto' NOT NULL"))
+        connection.execute(text("ALTER TABLE whatsapp_auth_sessions ADD COLUMN IF NOT EXISTS voice_mode BOOLEAN DEFAULT FALSE NOT NULL"))
         connection.execute(text("ALTER TABLE whatsapp_auth_sessions ADD COLUMN IF NOT EXISTS last_route VARCHAR(24)"))
         connection.execute(text("ALTER TABLE whatsapp_auth_sessions ADD COLUMN IF NOT EXISTS pending_follow_up TEXT"))
         connection.execute(text("ALTER TABLE whatsapp_auth_sessions ADD COLUMN IF NOT EXISTS recent_follow_ups JSON DEFAULT '[]' NOT NULL"))

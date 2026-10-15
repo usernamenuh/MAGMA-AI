@@ -1,174 +1,37 @@
-# 📖 API Documentation – Scraping & Analysis ESDM
+# Dokumentasi API MAGMA AI dan NARA
 
-## Overview
+Web dan WhatsApp memakai endpoint backend FastAPI dalam tabel berikut. Saat stack berjalan, buka **Swagger UI** di `http://localhost/api/docs` untuk melihat skema request dan respons. Nginx menambahkan awalan `/api`; di dalam jaringan Compose, backend melayani port `8000` tanpa awalan itu.
 
-This API provides three main functionalities:
+## Endpoint utama
 
-1. **Analyze (`/analyze`)** → Scrapes an API endpoint (based on user input), analyzes the response with **Mistral**, and saves the result into `log.json`.
-2. **Logs (`/logs`)** → Retrieves saved analysis results from `log.json` with pagination.
-3. **Scrapping (`/scrapping`)** → Scrapes raw data directly from API endpoints without analysis or logging.
+| Metode dan path melalui Nginx | Fungsi |
+| --- | --- |
+| `POST /api/analyze` | Menjawab pertanyaan menggunakan alur informasi MAGMA. |
+| `POST /api/analyze/en` | Varian bahasa Inggris untuk alur MAGMA. |
+| `GET /api/knowledge/models` | Daftar model chat yang tersedia dan pilihan default. |
+| `POST /api/knowledge/analyze` | Menjawab dari dokumen Knowledge Base; dapat dibatasi dengan `document_ids`. |
+| `POST /api/knowledge/analyze-en` | Varian bahasa Inggris untuk Knowledge Base. |
+| `POST /api/knowledge/upload` | Mengunggah PDF/Word ke antrean pemrosesan. |
+| `GET /api/knowledge/documents` | Daftar dokumen dan status pemrosesan. |
+| `GET /api/knowledge/documents/{id}` | Detail dokumen dan chunk tersimpan. |
+| `GET /api/knowledge/documents/{id}/text-audit` | Hasil pemeriksaan kelengkapan teks. |
+| `GET /api/knowledge/documents/{id}/annotated-pdf` | PDF dengan penandaan teks yang cocok. |
+| `POST /api/knowledge/documents/{id}/retry` | Pemrosesan lanjutan dokumen. |
+| `POST /api/knowledge/documents/{id}/manual-text` | Menambahkan teks manual dengan nomor halaman. |
+| `DELETE /api/knowledge/documents/{id}` | Menghapus dokumen. |
+| `POST /api/whatsapp/analyze` | Menerima pesan WhatsApp teks atau audio dari workflow n8n. |
+| `POST /api/knowledge/upload-whatsapp` | Mengunggah dokumen dari sesi WhatsApp yang telah login. |
 
----
+Backend menyembunyikan sebagian route integrasi, log, autentikasi, dan administrasi dari Swagger (`include_in_schema=False`). Periksa kode di `ms-esdm/routes/v1/` sebelum memanggilnya; beberapa route memerlukan kunci API. `{id}` pada tabel berarti ID dokumen.
 
-## Base URL
+## Bentuk request penting
 
-```
-http://localhost:8000
-```
+Untuk `POST /api/analyze`, field utama adalah `user_input`; `session_id`, `geo_location`, `location_name`, dan `model` bersifat opsional. Untuk `POST /api/knowledge/analyze`, field utama adalah `user_input`; `session_id`, `model`, dan daftar `document_ids` bersifat opsional.
 
----
+Untuk `POST /api/whatsapp/analyze`, backend menerima `session_id` yang diawali `whatsapp-`, `user_input` untuk teks, dan opsional `audio_base64` serta `audio_mimetype` untuk voice note. Audio ditranskripsi memakai Groq Whisper. Mode `/api-documentation`, `/knowlage-base`, `/auto`, `/voice`, dan `/text` dikelola per sesi. Balasan suara dibuat melalui Edge TTS dan dikirim melalui Evolution API hanya saat mode `/voice` aktif; voice note masuk tidak otomatis mengaktifkan balasan suara. Workflow n8n harus meneruskan audio ke field yang benar; keberadaan endpoint tidak menjamin alur end-to-end sudah aktif.
 
-## 📌 Endpoints
+## Autentikasi dan keamanan
 
-### 1. 🔍 Analyze – `POST /analyze/`
+Sebagian besar endpoint aplikasi memerlukan autentikasi atau kunci API sesuai dependency pada route. Jangan menyalin kunci asli ke contoh request, issue, atau screenshot. Konfigurasi lokal mengikuti [panduan pemasangan](../../docs/INSTALLATION_GUIDE.md); penggunaan WhatsApp ada di [panduan WhatsApp](../../docs/WHATSAPP_GUIDE.md).
 
-Run the full pipeline: **recommend API → call API → analyze response → save log**.
-
-#### Request
-
-```json
-{
-  "user_input": "Show me the latest volcanic activity"
-}
-```
-
-#### Response
-
-```json
-{
-  "date": "2025-09-23T08:30:00.123Z",
-  "user_input": "Show me the latest volcanic activity",
-  "api_call": "https://magma.esdm.go.id/api/volcanoes",
-  "output": "There were several volcanic activities reported this year..."
-}
-```
-
----
-
-### 2. 📜 Logs – `GET /logs/`
-
-Retrieve analysis history saved in `log.json`.
-
-#### Query Parameters
-
-* `page` (optional, default = 1)
-* `limit` (optional, default = 10, max = 100)
-
-#### Example Request
-
-```
-GET /logs?page=1&limit=5
-```
-
-#### Response
-
-```json
-{
-  "page": 1,
-  "limit": 5,
-  "total": 23,
-  "data": [
-    {
-      "date": "2025-09-23T08:30:00.123Z",
-      "user_input": "Show me the latest volcanic activity",
-      "api_call": "https://magma.esdm.go.id/api/volcanoes",
-      "output": "There were several volcanic activities reported this year..."
-    }
-  ]
-}
-```
-
----
-
-### 3. 🗂 Scrapping – `GET /scrapping/`
-
-Scrape raw API data.
-⚠️ This **does not analyze or log** the result.
-
-#### Query Parameters
-
-* `user_input` (optional)
-
-    * If provided → scrape only the recommended API.
-    * If empty → scrape all APIs in `examples_min.json`.
-* `limit` (optional, default = 10)
-
-    * Max items per API response (if supported).
-
-#### Example 1 – With User Input
-
-```
-GET /scrapping?user_input=latest volcanic activity&limit=5
-```
-
-##### Response
-
-```json
-{
-  "count": 1,
-  "results": [
-    {
-      "api_call": "https://magma.esdm.go.id/api/volcanoes",
-      "data": {
-        "status": "success",
-        "data": [
-          { "volcano": "Merapi", "activity": "eruption", "date": "2025-09-21" },
-          { "volcano": "Semeru", "activity": "ash cloud", "date": "2025-09-19" }
-        ]
-      }
-    }
-  ]
-}
-```
-
-#### Example 2 – Scrap All APIs
-
-```
-GET /scrapping?limit=3
-```
-
-##### Response
-
-```json
-{
-  "count": 5,
-  "results": [
-    {
-      "api_call": "https://magma.esdm.go.id/api/volcanoes",
-      "data": {...}
-    },
-    {
-      "api_call": "https://magma.esdm.go.id/api/earthquakes",
-      "data": {...}
-    }
-  ]
-}
-```
-
----
-
-## ⚙️ Project Structure
-
-```
-project/
-├── main.py              # FastAPI entrypoint
-├── routes/
-│   ├── analyze.py       # /analyze endpoint
-│   ├── logs.py          # /logs endpoint
-│   └── scrapping.py     # /scrapping endpoint
-├── services/
-│   ├── pipeline.py      # pipeline logic (recommend, call, analyze)
-│   └── logger.py        # save/load logs
-├── examples_min.json    # API examples reference
-└── log.json             # Logs storage
-```
-
----
-
-## ▶️ Run Server
-
-```bash
-uvicorn main:app --reload
-```
-
-* Docs: [http://localhost:8000/docs](http://localhost:8000/docs)
+Informasi kebencanaan berubah dari waktu ke waktu. Simpan waktu dan rujukan jawaban saat mengevaluasi hasil; respons AI bukan pengganti sumber resmi.

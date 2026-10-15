@@ -50,7 +50,7 @@ services:
     extra_hosts:
       - "magma.esdm.go.id:103.87.161.61"
     volumes:
-      - /mnt/data/magma-ai/blobs:/app/blobs:z
+      - ./data/blobs:/app/blobs:z
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/docs')"]
       interval: 30s
@@ -74,7 +74,7 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - /mnt/data/magma-ai/blobs:/app/blobs:z
+      - ./data/blobs:/app/blobs:z
     restart: unless-stopped
 
   openai-local:
@@ -87,7 +87,7 @@ services:
     expose:
       - "8002"
     volumes:
-      - /mnt/data/magma-ai/models:/app/models
+      - ./data/models:/app/models
     restart: unless-stopped
 
   frontend:

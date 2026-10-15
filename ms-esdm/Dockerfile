@@ -34,6 +34,9 @@ RUN pip install --no-cache-dir torch torchvision --index-url https://download.py
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
+# SQLAlchemy's async engine requires greenlet; recent SQLAlchemy releases
+# no longer pull it in when installed without the asyncio extra.
+RUN pip install --no-cache-dir "sqlalchemy[asyncio]"
 RUN pip install dateparser
 
 # Docling terbaru gagal diimpor dengan constraint Pydantic 2.7 lama.
