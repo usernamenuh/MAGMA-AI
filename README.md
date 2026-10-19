@@ -187,8 +187,8 @@ MAGMA AI berawal dari basis kode proyek internal yang dipakai selama kerja prakt
 
 ## Materi kerja praktik
 
-- [Presentasi kerja praktik](https://drive.google.com/file/d/1uVFNUw0MX9bNnd6O_aH-Lrtk9VUwSCvg/view?usp=drive_link)
-- [Laporan kerja praktik](https://docs.google.com/document/d/1aHXtDPNSkb-hdQeGFsb-ROwxfBPFHpZ1/edit?usp=drive_link&ouid=118283350958950837981&rtpof=true&sd=true)
+- [Presentasi kerja praktik](https://drive.google.com/file/d/1yZcSHl5d38XSi8BRy92fWZAC6wO340uW/view?usp=drivesdk)
+- [Laporan kerja praktik](https://docs.google.com/document/d/1GBqa6TPp9OCBDHh1BfzY_PYZQyZsEp70/edit?usp=drivesdk&ouid=107941145614659596264&rtpof=true&sd=true)
 
 ## Dokumentasi lanjutan
 
