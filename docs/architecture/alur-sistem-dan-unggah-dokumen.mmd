@@ -1,0 +1,58 @@
+flowchart TB
+    START["Pengguna web atau WhatsApp"] --> ACTION{"Jenis interaksi?"}
+
+    ACTION -->|"Mengajukan pertanyaan"| CHANNEL{"Kanal pertanyaan?"}
+    CHANNEL -->|"Web"| WEB["React melalui Nginx → FastAPI"]
+    CHANNEL -->|"WhatsApp teks"| WA_TEXT["Evolution API → n8n → FastAPI"]
+    CHANNEL -->|"WhatsApp voice note"| WA_AUDIO["Evolution API → n8n → FastAPI"]
+    WA_AUDIO --> STT["Groq Whisper: transkripsi audio"]
+    WEB --> INPUT["Teks pertanyaan"]
+    WA_TEXT --> INPUT
+    STT --> INPUT
+
+    INPUT --> MODE{"Mode sumber jawaban?"}
+    MODE -->|"/api-documentation"| API_MODE["API MAGMA"]
+    MODE -->|"/knowledge-base"| KB_MODE["Knowledge Base"]
+    MODE -->|"/auto atau tanpa perintah"| AUTO["Tentukan sumber dari pertanyaan"]
+    MODE -->|"/voice, /voice off, /text"| VOICE_PREF["Simpan preferensi balasan per sesi"]
+    VOICE_PREF --> INPUT
+    API_MODE --> SOURCE{"Sumber jawaban"}
+    KB_MODE --> SOURCE
+    AUTO --> SOURCE
+
+    SOURCE -->|"API MAGMA"| MAGMA["Ambil data dan waktu dari API MAGMA"]
+    SOURCE -->|"Knowledge Base"| SEARCH["Cari chunk dokumen relevan di pgvector"]
+    MAGMA --> CONTEXT["Susun konteks dan riwayat percakapan"]
+    SEARCH --> CONTEXT
+    CONTEXT --> MODEL{"Model bahasa yang dipilih?"}
+    MODEL -->|"Lokal"| LOCAL["Qwen lokal"]
+    MODEL -->|"Layanan jaringan"| CLOUD["Groq / OpenRouter"]
+    LOCAL --> ANSWER["Jawaban, rujukan, dan follow-up"]
+    CLOUD --> ANSWER
+    ANSWER -->|"Web"| WEB_REPLY["Tampilkan jawaban di web"]
+    ANSWER -->|"WhatsApp"| WA_REPLY["Kirim teks melalui n8n dan Evolution API"]
+    ANSWER --> VOICE_CHECK{"Mode /voice aktif?"}
+    VOICE_CHECK -->|"Ya, pada WhatsApp"| TTS["Edge TTS membuat audio"]
+    TTS --> VOICE_REPLY["Evolution API mengirim voice note"]
+    VOICE_CHECK -->|"Tidak"| TEXT_ONLY["Tidak mengirim audio"]
+
+    ACTION -->|"Mengunggah dokumen"| UP_CHANNEL{"Kanal unggah?"}
+    UP_CHANNEL -->|"Web"| UP_WEB["Unggah PDF, DOC, atau DOCX di Knowledge Base"]
+    UP_CHANNEL -->|"WhatsApp"| UP_WA["Kirim dokumen melalui Evolution API dan n8n"]
+    UP_WA --> AUTH{"Sesi /login aktif?"}
+    AUTH -->|"Tidak"| REJECT["Tolak unggahan; minta pengguna login"]
+    AUTH -->|"Ya"| UP_BACKEND["FastAPI: /knowledge/upload-whatsapp"]
+    UP_WEB --> UP_WEB_API["FastAPI: /knowledge/upload"]
+    UP_BACKEND --> VALIDATE["Validasi format berkas; WhatsApp maks. 20 MB"]
+    UP_WEB_API --> VALIDATE
+    VALIDATE --> STORE["Simpan berkas dan catat status antrean"]
+    STORE --> FILES[("Penyimpanan berkas")]
+    STORE --> DB[("PostgreSQL + pgvector")]
+    STORE -->|"Masuk antrean"| WORKER["Worker mengambil dokumen dari antrean"]
+    FILES --> WORKER
+    WORKER --> EXTRACT["Ekstraksi dan pemeriksaan kelengkapan teks"]
+    EXTRACT --> EMBED["Buat chunk dan embedding"]
+    EMBED --> SAVE["Simpan chunk, vektor, dan status pemrosesan"]
+    SAVE --> DB
+    SAVE --> STATUS["Status dapat diperiksa di web; pengunggah WhatsApp menerima notifikasi"]
+    DB -. "Chunk tersedia untuk pencarian" .-> SEARCH

@@ -31,4 +31,4 @@ cryptography
 asyncpg
 psycopg2-binary
 httpx
-edge-tts
+edge-tts==7.3.0

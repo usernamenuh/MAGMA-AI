@@ -46,6 +46,13 @@ def prepare_text_for_speech(text: str, max_chars: int = 500) -> str:
     t = re.sub(r'\bPVMBG\b', 'P V M B G', t)
     t = re.sub(r'\bESDM\b', 'E S D M', t)
     t = re.sub(r'\bKRB\b', 'Kawasan Rawan Bencana', t)
+    level_names = {"I": "satu", "II": "dua", "III": "tiga", "IV": "empat"}
+    t = re.sub(
+        r'\bLevel\s+(IV|III|II|I)\b',
+        lambda match: f"Level {level_names[match.group(1).upper()]}",
+        t,
+        flags=re.I,
+    )
     t = re.sub(r'\bkm\b', ' kilometer', t)
     t = re.sub(r'(\d+)\s*m\b', r'\1 meter', t)
     t = re.sub(r'(\d{4})-(\d{2})-(\d{2})', r'\3-\2-\1', t)

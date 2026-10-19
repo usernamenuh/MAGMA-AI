@@ -15,6 +15,7 @@
 - [Preview sistem](#preview-sistem)
 - [Struktur repositori](#struktur-repositori)
 - [Asal proyek dan atribusi](#asal-proyek-dan-atribusi)
+- [Materi kerja praktik](#materi-kerja-praktik)
 - [Dokumentasi lanjutan](#dokumentasi-lanjutan)
 - [Keterbatasan](#keterbatasan)
 - [Keamanan dan data](#keamanan-dan-data)
@@ -183,6 +184,11 @@ MAGMA AI berawal dari basis kode proyek internal yang dipakai selama kerja prakt
 | Supervisi | Dr. Devy Kamil Syahbana | Supervisi pekerjaan kerja praktik. |
 | Pembimbing | Achmad Fathoni, S.T. | Pembimbing kerja praktik. |
 | Pengembangan proyek dalam kerja praktik | Muhammad Enuh | Pengembangan, integrasi, pengujian, dan dokumentasi. |
+
+## Materi kerja praktik
+
+- [Presentasi kerja praktik](https://drive.google.com/file/d/1uVFNUw0MX9bNnd6O_aH-Lrtk9VUwSCvg/view?usp=drive_link)
+- [Laporan kerja praktik](https://docs.google.com/document/d/1aHXtDPNSkb-hdQeGFsb-ROwxfBPFHpZ1/edit?usp=drive_link&ouid=118283350958950837981&rtpof=true&sd=true)
 
 ## Dokumentasi lanjutan
 
